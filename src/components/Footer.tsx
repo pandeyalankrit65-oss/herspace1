@@ -39,6 +39,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/timer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  {t("nav.timer")}
+                </Link>
+              </li>
+              <li>
                 <Link to="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   {t("nav.support")}
                 </Link>

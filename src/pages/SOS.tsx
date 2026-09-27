@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle } from "lucide-react";
+import { AlertCircle, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
+import FakeCall from "@/components/FakeCall";
 import type { Contact } from "./Contacts";
 import { useI18n } from "@/i18n";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
@@ -351,6 +352,22 @@ const SOS = () => {
               </CardContent>
             </Card>
           )}
+
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+              <CardHeader>
+                <Timer className="h-8 w-8 text-primary mb-2" />
+                <CardTitle className="text-lg">{t("timer.ctaTitle")}</CardTitle>
+                <CardDescription>{t("timer.ctaDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link to="/timer">
+                  <Button variant="hero" className="w-full">{t("timer.ctaButton")}</Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <FakeCall />
+          </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">

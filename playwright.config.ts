@@ -47,6 +47,7 @@ export default defineConfig({
         MESSAGE_OUTBOX: process.env.E2E_OUTBOX,
         APP_URL: `http://localhost:${WEB_PORT}`,
         DISABLE_IP_RATE_LIMIT: "1",
+        CHECK_IN_POLL_MS: "1000", // so an expired safety timer alerts within a second
       },
     },
     {

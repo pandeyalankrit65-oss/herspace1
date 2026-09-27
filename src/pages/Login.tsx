@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [params] = useSearchParams();
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const next = safeNext(params.get("next"));
+
+  // Already signed in (e.g. followed a ?next= link): go straight on.
+  useEffect(() => {
+    if (!authLoading && user) navigate(next, { replace: true });
+  }, [authLoading, user, next, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

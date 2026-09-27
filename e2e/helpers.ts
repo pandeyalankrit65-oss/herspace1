@@ -14,10 +14,10 @@ export function readOutbox(): OutboxMessage[] {
 }
 
 // Waits for a message the server "sent" (written to the outbox) that matches.
-export async function waitForMessage(match: (m: OutboxMessage) => boolean): Promise<OutboxMessage> {
+export async function waitForMessage(match: (m: OutboxMessage) => boolean, timeout = 10_000): Promise<OutboxMessage> {
   let found: OutboxMessage | undefined;
   await expect
-    .poll(() => (found = readOutbox().reverse().find(match)), { timeout: 10_000, message: "message in outbox" })
+    .poll(() => (found = readOutbox().reverse().find(match)), { timeout, message: "message in outbox" })
     .toBeTruthy();
   return found!;
 }

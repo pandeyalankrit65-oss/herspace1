@@ -48,7 +48,10 @@ accountRouter.get('/export', (req, res) => {
   const locationShares = db
     .prepare('SELECT created_at AS createdAt, expires_at AS expiresAt, ended_at AS endedAt, lat, lng, updated_at AS updatedAt FROM location_shares WHERE user_id = ?')
     .all(userId);
-  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
+  const checkIns = db
+    .prepare('SELECT note, status, created_at AS createdAt, due_at AS dueAt, alerted_at AS alertedAt FROM check_ins WHERE user_id = ?')
+    .all(userId);
+  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, checkIns, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
 });
 
 accountRouter.delete('/', passwordLimiter, (req, res) => {

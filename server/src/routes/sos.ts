@@ -37,7 +37,16 @@ function listDeliveries(sosId: number): Delivery[] {
     .all(sosId) as Delivery[];
 }
 
-async function triggerAlert(user: User | undefined, coords: z.infer<typeof coordsSchema> | undefined, isTest: boolean) {
+export type AlertOptions = {
+  test?: boolean;
+  // Set when a safety timer ran out without the user checking in.
+  checkIn?: { note: string | null; startedAt: string; dueAt: string };
+};
+
+const fmtTime = (iso: string) => new Date(iso).toUTCString();
+
+export async function triggerAlert(user: User | undefined, coords: z.infer<typeof coordsSchema> | undefined, options: AlertOptions = {}) {
+  const isTest = Boolean(options.test);
   const createdAt = now();
   const sos = db
     .prepare('INSERT INTO sos_events (user_id, lat, lng, accuracy, created_at, is_test) VALUES (?, ?, ?, ?, ?, ?)')
@@ -56,9 +65,12 @@ async function triggerAlert(user: User | undefined, coords: z.infer<typeof coord
   // Real alerts from a logged-in user get a live-location link that keeps updating.
   const share = user && !isTest ? createShare(user.id, sosId, coords) : undefined;
   const live = share ? ` Live location: ${share.url}` : '';
+  const checkIn = options.checkIn;
   const message = isTest
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`
-    : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live} Please call them now. If you can't reach them, contact local emergency services.`;
+    : checkIn
+      ? `HerSpace safety alert: ${who} started a safety timer at ${fmtTime(checkIn.startedAt)}${checkIn.note ? ` ("${checkIn.note}")` : ''} and didn't check in by ${fmtTime(checkIn.dueAt)}. Last known ${where.charAt(0).toLowerCase()}${where.slice(1)}${live} Please call them now. If you can't reach them, contact local emergency services.`
+      : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live} Please call them now. If you can't reach them, contact local emergency services.`;
 
   const insert = db.prepare(
     'INSERT INTO sos_deliveries (sos_id, contact_name, phone, channel, status, error, provider_sid, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
@@ -73,12 +85,14 @@ async function triggerAlert(user: User | undefined, coords: z.infer<typeof coord
   confirmed.forEach((c, i) => record(c, 'sms', smsResults[i]));
 
   if (!isTest && voiceCallsEnabled()) {
-    const spoken = `This is an emergency alert from HerSpace. ${who} has pressed their S O S button. Please check your text messages for their location, and call them now.`;
+    const spoken = checkIn
+      ? `This is a safety alert from HerSpace. ${who} did not check in when their safety timer ended. Please check your text messages for their last known location, and call them now.`
+      : `This is an emergency alert from HerSpace. ${who} has pressed their S O S button. Please check your text messages for their location, and call them now.`;
     const callResults = await Promise.all(confirmed.map((c) => placeCall(c.phone, spoken)));
     confirmed.forEach((c, i) => record(c, 'call', callResults[i]));
   }
 
-  console.log(`[SOS] ${isTest ? 'Test ' : ''}event ${sosId} user=${user?.id ?? 'anonymous'} confirmed=${confirmed.length}/${contacts.length}`);
+  console.log(`[SOS] ${isTest ? 'Test ' : checkIn ? 'Missed check-in ' : ''}event ${sosId} user=${user?.id ?? 'anonymous'} confirmed=${confirmed.length}/${contacts.length}`);
   return {
     id: sosId,
     share: share ? { id: share.id, url: share.url, expiresAt: share.expiresAt } : null,
@@ -98,11 +112,11 @@ const sosSchema = z.object({ coords: coordsSchema.optional() });
 sosRouter.post('/', sosIpLimiter, sosUserLimiter, async (req, res) => {
   const body = parse(sosSchema, req, res);
   if (!body) return;
-  res.status(201).json(await triggerAlert(req.user, body.coords, false));
+  res.status(201).json(await triggerAlert(req.user, body.coords));
 });
 
 sosRouter.post('/test', requireAuth, testLimiter, async (req, res) => {
-  res.status(201).json(await triggerAlert(req.user, undefined, true));
+  res.status(201).json(await triggerAlert(req.user, undefined, { test: true }));
 });
 
 sosRouter.get('/', requireAuth, (req, res) => {

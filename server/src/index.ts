@@ -2,11 +2,27 @@ import './env';
 import { app } from './app';
 import { db, purgeExpiredData } from './db';
 import { emailConfigured, smsConfigured, statusCallbackUrl, voiceCallsEnabled } from './messaging';
+import { processOverdueCheckIns } from './routes/checkins';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 purgeExpiredData();
 setInterval(purgeExpiredData, 24 * 60 * 60 * 1000).unref();
+
+// Safety timers are enforced here, on the server, so they work even if the phone is off.
+const CHECK_IN_POLL_MS = Number(process.env.CHECK_IN_POLL_MS || 20_000);
+let checking = false;
+setInterval(async () => {
+  if (checking) return;
+  checking = true;
+  try {
+    await processOverdueCheckIns();
+  } catch (err) {
+    console.error('[check-in] Scheduler error:', err);
+  } finally {
+    checking = false;
+  }
+}, CHECK_IN_POLL_MS).unref();
 
 const server = app.listen(PORT, () => {
   console.log(`HerSpace server listening on http://localhost:${PORT}`);

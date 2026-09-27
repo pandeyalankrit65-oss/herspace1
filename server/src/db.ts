@@ -119,6 +119,25 @@ const migrations: string[] = [
     value TEXT NOT NULL
   );
   `,
+  `
+  -- Safety timers: if the user doesn't check in by due_at, the server alerts their contacts.
+  -- status: active -> completed | cancelled | alerted (alerted -> completed when they say they're safe)
+  CREATE TABLE check_ins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    due_at TEXT NOT NULL,
+    lat REAL,
+    lng REAL,
+    accuracy REAL,
+    location_at TEXT,
+    alerted_at TEXT,
+    sos_id INTEGER REFERENCES sos_events(id) ON DELETE SET NULL
+  );
+  CREATE INDEX check_ins_due ON check_ins(status, due_at);
+  `,
 ];
 
 function migrate() {
@@ -155,4 +174,5 @@ export function purgeExpiredData() {
   // Finished shares are kept a day so a contact opening the link late sees "ended", not "not found".
   const shareCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   db.prepare('DELETE FROM location_shares WHERE COALESCE(ended_at, expires_at) < ?').run(shareCutoff);
+  db.prepare("DELETE FROM check_ins WHERE status != 'active' AND created_at < ?").run(sosCutoff);
 }

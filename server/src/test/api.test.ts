@@ -5,6 +5,7 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { app } from '../app';
 import { db } from '../db';
+import { processOverdueCheckIns } from '../routes/checkins';
 
 let server: Server;
 let base: string;
@@ -324,5 +325,53 @@ describe('live location', () => {
     assert.equal((await call('/sos', { body: {} })).data.share, null);
     assert.equal((await call('/sos/test', { token, method: 'POST' })).data.share, null);
     assert.equal((await call('/track/not-a-real-token')).status, 404);
+  });
+});
+
+describe('safety timer', () => {
+  test('alerts contacts when the timer runs out, once, with the last location', async () => {
+    const { token } = await newUser('Isha');
+    const c = await call('/contacts', { token, body: { name: 'Mom', phone: '+919222222222' } });
+    await call(`/contact-invites/${c.data.inviteLink.split('/confirm-contact/')[1]}`, { body: { accept: true } });
+
+    const started = await call('/check-ins', { token, body: { minutes: 30, note: 'Walking home', coords: { lat: 18.52, lng: 73.85 } } });
+    assert.equal(started.status, 201);
+    const id = started.data.checkIn.id;
+    await call(`/check-ins/${id}/location`, { token, body: { coords: { lat: 18.53, lng: 73.86 } } });
+
+    // Nothing happens before the deadline.
+    assert.equal(await processOverdueCheckIns(new Date(Date.now() + 29 * 60_000)), 0);
+    // Extending moves the deadline.
+    await call(`/check-ins/${id}/extend`, { token, body: { minutes: 15 } });
+    assert.equal(await processOverdueCheckIns(new Date(Date.now() + 40 * 60_000)), 0);
+
+    const alerted = await processOverdueCheckIns(new Date(Date.now() + 46 * 60_000));
+    assert.equal(alerted, 1);
+    assert.equal(await processOverdueCheckIns(new Date(Date.now() + 60 * 60_000)), 0, 'never alerted twice');
+
+    const current = await call('/check-ins/current', { token });
+    assert.equal(current.data.checkIn.status, 'alerted');
+    const sos = db.prepare('SELECT lat, lng FROM sos_events WHERE id = (SELECT sos_id FROM check_ins WHERE id = ?)').get(id) as { lat: number; lng: number };
+    assert.deepEqual([sos.lat, sos.lng], [18.53, 73.86], 'uses the latest location');
+    const delivery = db.prepare('SELECT contact_name FROM sos_deliveries WHERE sos_id = (SELECT sos_id FROM check_ins WHERE id = ?)').get(id) as { contact_name: string };
+    assert.equal(delivery.contact_name, 'Mom');
+
+    // "I'm safe" resolves the alert and stops the live link it started.
+    assert.equal((await call(`/check-ins/${id}/complete`, { token, method: 'POST' })).data.wasAlerted, true);
+    assert.equal((await call('/check-ins/current', { token })).data.checkIn, null);
+    assert.equal((await call('/location-shares/active', { token })).data.share, null);
+  });
+
+  test('checking in on time sends nothing; a new timer replaces the old one', async () => {
+    const { token } = await newUser();
+    const first = await call('/check-ins', { token, body: { minutes: 10 } });
+    const second = await call('/check-ins', { token, body: { minutes: 20 } });
+    assert.equal((await call('/check-ins/current', { token })).data.checkIn.id, second.data.checkIn.id);
+    await call(`/check-ins/${second.data.checkIn.id}/complete`, { token, method: 'POST' });
+    assert.equal(await processOverdueCheckIns(new Date(Date.now() + 60 * 60_000)), 0);
+    assert.equal((await call(`/check-ins/${first.data.checkIn.id}/extend`, { token, body: { minutes: 5 } })).status, 409);
+    const other = await newUser();
+    assert.equal((await call(`/check-ins/${second.data.checkIn.id}/complete`, { token: other.token, method: 'POST' })).status, 404);
+    assert.equal((await call('/check-ins', { token, body: { minutes: 0 } })).status, 400);
   });
 });

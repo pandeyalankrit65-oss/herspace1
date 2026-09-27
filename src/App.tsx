@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -25,6 +24,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Account = lazy(() => import("./pages/Account"));
 const Track = lazy(() => import("./pages/Track"));
+const SafetyTimer = lazy(() => import("./pages/SafetyTimer"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -38,7 +38,6 @@ const App = () => (
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
-            <Sonner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Suspense fallback={<div className="min-h-screen" />}>
                 <Routes>
@@ -58,6 +57,7 @@ const App = () => (
                   <Route path="/reset-password/:token" element={<ResetPassword />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/track/:token" element={<Track />} />
+                <Route path="/timer" element={<SafetyTimer />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

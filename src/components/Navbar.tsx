@@ -20,8 +20,8 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { path: "/", label: t("nav.home") },
     { path: "/sos", label: t("nav.sos") },
+    { path: "/timer", label: t("nav.timer") },
     { path: "/report", label: t("nav.report") },
     { path: "/support", label: t("nav.support") },
     { path: "/map", label: t("nav.map") },

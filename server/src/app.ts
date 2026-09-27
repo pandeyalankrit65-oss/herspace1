@@ -12,6 +12,7 @@ import { sosRouter, twilioRouter } from './routes/sos';
 import { reportsRouter } from './routes/reports';
 import { accountRouter } from './routes/account';
 import { locationSharesRouter, trackRouter } from './routes/location';
+import { checkInsRouter } from './routes/checkins';
 
 export const app = express();
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8080').split(',').map((o) => o.trim());
@@ -52,6 +53,7 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/sos', sosRouter);
 app.use('/api/location-shares', locationSharesRouter);
 app.use('/api/track', trackRouter);
+app.use('/api/check-ins', checkInsRouter);
 
 const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 15 });
 const chatSchema = z.object({
@@ -73,7 +75,6 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {
   if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Invalid JSON body' });
   if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Request too large' });

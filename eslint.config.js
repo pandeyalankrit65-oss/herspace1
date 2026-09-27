@@ -23,4 +23,14 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // shadcn/ui components export their variant helpers next to the component by design, and
+    // these modules pair a provider with its hook/helpers. Fast refresh just reloads them.
+    files: ["src/components/ui/**", "src/i18n/index.tsx", "src/components/LegalPage.tsx", "src/contexts/**"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
+    files: ["server/**/*.ts", "e2e/**/*.ts", "playwright.config.ts"],
+    languageOptions: { globals: globals.node },
+  },
 );

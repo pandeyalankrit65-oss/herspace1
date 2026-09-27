@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,14 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [params] = useSearchParams();
-  const { signup } = useAuth();
+  const { signup, user, loading: authLoading } = useAuth();
   // New accounts go straight to adding emergency contacts unless a specific page was requested.
   const next = params.get("next") ? safeNext(params.get("next")) : "/contacts";
+
+  // Already signed in (e.g. followed a ?next= link): go straight on.
+  useEffect(() => {
+    if (!authLoading && user) navigate(next, { replace: true });
+  }, [authLoading, user, next, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

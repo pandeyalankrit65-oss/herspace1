@@ -10,7 +10,9 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 |---|---|
 | **Emergency SOS** (`/sos`) | Starts a 3-second countdown you can cancel, then texts your confirmed emergency contacts a map link to your current location. It can also ring them with an automated voice call (optional). It shows what happened for each contact, and upgrades "sent" to "delivered" or "answered" as Twilio confirms. Anyone the alert missed can be texted or called from your own phone with one tap. There's always a button to call the emergency number (default `112`). **HerSpace does not contact police or emergency services.** |
 | **Live location** (`/track/:token`) | A logged-in user's SOS text includes a private live-map link. While the SOS page stays open, the phone sends its position about every 20 seconds (it asks the browser to keep the screen on). Contacts see it update on a map, with a warning if it goes stale. Tapping **"I'm safe"** ends sharing and deletes the position immediately. Links expire after 4 hours. |
-| **Voice trigger** | Say "help me" while the SOS page is open to start the countdown. It uses the browser's Web Speech API (Chrome/Edge), and only works while the page is open. |
+| **Safety timer** (`/timer`) | Set a timer (15 minutes to 2 hours) with an optional note, e.g. "walking home from the metro". If you don't tap **"I'm safe"** in time, the **server** texts your confirmed contacts your last known location and a live link. It works even if your phone is off, lost or out of battery. While the page is open, you can add time and your location stays fresh, and you get a vibration and a notification 2 minutes before the end. |
+| **Fake call** | A realistic incoming-call screen with ringtone and vibration, now or after a delay, as an excuse to leave an uncomfortable situation. No real call is made. |
+| **Voice trigger** | Say "help", "help me", "bachao" or "बचाओ" while the SOS page is open to start the (cancellable) countdown. The page shows what it heard, and a clear error if speech recognition fails. It uses the browser's Web Speech API: it works in Chrome and Edge, not Firefox or Brave, needs internet, and only works while the page is open. |
 | **Emergency contacts** (`/contacts`) | Up to 10 contacts, stored on your account. Each contact gets an invite link and must **agree** before they receive alerts. This stops SOS from being used to spam strangers, and means they know what an alert means. The invite can be sent by SMS automatically or shared by the user over SMS or WhatsApp. A **test alert** checks that messages actually arrive. |
 | **Incident reports** (`/report`) | You can submit anonymously, in which case no account is linked, even if you're logged in. You can also add your current location to the Safe Map. |
 | **Safe Map** (`/map`) | An OpenStreetMap/Leaflet map of reported incidents. Locations are rounded to about 1 km, and only the incident type and date are shown. Descriptions and identities never appear on the map. |
@@ -62,6 +64,8 @@ Open http://localhost:8080. The Vite dev server forwards `/api` requests to the 
 | `RESEND_API_KEY`, `EMAIL_FROM` | Sends password-reset emails through [Resend](https://resend.com). Without them, reset links are printed to the server console (development only). |
 | `COOKIE_SECURE` | Force the `Secure` cookie flag on or off (default: on when `NODE_ENV=production`). The frontend and API must be served from the same origin, e.g. behind one reverse proxy. |
 | `TRUST_PROXY` | Number of reverse proxies in front of the API in production, so rate limits see real client IPs. |
+| `HERSPACE_SECRET` | Key for anonymising IP addresses (map flags). If unset, one is generated and stored in the database. |
+| `CHECK_IN_POLL_MS` | How often the server checks for expired safety timers (default 20000). |
 | `LIVE_SHARE_HOURS` | How long a live-location link stays active (default 4). |
 | `SOS_RETENTION_DAYS`, `MAP_FLAG_THRESHOLD` | Data retention (default 90 days) and flags needed to hide a map point (default 3). |
 | `ANTHROPIC_API_KEY` | Powers the AI support chat. Without it, the chat uses scripted fallback replies. |
@@ -118,6 +122,7 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 | `POST /api/sos/test` | Session | Test alert (max 3/day) |
 | `GET /api/sos`, `GET /api/sos/:id` | Session | Your past SOS events / live delivery status |
 | `GET /api/location-shares/active`, `POST /api/location-shares/:id/location`, `POST /api/location-shares/:id/stop` | Session | Live location: resume, update position, "I'm safe" |
+| `POST /api/check-ins`, `GET /api/check-ins/current`, `POST /api/check-ins/:id/extend`, `/location`, `/complete` | Session | Safety timer |
 | `GET /api/track/:token` | Link token | What a contact sees: name, latest position, active/ended |
 | `POST /api/twilio/status` | Twilio signature | Delivery-status callbacks |
 | `POST /api/reports` | Optional | Submit a report (`anonymous: true` never stores the user) |
