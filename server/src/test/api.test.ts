@@ -464,3 +464,115 @@ describe('places', () => {
     );
   });
 });
+
+// A tiny JPEG-shaped file: JFIF header, an EXIF block with a "GPS" marker, a table and scan data.
+function jpegWithExif() {
+  const seg = (marker: number, payload: Buffer) => Buffer.concat([Buffer.from([0xff, marker, 0, payload.length + 2]), payload]);
+  return Buffer.concat([
+    Buffer.from([0xff, 0xd8]),
+    seg(0xe0, Buffer.from('JFIF\0\x01\x01\0\0\x01\0\x01\0\0', 'binary')),
+    seg(0xe1, Buffer.from('Exif\0\0GPS 28.6139N 77.2090E', 'binary')),
+    seg(0xfe, Buffer.from('taken by Asha', 'binary')),
+    seg(0xdb, Buffer.alloc(65, 1)),
+    seg(0xda, Buffer.from([1, 1, 0, 0, 0x3f, 0])),
+    Buffer.from([0x12, 0x34, 0xff, 0xd9]),
+  ]);
+}
+
+async function upload(reportId: number, token: string, data: Buffer, type = 'image/jpeg') {
+  const res = await fetch(`${base}/reports/${reportId}/photos`, { method: 'POST', headers: { 'Content-Type': type, 'X-Upload-Token': token }, body: new Uint8Array(data) });
+  return { status: res.status, data: (await res.json()) as { id?: number; error?: string } };
+}
+
+describe('report photos', () => {
+  test('are stripped of metadata and only visible to the owner', async () => {
+    const { token } = await newUser('Kavya');
+    const report = await call('/reports', { token, body: { incidentType: 'harassment', description: 'At the station' } });
+    const { id, uploadToken } = report.data;
+
+    assert.equal((await upload(id, 'wrong-token', jpegWithExif())).status, 404);
+    assert.equal((await upload(id, uploadToken, Buffer.from('not an image'))).status, 415);
+    assert.equal((await upload(id, uploadToken, Buffer.from('GIF89a'), 'image/gif')).status, 415);
+    const photo = await upload(id, uploadToken, jpegWithExif());
+    assert.equal(photo.status, 201);
+
+    const mine = await call('/reports', { token });
+    assert.deepEqual(mine.data.reports.find((r: { id: number }) => r.id === id).photos, [photo.data.id]);
+
+    const res = await fetch(`${base}/reports/${id}/photos/${photo.data.id}`, { headers: { Cookie: `herspace_session=${token}` } });
+    assert.equal(res.headers.get('content-type'), 'image/jpeg');
+    const stored = Buffer.from(await res.arrayBuffer());
+    assert.equal(stored.includes(Buffer.from('GPS')), false, 'EXIF removed');
+    assert.equal(stored.includes(Buffer.from('taken by Asha')), false, 'comment removed');
+    assert.equal(stored.includes(Buffer.from('JFIF')), true);
+    assert.deepEqual([...stored.subarray(-4)], [0x12, 0x34, 0xff, 0xd9], 'image data kept');
+
+    const other = await newUser('Other');
+    assert.equal((await call(`/reports/${id}/photos/${photo.data.id}`, { token: other.token })).status, 404);
+    assert.equal((await call(`/reports/${id}/photos/${photo.data.id}`)).status, 401);
+
+    // Three at most; deleting the report removes them.
+    await upload(id, uploadToken, jpegWithExif());
+    await upload(id, uploadToken, jpegWithExif());
+    assert.equal((await upload(id, uploadToken, jpegWithExif())).status, 409);
+    assert.equal((await call(`/reports/${id}`, { token, method: 'DELETE' })).status, 200);
+    assert.equal((db.prepare('SELECT COUNT(*) AS n FROM report_photos WHERE report_id = ?').get(id) as { n: number }).n, 0);
+  });
+
+  test('can be added to anonymous reports, but only right after submitting', async () => {
+    const report = await call('/reports', { body: { incidentType: 'other', description: 'Anonymous', anonymous: true } });
+    assert.equal((await upload(report.data.id, report.data.uploadToken, jpegWithExif())).status, 201);
+    db.prepare("UPDATE reports SET upload_expires_at = '2000-01-01T00:00:00.000Z' WHERE id = ?").run(report.data.id);
+    assert.equal((await upload(report.data.id, report.data.uploadToken, jpegWithExif())).status, 410);
+  });
+});
+
+describe('moderation', () => {
+  test('moderators review flagged map points; others cannot', async () => {
+    const reporter = await newUser('Reporter');
+    const report = await call('/reports', {
+      token: reporter.token,
+      body: { incidentType: 'stalking', description: 'Followed near the park', coords: { lat: 12.9716, lng: 77.5946 } },
+    });
+    const id = report.data.id as number;
+    await upload(id, report.data.uploadToken, jpegWithExif());
+    const onMap = async () => (await call('/reports/map')).data.points.some((p: { id: number }) => p.id === id);
+
+    // Three different people flag it: hidden pending review.
+    for (let i = 0; i < 3; i++) await call(`/reports/${id}/flag`, { token: (await newUser('Flagger')).token, body: {} });
+    assert.equal(await onMap(), false);
+
+    assert.equal((await call('/moderation/reports', { token: reporter.token })).status, 403);
+    assert.equal((await call('/moderation/reports')).status, 401);
+
+    const signup = await call('/auth/signup', { body: { name: 'Mod', email: 'moderator@example.com', password: 'password123' } });
+    assert.equal(signup.data.user.moderator, true);
+    const mod = signup.token as string;
+    const queue = await call('/moderation/reports', { token: mod });
+    const item = queue.data.reports.find((r: { id: number }) => r.id === id);
+    assert.equal(item.flags, 3);
+    assert.equal(item.hidden, true);
+    assert.equal(item.description, 'Followed near the park');
+    assert.equal(item.lat, 12.97);
+    assert.equal('userId' in item || 'email' in item, false, 'never who reported it');
+    // Moderators can view the photos.
+    const photo = await fetch(`${base}/reports/${id}/photos/${item.photos[0]}`, { headers: { Cookie: `herspace_session=${mod}` } });
+    assert.equal(photo.status, 200);
+
+    // Approving puts it back on the map despite the flags.
+    await call(`/moderation/reports/${id}`, { token: mod, body: { action: 'approve' } });
+    assert.equal(await onMap(), true);
+    assert.equal((await call('/moderation/reports', { token: mod })).data.reports.some((r: { id: number }) => r.id === id), false);
+    assert.equal((await call('/moderation/reports?queue=approved', { token: mod })).data.reports.some((r: { id: number }) => r.id === id), true);
+
+    // Removing hides it for good, and it can't be flagged any more.
+    await call(`/moderation/reports/${id}`, { token: mod, body: { action: 'remove' } });
+    assert.equal(await onMap(), false);
+    assert.equal((await call(`/reports/${id}/flag`, { body: {} })).status, 404);
+
+    // Reopening clears the old flags.
+    await call(`/moderation/reports/${id}`, { token: mod, body: { action: 'reopen' } });
+    assert.equal(await onMap(), true);
+    assert.equal((await call(`/moderation/reports/${id}`, { token: mod, body: { action: 'delete' } })).status, 400);
+  });
+});

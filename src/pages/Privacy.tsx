@@ -29,7 +29,9 @@ const Privacy = () => (
         </li>
         <li>
           <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose to
-          share. If you submit anonymously, the report is not linked to your account in any way.
+          share, and any photos you add. Before a photo leaves your device, the app makes a clean copy without its hidden
+          details (such as the GPS position and camera model); our server removes any that remain. If you submit anonymously,
+          the report and its photos are not linked to your account in any way.
         </li>
         <li>
           <strong>Map flags:</strong> when you flag a map point we record your account, or a scrambled version of your IP address
@@ -53,7 +55,11 @@ const Privacy = () => (
         </li>
         <li>
           <strong>Everyone using the Safe Map</strong> can see reports that include a location, but only the incident type, the
-          date and an area rounded to about 1 km. Descriptions and who reported are never shown.
+          date and an area rounded to about 1 km. Descriptions, photos and who reported are never shown.
+        </li>
+        <li>
+          <strong>HerSpace moderators</strong> review map points that people flag as false or abusive. They see the report's
+          type, description, date, rough area and photos, but not who sent it.
         </li>
         <li>
           <strong>Service providers</strong> that run parts of the app for us: Twilio (text messages and calls), Resend

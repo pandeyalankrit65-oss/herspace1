@@ -1,7 +1,7 @@
 import { Request, Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
-import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
+import { deleteAllSessions, endSession, hashPassword, publicUser, requireAuth, startSession, verifyPassword } from '../auth';
 import { emailConfigured, sendEmail } from '../messaging';
 import { rateLimit } from '../rateLimit';
 import { appUrl, now, parse, passwordSchema, randomToken, sha256 } from '../util';
@@ -51,7 +51,7 @@ authRouter.post('/signup', authLimiter, (req, res) => {
     .run(body.name, body.email, hashPassword(body.password), now());
   const id = Number(result.lastInsertRowid);
   startSession(res, id);
-  res.status(201).json({ user: { id, name: body.name, email: body.email } });
+  res.status(201).json({ user: publicUser(id) });
 });
 
 authRouter.post('/login', authLimiter, loginAccountLimiter, (req, res) => {
@@ -65,7 +65,7 @@ authRouter.post('/login', authLimiter, loginAccountLimiter, (req, res) => {
     return res.status(401).json({ error: 'Incorrect email or password.' });
   }
   startSession(res, user.id);
-  res.json({ user: { id: user.id, name: user.name, email: user.email } });
+  res.json({ user: publicUser(user.id) });
 });
 
 authRouter.post('/logout', (req, res) => {
@@ -118,7 +118,6 @@ authRouter.post('/reset', authLimiter, (req, res) => {
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(body.password), row.user_id);
   db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(row.user_id);
   deleteAllSessions(row.user_id);
-  const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(row.user_id);
   startSession(res, row.user_id);
-  res.json({ user });
+  res.json({ user: publicUser(row.user_id) });
 });

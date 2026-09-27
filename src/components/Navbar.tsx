@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, ChevronDown, Languages, LogOut, Monitor, Moon, Shield, Sun, User, Users } from "lucide-react";
+import { AlertCircle, ChevronDown, Languages, LogOut, Monitor, Moon, Shield, ShieldCheck, Sun, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -169,6 +169,13 @@ const Navbar = () => {
                     <User className="h-4 w-4" /> {t("nav.account")}
                   </Link>
                 </DropdownMenuItem>
+                {user.moderator && (
+                  <DropdownMenuItem asChild className="gap-2">
+                    <Link to="/moderation">
+                      <ShieldCheck className="h-4 w-4" /> {t("nav.moderation")}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={handleLogout} className="gap-2">
                   <LogOut className="h-4 w-4" /> {t("nav.logOut")}

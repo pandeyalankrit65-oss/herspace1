@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, MapPin, Calendar, LocateFixed } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { FileText, MapPin, Calendar, LocateFixed, ImagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
+import { MAX_PHOTOS, preparePhoto, uploadPhoto } from "@/lib/photos";
 
 const Report = () => {
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const { user } = useAuth();
   const emptyForm = {
     incidentType: "",
@@ -29,6 +30,33 @@ const Report = () => {
   };
   const [formData, setFormData] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<Array<{ blob: Blob; url: string }>>([]);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const photoUrls = useRef<string[]>([]);
+  photoUrls.current = photos.map((p) => p.url);
+  useEffect(() => () => photoUrls.current.forEach((u) => URL.revokeObjectURL(u)), []);
+
+  const addPhotos = async (files: FileList | null) => {
+    const room = MAX_PHOTOS - photos.length;
+    const picked = Array.from(files ?? []).slice(0, room);
+    const added: Array<{ blob: Blob; url: string }> = [];
+    for (const file of picked) {
+      try {
+        const blob = await preparePhoto(file);
+        added.push({ blob, url: URL.createObjectURL(blob) });
+      } catch {
+        toast({ title: t("report.photoFailed"), variant: "destructive" });
+      }
+    }
+    setPhotos((prev) => [...prev, ...added].slice(0, MAX_PHOTOS));
+    if (photoInput.current) photoInput.current.value = "";
+  };
+
+  const removePhoto = (index: number) =>
+    setPhotos((prev) => {
+      URL.revokeObjectURL(prev[index].url);
+      return prev.filter((_, i) => i !== index);
+    });
 
   const getCoords = () =>
     new Promise<{ lat: number; lng: number } | undefined>((resolve) => {
@@ -52,7 +80,7 @@ const Report = () => {
       if (formData.includeCoords && !coords) {
         toast({ title: t("report.locUnavailableTitle"), description: t("report.locUnavailableDesc") });
       }
-      await api("/api/reports", {
+      const created = await api<{ id: number; uploadToken: string }>("/api/reports", {
         body: {
           incidentType: formData.incidentType,
           description: formData.description,
@@ -62,11 +90,18 @@ const Report = () => {
           coords,
         },
       });
+      let failedUploads = 0;
+      for (const photo of photos) {
+        await uploadPhoto(created.id, created.uploadToken, photo.blob).catch(() => failedUploads++);
+      }
       toast({
         title: t("report.submittedTitle"),
-        description: t("report.submittedDesc"),
+        description: failedUploads ? tn("report.photosNotUploaded", failedUploads) : t("report.submittedDesc"),
+        variant: failedUploads ? "destructive" : undefined,
       });
       setFormData(emptyForm);
+      photos.forEach((p) => URL.revokeObjectURL(p.url));
+      setPhotos([]);
     } catch (err) {
       toast({
         title: t("report.failedTitle"),
@@ -158,6 +193,47 @@ const Report = () => {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     required
                   />
+                </div>
+
+                {/* Photos */}
+                <div className="space-y-2">
+                  <Label htmlFor="report-photos">{t("report.photos")}</Label>
+                  <input
+                    ref={photoInput}
+                    id="report-photos"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => addPhotos(e.target.files)}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {photos.map((p, i) => (
+                      <div key={p.url} className="relative h-20 w-20 overflow-hidden rounded-lg border">
+                        <img src={p.url} alt={t("report.photoAlt", { n: i + 1 })} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(i)}
+                          aria-label={t("report.removePhoto", { n: i + 1 })}
+                          className="absolute right-1 top-1 rounded-full bg-background/90 p-0.5 shadow"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < MAX_PHOTOS && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-20 w-20 flex-col gap-1 text-xs"
+                        onClick={() => photoInput.current?.click()}
+                      >
+                        <ImagePlus className="h-5 w-5" />
+                        {t("report.addPhotos")}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("report.photosHint")}</p>
                 </div>
 
                 {/* Map location */}

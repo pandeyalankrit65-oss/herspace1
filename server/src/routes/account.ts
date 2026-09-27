@@ -4,6 +4,7 @@ import { db } from '../db';
 import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
 import { rateLimit } from '../rateLimit';
 import { parse, passwordSchema } from '../util';
+import { deleteReports, reportPhotos } from './reports';
 
 // Account self-service: password change, data export and deletion (DPDP Act rights).
 export const accountRouter = Router();
@@ -44,10 +45,14 @@ accountRouter.get('/export', (req, res) => {
   const contacts = db.prepare('SELECT name, phone, relation, status FROM contacts WHERE user_id = ?').all(userId);
   const reports = db
     .prepare(
-      `SELECT incident_type AS incidentType, description, location_text AS location, lat, lng,
+      `SELECT id, incident_type AS incidentType, description, location_text AS location, lat, lng,
               incident_date AS date, created_at AS createdAt FROM reports WHERE user_id = ?`
     )
-    .all(userId);
+    .all(userId)
+    .map((r) => {
+      const { id, ...rest } = r as { id: number };
+      return { ...rest, photos: reportPhotos(id).length };
+    });
   const sosEvents = (
     db.prepare('SELECT id, lat, lng, accuracy, created_at AS createdAt, is_test AS isTest FROM sos_events WHERE user_id = ?').all(userId) as Array<{ id: number }>
   ).map((e) => ({
@@ -72,7 +77,7 @@ accountRouter.delete('/', passwordLimiter, (req, res) => {
   db.exec('BEGIN');
   try {
     // Personal data goes with the account. Anonymous reports were never linked to it.
-    db.prepare('DELETE FROM reports WHERE user_id = ?').run(userId);
+    deleteReports('r.user_id = ?', userId);
     db.prepare('DELETE FROM sos_events WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId); // cascades to sessions, contacts, resets
     db.exec('COMMIT');

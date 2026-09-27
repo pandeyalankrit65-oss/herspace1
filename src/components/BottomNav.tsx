@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, FileText, Footprints, Home, LogIn, LogOut, Map, Menu, MessageCircle, Timer, User, Users } from "lucide-react";
+import { AlertCircle, FileText, Footprints, Home, LogIn, LogOut, Map, Menu, MessageCircle, ShieldCheck, Timer, User, Users } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
@@ -16,12 +16,13 @@ const TABS_RIGHT: Array<{ path: string; label: MessageKey; icon: typeof Home }> 
   { path: "/report", label: "nav.report", icon: FileText },
 ];
 
-const SHEET_LINKS: Array<{ path: string; label: MessageKey; icon: typeof Home; auth?: boolean }> = [
+const SHEET_LINKS: Array<{ path: string; label: MessageKey; icon: typeof Home; auth?: boolean; moderator?: boolean }> = [
   { path: "/walk", label: "nav.walk", icon: Footprints },
   { path: "/map", label: "nav.map", icon: Map },
   { path: "/support", label: "nav.support", icon: MessageCircle },
   { path: "/contacts", label: "nav.emergencyContacts", icon: Users, auth: true },
   { path: "/account", label: "nav.account", icon: User, auth: true },
+  { path: "/moderation", label: "nav.moderation", icon: ShieldCheck, moderator: true },
 ];
 
 const Tab = ({ path, label, icon: Icon }: { path: string; label: string; icon: typeof Home }) => (
@@ -107,7 +108,7 @@ const BottomNav = () => {
           </SheetHeader>
           {user && <p className="mt-1 truncate text-sm text-muted-foreground">{t("nav.signedInAs", { email: user.email })}</p>}
           <div className="mt-4 grid grid-cols-2 gap-2">
-            {SHEET_LINKS.filter((l) => !l.auth || user).map(({ path, label, icon: Icon }) => (
+            {SHEET_LINKS.filter((l) => (!l.auth || user) && (!l.moderator || user?.moderator)).map(({ path, label, icon: Icon }) => (
               <button
                 key={path}
                 type="button"

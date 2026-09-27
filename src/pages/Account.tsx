@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import LoadingRows from "@/components/LoadingRows";
+import ReportPhotos from "@/components/ReportPhotos";
 
 const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimination", "other"];
 
@@ -21,6 +22,7 @@ type Report = {
   location: string | null;
   date: string | null;
   createdAt: string;
+  photos?: number[];
 };
 
 const Account = () => {
@@ -152,6 +154,7 @@ const Account = () => {
                     {r.location ? ` · ${r.location}` : ""}
                   </p>
                   <p className="text-sm whitespace-pre-wrap">{r.description}</p>
+                  <ReportPhotos reportId={r.id} photos={r.photos ?? []} />
                 </div>
               ))}
             </CardContent>

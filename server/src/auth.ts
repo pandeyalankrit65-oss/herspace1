@@ -5,7 +5,19 @@ import { randomToken, sha256 } from './util';
 
 const SESSION_DAYS = 30;
 
-export type User = { id: number; name: string; email: string };
+export type User = { id: number; name: string; email: string; moderator: boolean };
+
+// Moderators review flagged Safe Map reports. Grant the role with ADMIN_EMAILS (comma-separated)
+// or by setting users.role = 'moderator'.
+const adminEmails = () =>
+  new Set((process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean));
+const isModerator = (email: string, role: string) => role === 'moderator' || adminEmails().has(email.toLowerCase());
+
+// The user object sent to the browser.
+export function publicUser(id: number): User {
+  const row = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(id) as { id: number; name: string; email: string; role: string };
+  return { id: row.id, name: row.name, email: row.email, moderator: isModerator(row.email, row.role) };
+}
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -88,12 +100,12 @@ export function loadUser(req: Request, _res: Response, next: NextFunction) {
   if (token) {
     const row = db
       .prepare(
-        `SELECT u.id, u.name, u.email, s.expires_at FROM sessions s
+        `SELECT u.id, u.name, u.email, u.role, s.expires_at FROM sessions s
          JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`
       )
-      .get(sha256(token)) as (User & { expires_at: string }) | undefined;
+      .get(sha256(token)) as { id: number; name: string; email: string; role: string; expires_at: string } | undefined;
     if (row && new Date(row.expires_at) > new Date()) {
-      req.user = { id: row.id, name: row.name, email: row.email };
+      req.user = { id: row.id, name: row.name, email: row.email, moderator: isModerator(row.email, row.role) };
     }
   }
   next();
@@ -112,5 +124,11 @@ export function csrfGuard(req: Request, res: Response, next: NextFunction) {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.user) return res.status(401).json({ error: 'Please log in to continue.' });
+  next();
+}
+
+export function requireModerator(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) return res.status(401).json({ error: 'Please log in to continue.' });
+  if (!req.user.moderator) return res.status(403).json({ error: 'Only moderators can do this.' });
   next();
 }

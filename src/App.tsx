@@ -26,6 +26,7 @@ const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Account = lazy(() => import("./pages/Account"));
+const Moderation = lazy(() => import("./pages/Moderation"));
 const Track = lazy(() => import("./pages/Track"));
 const SafetyTimer = lazy(() => import("./pages/SafetyTimer"));
 const Walk = lazy(() => import("./pages/Walk"));
@@ -62,6 +63,7 @@ const App = () => (
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password/:token" element={<ResetPassword />} />
                     <Route path="/account" element={<Account />} />
+                    <Route path="/moderation" element={<Moderation />} />
                     <Route path="/track/:token" element={<Track />} />
                     <Route path="/timer" element={<SafetyTimer />} />
                   <Route path="/walk" element={<Walk />} />

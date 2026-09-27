@@ -57,6 +57,8 @@ export default defineConfig({
         CHECK_IN_POLL_MS: "1000", // so an expired safety timer alerts within a second
         NOMINATIM_URL: `http://localhost:${OSM_PORT}`,
         OVERPASS_URL: `http://localhost:${OSM_PORT}/interpreter`,
+        ADMIN_EMAILS: "moderator-desktop@example.com,moderator-phone@example.com",
+        UPLOAD_DIR: path.join(process.env.E2E_RUN_DIR, "uploads"),
       },
     },
     {

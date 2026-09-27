@@ -2,7 +2,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useState 
 import { api, ApiError } from "@/lib/api";
 import { clearOfflineData, offlineUser } from "@/lib/offline";
 
-export type User = { id: number; name: string; email: string };
+export type User = { id: number; name: string; email: string; moderator?: boolean };
 
 type AuthResponse = { user: User };
 

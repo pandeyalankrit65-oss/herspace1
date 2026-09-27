@@ -1,17 +1,36 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth } from '../auth';
+import { deletePhotoFiles, MAX_PHOTO_BYTES, MAX_PHOTOS_PER_REPORT, photoPath, savePhoto, stripJpegMetadata } from '../photos';
 import { rateLimit } from '../rateLimit';
-import { coordsSchema, keyedHash, now, parse } from '../util';
+import { coordsSchema, keyedHash, now, parse, randomToken, sha256 } from '../util';
 
 export const reportsRouter = Router();
 
 // Reports with this many community flags are hidden from the public map pending review.
-const FLAG_THRESHOLD = Number(process.env.MAP_FLAG_THRESHOLD || 3);
+export const FLAG_THRESHOLD = Number(process.env.MAP_FLAG_THRESHOLD || 3);
 
 const reportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
 const flagLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 20 });
+const photoLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30 });
+
+// Photos are uploaded right after the report is created, with a short-lived token returned by
+// POST /api/reports. That works for anonymous reports without linking them to anyone.
+const UPLOAD_WINDOW_MS = 15 * 60 * 1000;
+
+export const reportPhotos = (reportId: number) =>
+  db.prepare('SELECT id FROM report_photos WHERE report_id = ? ORDER BY id').all(reportId) as Array<{ id: number }>;
+
+// Deletes reports (and their photo files) matching a condition on `reports r`.
+export function deleteReports(where: string, ...params: Array<string | number>) {
+  const files = db
+    .prepare(`SELECT p.file FROM report_photos p JOIN reports r ON r.id = p.report_id WHERE ${where}`)
+    .all(...params) as Array<{ file: string }>;
+  const result = db.prepare(`DELETE FROM reports AS r WHERE ${where}`).run(...params);
+  deletePhotoFiles(files.map((f) => f.file));
+  return Number(result.changes);
+}
 
 const reportSchema = z.object({
   incidentType: z.enum(['harassment', 'assault', 'stalking', 'threat', 'discrimination', 'other']),
@@ -31,13 +50,44 @@ reportsRouter.post('/', reportLimiter, (req, res) => {
   if (!body) return;
   // Anonymous reports never store who submitted them, even when logged in.
   const userId = body.anonymous ? null : req.user?.id ?? null;
+  const uploadToken = randomToken();
   const result = db
     .prepare(
-      `INSERT INTO reports (user_id, incident_type, description, location_text, lat, lng, incident_date, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO reports (user_id, incident_type, description, location_text, lat, lng, incident_date, created_at, upload_token_hash, upload_expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(userId, body.incidentType, body.description, body.location || null, body.coords?.lat ?? null, body.coords?.lng ?? null, body.date || null, now());
-  res.status(201).json({ success: true, id: Number(result.lastInsertRowid), linkedToAccount: userId !== null });
+    .run(
+      userId,
+      body.incidentType,
+      body.description,
+      body.location || null,
+      body.coords?.lat ?? null,
+      body.coords?.lng ?? null,
+      body.date || null,
+      now(),
+      sha256(uploadToken),
+      new Date(Date.now() + UPLOAD_WINDOW_MS).toISOString()
+    );
+  res.status(201).json({ success: true, id: Number(result.lastInsertRowid), linkedToAccount: userId !== null, uploadToken });
+});
+
+reportsRouter.post('/:id/photos', photoLimiter, express.raw({ type: 'image/jpeg', limit: MAX_PHOTO_BYTES }), (req, res) => {
+  const id = Number(req.params.id);
+  const token = req.get('x-upload-token') || '';
+  const report = db.prepare('SELECT upload_token_hash AS hash, upload_expires_at AS expiresAt FROM reports WHERE id = ?').get(id) as
+    | { hash: string | null; expiresAt: string | null }
+    | undefined;
+  if (!report || !report.hash || report.hash !== sha256(token)) return res.status(404).json({ error: 'Report not found.' });
+  if (!report.expiresAt || new Date(report.expiresAt) < new Date()) {
+    return res.status(410).json({ error: 'Photos can only be added right after submitting a report.' });
+  }
+  const clean = Buffer.isBuffer(req.body) ? stripJpegMetadata(req.body) : null;
+  if (!clean) return res.status(415).json({ error: 'Photos must be JPEG images.' });
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM report_photos WHERE report_id = ?').get(id) as { n: number }).n;
+  if (count >= MAX_PHOTOS_PER_REPORT) return res.status(409).json({ error: `A report can have up to ${MAX_PHOTOS_PER_REPORT} photos.` });
+  const file = savePhoto(clean);
+  const result = db.prepare('INSERT INTO report_photos (report_id, file, size, created_at) VALUES (?, ?, ?, ?)').run(id, file, clean.length, now());
+  res.status(201).json({ id: Number(result.lastInsertRowid) });
 });
 
 // A user's own (non-anonymous) reports.
@@ -47,13 +97,26 @@ reportsRouter.get('/', requireAuth, (req, res) => {
       `SELECT id, incident_type AS incidentType, description, location_text AS location, incident_date AS date, created_at AS createdAt
        FROM reports WHERE user_id = ? ORDER BY id DESC`
     )
-    .all(req.user!.id);
-  res.json({ reports });
+    .all(req.user!.id) as Array<{ id: number }>;
+  res.json({ reports: reports.map((r) => ({ ...r, photos: reportPhotos(r.id).map((p) => p.id) })) });
+});
+
+// A photo is visible to the person who reported it (if not anonymous) and to moderators.
+reportsRouter.get('/:id/photos/:photoId', requireAuth, (req, res) => {
+  const photo = db
+    .prepare('SELECT p.file, r.user_id AS userId FROM report_photos p JOIN reports r ON r.id = p.report_id WHERE p.id = ? AND r.id = ?')
+    .get(Number(req.params.photoId), Number(req.params.id)) as { file: string; userId: number | null } | undefined;
+  const allowed = photo && (photo.userId === req.user!.id || req.user!.moderator);
+  const file = allowed ? photoPath(photo.file) : null;
+  if (!file) return res.status(404).json({ error: 'Photo not found.' });
+  res.type('image/jpeg').sendFile(file, (err) => {
+    if (err && !res.headersSent) res.status(404).json({ error: 'Photo not found.' });
+  });
 });
 
 reportsRouter.delete('/:id', requireAuth, (req, res) => {
-  const result = db.prepare('DELETE FROM reports WHERE id = ? AND user_id = ?').run(Number(req.params.id), req.user!.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Report not found.' });
+  const deleted = deleteReports('r.id = ? AND r.user_id = ?', Number(req.params.id), req.user!.id);
+  if (deleted === 0) return res.status(404).json({ error: 'Report not found.' });
   res.json({ success: true });
 });
 
@@ -64,8 +127,8 @@ reportsRouter.get('/map', (_req, res) => {
       `SELECT r.id, r.incident_type AS incidentType, ROUND(r.lat, 2) AS lat, ROUND(r.lng, 2) AS lng,
               COALESCE(r.incident_date, substr(r.created_at, 1, 10)) AS date
        FROM reports r
-       WHERE r.lat IS NOT NULL AND r.lng IS NOT NULL
-         AND (SELECT COUNT(*) FROM report_flags f WHERE f.report_id = r.id) < ?
+       WHERE r.lat IS NOT NULL AND r.lng IS NOT NULL AND r.map_status != 'removed'
+         AND (r.map_status = 'approved' OR (SELECT COUNT(*) FROM report_flags f WHERE f.report_id = r.id) < ?)
        ORDER BY r.id DESC LIMIT 1000`
     )
     .all(FLAG_THRESHOLD);
@@ -75,7 +138,7 @@ reportsRouter.get('/map', (_req, res) => {
 // Anyone can flag a map point as false or abusive; each person/IP counts once per report.
 reportsRouter.post('/:id/flag', flagLimiter, (req, res) => {
   const id = Number(req.params.id);
-  const exists = db.prepare('SELECT 1 FROM reports WHERE id = ? AND lat IS NOT NULL').get(id);
+  const exists = db.prepare("SELECT 1 FROM reports WHERE id = ? AND lat IS NOT NULL AND map_status != 'removed'").get(id);
   if (!exists) return res.status(404).json({ error: 'Report not found.' });
   const flagger = req.user ? `user:${req.user.id}` : `ip:${keyedHash(req.ip || 'unknown')}`;
   db.prepare('INSERT OR IGNORE INTO report_flags (report_id, flagger, created_at) VALUES (?, ?, ?)').run(id, flagger, now());
