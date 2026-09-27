@@ -14,6 +14,13 @@ export default {
       },
     },
     extend: {
+      // Red text has its own shade (see --destructive-text), separate from red fills.
+      textColor: {
+        destructive: {
+          DEFAULT: "hsl(var(--destructive-text))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+      },
       fontFamily: {
         // Latin text uses Plus Jakarta Sans; Devanagari characters fall through to Noto Sans
         // Devanagari, so Hindi and English share one consistent, self-hosted type system.

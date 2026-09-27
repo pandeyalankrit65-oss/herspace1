@@ -114,7 +114,7 @@ const Signup = () => {
               <p className="text-sm text-muted-foreground mt-4 text-center">
                 {tr("signup.haveAccount", {
                   link: (
-                    <Link to={`/login${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary">
+                    <Link to={`/login${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary underline underline-offset-2">
                       {t("common.logIn")}
                     </Link>
                   ),

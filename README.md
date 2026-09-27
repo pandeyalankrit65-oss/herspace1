@@ -125,7 +125,13 @@ The **browser tests** (`e2e/`) build the app and drive it in Chromium, at deskto
 - reporting and the map
 - Hindi
 - offline SOS
+- contacts replying "I'm on my way", walk with me, help nearby on the map, the setup checklist
+- report photos (EXIF removed) and map moderation
+- voice (with a fake speech engine) and shake (with synthetic motion events) triggers
 - every page checked for console errors and phone-width overflow
+- every page checked with [axe](https://github.com/dequelabs/axe-core) for WCAG 2.1 A/AA problems, in light and dark mode
+
+OpenStreetMap lookups go to a local stub (`e2e/stub-osm.mjs`), never to the public services.
 
 They run against an isolated API server (its own port and database) in **outbox mode**. `MESSAGE_OUTBOX` makes the server write SMS, calls and emails to a file instead of sending them, and tests read invite, SOS and reset links from that file. The server refuses outbox mode when `NODE_ENV=production`. To run them locally without downloading Chromium, use your installed Chrome: `PW_CHANNEL=chrome npm run test:e2e`.
 

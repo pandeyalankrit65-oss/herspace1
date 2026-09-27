@@ -264,7 +264,7 @@ const SOS = () => {
                         <span className="flex flex-col items-center gap-1.5">
                           <AlertCircle className="!size-12 sm:!size-14" />
                           <span className="text-5xl font-black tracking-wide sm:text-6xl">SOS</span>
-                          <span className="max-w-[10rem] whitespace-normal text-center text-xs font-semibold leading-tight opacity-90 sm:text-sm">
+                          <span className="max-w-[10rem] whitespace-normal text-center text-xs font-semibold leading-tight sm:text-sm">
                             {sending ? t("sos.buttonSending") : t("sos.buttonCaption")}
                           </span>
                         </span>

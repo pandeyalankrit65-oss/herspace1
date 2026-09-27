@@ -130,7 +130,7 @@ const Walk = () => {
           {confirmed === 0 && (
             <div role="alert" className="space-y-2 rounded-xl border border-warning/50 bg-warning/10 px-4 py-3 text-sm">
               <p>{t("timer.noContacts")}</p>
-              <Link to="/contacts" className="font-semibold text-primary underline">
+              <Link to="/contacts" className="font-semibold underline underline-offset-2">
                 {t("sos.contacts.manage")}
               </Link>
             </div>

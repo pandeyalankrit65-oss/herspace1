@@ -59,7 +59,7 @@ const ForgotPassword = () => {
                 </form>
               )}
               <p className="text-sm text-muted-foreground mt-4 text-center">
-                <Link to="/login" className="text-primary">
+                <Link to="/login" className="text-primary underline underline-offset-2">
                   {t("forgot.back")}
                 </Link>
               </p>

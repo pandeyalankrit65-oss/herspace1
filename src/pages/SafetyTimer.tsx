@@ -270,7 +270,7 @@ const SafetyTimer = () => {
           {confirmedContacts === 0 && (
             <div role="alert" className="rounded-md border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm space-y-2">
               <p>{t("timer.noContacts")}</p>
-              <Link to="/contacts" className="text-primary underline">
+              <Link to="/contacts" className="font-semibold underline underline-offset-2">
                 {t("sos.contacts.manage")}
               </Link>
             </div>

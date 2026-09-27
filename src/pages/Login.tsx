@@ -70,7 +70,7 @@ const Login = () => {
                     <label className="text-sm block" htmlFor="password">
                       {t("common.password")}
                     </label>
-                    <Link to="/forgot-password" className="text-xs text-primary">
+                    <Link to="/forgot-password" className="text-xs text-primary underline underline-offset-2">
                       {t("login.forgot")}
                     </Link>
                   </div>
@@ -95,7 +95,7 @@ const Login = () => {
               <p className="text-sm text-muted-foreground mt-4 text-center">
                 {tr("login.noAccount", {
                   link: (
-                    <Link to={`/signup${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary">
+                    <Link to={`/signup${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary underline underline-offset-2">
                       {t("common.signUp")}
                     </Link>
                   ),

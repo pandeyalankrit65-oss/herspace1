@@ -65,7 +65,7 @@ const Footer = () => {
                 <Phone className="h-4 w-4" />
                 <span>
                   {t("footer.emergency")}{" "}
-                  <a href={`tel:${EMERGENCY_NUMBER}`} className="text-primary hover:underline">
+                  <a href={`tel:${EMERGENCY_NUMBER}`} className="text-primary underline underline-offset-2">
                     {EMERGENCY_NUMBER}
                   </a>
                 </span>
