@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth } from '../auth';
 import { rateLimit } from '../rateLimit';
-import { coordsSchema, now, parse, sha256 } from '../util';
+import { coordsSchema, keyedHash, now, parse } from '../util';
 
 export const reportsRouter = Router();
 
@@ -77,7 +77,7 @@ reportsRouter.post('/:id/flag', flagLimiter, (req, res) => {
   const id = Number(req.params.id);
   const exists = db.prepare('SELECT 1 FROM reports WHERE id = ? AND lat IS NOT NULL').get(id);
   if (!exists) return res.status(404).json({ error: 'Report not found.' });
-  const flagger = req.user ? `user:${req.user.id}` : `ip:${sha256(req.ip || 'unknown')}`;
+  const flagger = req.user ? `user:${req.user.id}` : `ip:${keyedHash(req.ip || 'unknown')}`;
   db.prepare('INSERT OR IGNORE INTO report_flags (report_id, flagger, created_at) VALUES (?, ?, ?)').run(id, flagger, now());
   res.json({ success: true });
 });

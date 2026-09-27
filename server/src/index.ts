@@ -1,6 +1,6 @@
 import './env';
 import { app } from './app';
-import { purgeExpiredData } from './db';
+import { db, purgeExpiredData } from './db';
 import { emailConfigured, smsConfigured, statusCallbackUrl, voiceCallsEnabled } from './messaging';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
@@ -8,10 +8,22 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 purgeExpiredData();
 setInterval(purgeExpiredData, 24 * 60 * 60 * 1000).unref();
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`HerSpace server listening on http://localhost:${PORT}`);
   if (!smsConfigured()) console.warn('[SOS] Twilio is not configured: SOS alerts will NOT be delivered by SMS.');
   else if (!statusCallbackUrl()) console.warn('[SOS] PUBLIC_API_URL is not set: SMS delivery confirmations are disabled.');
   if (smsConfigured()) console.log(`[SOS] Voice calls ${voiceCallsEnabled() ? 'enabled' : 'disabled'} (SOS_VOICE_CALLS).`);
   if (!emailConfigured()) console.warn('[auth] Email is not configured: password reset links are only logged to the console in development.');
 });
+
+// Finish in-flight requests (an SOS may be mid-send) and close the database cleanly.
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.on(signal, () => {
+    console.log(`${signal} received, shutting down...`);
+    server.close(() => {
+      db.close();
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10_000).unref();
+  });
+}

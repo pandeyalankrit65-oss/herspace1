@@ -99,6 +99,49 @@ describe('auth', () => {
   });
 });
 
+describe('hardening', () => {
+  test('password guessing is limited per account, even across IP addresses', async () => {
+    const { email } = await newUser();
+    for (let i = 0; i < 10; i++) assert.equal((await call('/auth/login', { body: { email, password: 'wrong-guess' } })).status, 401);
+    const blocked = await call('/auth/login', { body: { email, password: 'password123' } });
+    assert.equal(blocked.status, 429, 'the 11th attempt is refused, even with the right password');
+  });
+
+  test('unknown emails take as long to reject as wrong passwords', async () => {
+    const { email } = await newUser();
+    const time = async (e: string) => {
+      const start = performance.now();
+      await call('/auth/login', { body: { email: e, password: 'wrong-guess' } });
+      return performance.now() - start;
+    };
+    const known = await time(email);
+    const unknown = await time('nobody-here@example.com');
+    assert.ok(unknown > known * 0.5, `unknown email answered in ${unknown.toFixed(1)}ms vs ${known.toFixed(1)}ms`);
+  });
+
+  test('API responses are never cached', async () => {
+    const res = await fetch(`${base}/health`);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+  });
+
+  test('oversized chat requests are rejected', async () => {
+    const long = 'a'.repeat(3_999);
+    const messages = Array.from({ length: 5 }, () => ({ role: 'user', content: long }));
+    assert.equal((await call('/chat', { body: { messages } })).status, 400);
+  });
+
+  test("logged-out map flags don't store a reversible IP hash", async () => {
+    const { token } = await newUser();
+    const r = await call('/reports', { token, body: { incidentType: 'other', description: 'x', coords: { lat: 1.5, lng: 1.5 } } });
+    await call(`/reports/${r.data.id}/flag`, { method: 'POST' });
+    const row = db.prepare('SELECT flagger FROM report_flags WHERE report_id = ?').get(r.data.id) as { flagger: string };
+    const { createHash } = await import('node:crypto');
+    for (const ip of ['127.0.0.1', '::1', '::ffff:127.0.0.1']) {
+      assert.notEqual(row.flagger, `ip:${createHash('sha256').update(ip).digest('hex')}`);
+    }
+  });
+});
+
 describe('contacts and SOS', () => {
   test('contacts require login and valid international numbers', async () => {
     assert.equal((await call('/contacts')).status, 401);

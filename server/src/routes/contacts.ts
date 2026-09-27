@@ -12,6 +12,11 @@ export const contactInvitesRouter = Router();
 const MAX_CONTACTS = 10;
 
 // Each invite sends an SMS to someone who hasn't agreed to anything yet, so keep it tight.
+const inviteIpLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 40,
+  message: 'Too many contact invites from this network today. Please try again tomorrow.',
+});
 const inviteLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 20,
@@ -56,7 +61,7 @@ contactsRouter.get('/', (req, res) => {
   res.json({ contacts: listContacts(req.user!.id) });
 });
 
-contactsRouter.post('/', inviteLimiter, async (req, res) => {
+contactsRouter.post('/', inviteIpLimiter, inviteLimiter, async (req, res) => {
   const body = parse(contactSchema, req, res);
   if (!body) return;
   const user = req.user!;
@@ -91,7 +96,7 @@ contactsRouter.put('/:id', async (req, res) => {
   res.json({ contact: { id, ...body, status: current.status } });
 });
 
-contactsRouter.post('/:id/resend', inviteLimiter, async (req, res) => {
+contactsRouter.post('/:id/resend', inviteIpLimiter, inviteLimiter, async (req, res) => {
   const id = Number(req.params.id);
   const contact = listContacts(req.user!.id).find((c) => c.id === id);
   if (!contact) return res.status(404).json({ error: 'Contact not found.' });

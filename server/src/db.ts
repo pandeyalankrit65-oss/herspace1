@@ -113,6 +113,12 @@ const migrations: string[] = [
   );
   CREATE INDEX location_shares_user ON location_shares(user_id);
   `,
+  `
+  CREATE TABLE settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+  `,
 ];
 
 function migrate() {

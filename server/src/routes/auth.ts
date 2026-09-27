@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Request, Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
@@ -9,6 +9,27 @@ import { appUrl, now, parse, passwordSchema, randomToken, sha256 } from '../util
 export const authRouter = Router();
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+
+// Per-account limits, so guessing one account's password from many IP addresses is still slow,
+// and nobody can flood someone's inbox with reset emails.
+const emailKey = (prefix: string) => (req: Request) =>
+  typeof req.body?.email === 'string' ? `${prefix}:${req.body.email.trim().toLowerCase()}` : undefined;
+const loginAccountLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  key: emailKey('login'),
+  message: 'Too many login attempts for this account. Please wait 15 minutes or reset your password.',
+});
+const resetAccountLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  key: emailKey('reset'),
+  message: 'A reset link was sent recently. Please check your email or try again later.',
+});
+
+// Checked against when the email is unknown, so a wrong email takes as long as a wrong password
+// and response times don't reveal who has an account.
+const DUMMY_HASH = hashPassword('not-a-real-password');
 const RESET_TOKEN_MINUTES = 60;
 
 const emailSchema = z.string().trim().toLowerCase().email();
@@ -33,13 +54,14 @@ authRouter.post('/signup', authLimiter, (req, res) => {
   res.status(201).json({ user: { id, name: body.name, email: body.email } });
 });
 
-authRouter.post('/login', authLimiter, (req, res) => {
+authRouter.post('/login', authLimiter, loginAccountLimiter, (req, res) => {
   const body = parse(z.object({ email: emailSchema, password: z.string().min(1).max(200) }), req, res);
   if (!body) return;
   const user = db.prepare('SELECT id, name, email, password_hash FROM users WHERE email = ?').get(body.email) as
     | { id: number; name: string; email: string; password_hash: string }
     | undefined;
-  if (!user || !verifyPassword(body.password, user.password_hash)) {
+  const valid = verifyPassword(body.password, user?.password_hash ?? DUMMY_HASH);
+  if (!user || !valid) {
     return res.status(401).json({ error: 'Incorrect email or password.' });
   }
   startSession(res, user.id);
@@ -56,7 +78,7 @@ authRouter.get('/me', requireAuth, (req, res) => {
 });
 
 // Always answers the same way so the endpoint can't be used to discover registered emails.
-authRouter.post('/forgot', authLimiter, async (req, res) => {
+authRouter.post('/forgot', authLimiter, resetAccountLimiter, async (req, res) => {
   const body = parse(z.object({ email: emailSchema }), req, res);
   if (!body) return;
   const user = db.prepare('SELECT id, name FROM users WHERE email = ?').get(body.email) as { id: number; name: string } | undefined;

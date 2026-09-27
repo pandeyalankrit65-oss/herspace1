@@ -17,6 +17,11 @@ export function rateLimit({
   message?: string;
 }) {
   const hits = new Map<string, { count: number; resetAt: number }>();
+  // Forget finished windows so the map doesn't grow with every IP address ever seen.
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, entry] of hits) if (entry.resetAt <= now) hits.delete(k);
+  }, Math.max(windowMs, 60_000)).unref();
 
   return (req: Request, res: Response, next: NextFunction) => {
     const k = key(req);

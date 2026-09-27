@@ -23,6 +23,8 @@ app.disable('x-powered-by');
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
+  // API responses hold personal data; browsers and proxies must not keep copies.
+  res.setHeader('Cache-Control', 'no-store');
   next();
 });
 app.use(cors({ origin: allowedOrigins, credentials: true }));
@@ -56,7 +58,9 @@ const chatSchema = z.object({
   messages: z
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(4000) }))
     .min(1)
-    .max(30),
+    .max(30)
+    // Caps what one request can cost in AI tokens.
+    .refine((messages) => messages.reduce((n, m) => n + m.content.length, 0) <= 16_000, 'Conversation is too long'),
   lang: z.enum(['en', 'hi']).optional(),
 });
 
