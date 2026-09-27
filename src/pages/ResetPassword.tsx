@@ -46,7 +46,7 @@ const ResetPassword = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-md">
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+          <Card>
             <CardHeader className="text-center space-y-2">
               <CardTitle className="text-2xl">{t("reset.title")}</CardTitle>
               <CardDescription>{t("common.minChars")}</CardDescription>
@@ -54,17 +54,41 @@ const ResetPassword = () => {
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="password">{t("reset.new")}</label>
-                  <Input id="password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="password">
+                    {t("reset.new")}
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="confirm">{t("reset.confirm")}</label>
-                  <Input id="confirm" type="password" autoComplete="new-password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="confirm">
+                    {t("reset.confirm")}
+                  </label>
+                  <Input
+                    id="confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                  />
                 </div>
                 {error && (
                   <p className="text-sm text-destructive" role="alert">
                     {error}{" "}
-                    {/expired|invalid/i.test(error) && <Link to="/forgot-password" className="underline">{t("reset.requestNew")}</Link>}
+                    {/expired|invalid/i.test(error) && (
+                      <Link to="/forgot-password" className="underline">
+                        {t("reset.requestNew")}
+                      </Link>
+                    )}
                   </p>
                 )}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>

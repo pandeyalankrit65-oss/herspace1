@@ -20,7 +20,7 @@ const STEPS: Array<{ step: string; title: MessageKey; text: MessageKey }> = [
   { step: "03", title: "corporate.step3Title", text: "corporate.step3Text" },
 ];
 
-const gradientText = "bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent";
+const gradientText = "text-primary";
 
 const Corporate = () => {
   const { t, tr } = useI18n();
@@ -35,14 +35,18 @@ const Corporate = () => {
             <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 mb-4">
               <Building2 className="h-16 w-16 text-primary" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-primary via-accent to-cyan bg-clip-text text-transparent">{t("nav.corporate")}</span>
+            <h1 className="text-3xl md:text-5xl font-extrabold">
+              <span className="bg-gradient-to-r from-primary via-accent to-cyan bg-clip-text text-transparent">
+                {t("nav.corporate")}
+              </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">{t("corporate.intro")}</p>
-            <p className="text-sm rounded-md border border-primary/40 bg-primary/10 px-4 py-2 max-w-2xl mx-auto">{t("corporate.notYet")}</p>
+            <p className="text-sm rounded-md border border-primary/40 bg-primary/10 px-4 py-2 max-w-2xl mx-auto">
+              {t("corporate.notYet")}
+            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/report">
-                <Button variant="hero" size="xl" className="gap-2 animate-glow-pulse">
+                <Button variant="hero" size="xl" className="gap-2">
                   <FileText className="h-5 w-5" />
                   {t("corporate.reportButton")}
                 </Button>
@@ -57,7 +61,7 @@ const Corporate = () => {
           </div>
 
           <section className="mb-16">
-            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+            <Card className="bg-primary/5 border-primary/20">
               <CardHeader className="text-center">
                 <CardTitle className="text-3xl">{t("corporate.whyTitle")}</CardTitle>
               </CardHeader>
@@ -70,16 +74,15 @@ const Corporate = () => {
 
           <section className="mb-16">
             <h2 className="text-3xl font-bold text-center mb-12">
-              {tr("corporate.supportTitle", { highlight: <span className={gradientText}>{t("corporate.supportHighlight")}</span> })}
+              {tr("corporate.supportTitle", {
+                highlight: <span className={gradientText}>{t("corporate.supportHighlight")}</span>,
+              })}
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               {FEATURES.map(({ icon: Icon, title, text }) => (
-                <Card
-                  key={title}
-                  className="group bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-[var(--glow-primary)] hover:scale-105 duration-300"
-                >
+                <Card key={title} className="group hover:border-primary/50 transition-all duration-300">
                   <CardHeader>
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit mb-4 group-hover:shadow-[var(--glow-primary)] transition-all">
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit mb-4 group- transition-all">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl">{t(title)}</CardTitle>
@@ -106,7 +109,7 @@ const Corporate = () => {
           </section>
 
           <section className="mb-16">
-            <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <Card>
               <CardHeader className="text-center">
                 <Building2 className="h-12 w-12 mx-auto mb-4 text-primary" />
                 <CardTitle className="text-2xl">{t("corporate.partnersTitle")}</CardTitle>
@@ -133,7 +136,7 @@ const Corporate = () => {
             </Card>
           </section>
 
-          <Card className="bg-gradient-to-br from-destructive/10 to-red-900/10 border-destructive/30">
+          <Card className="bg-destructive/5 border-destructive/25">
             <CardHeader>
               <CardTitle>{t("corporate.helpTitle")}</CardTitle>
               <CardDescription>{t("corporate.helpText")}</CardDescription>
@@ -141,10 +144,14 @@ const Corporate = () => {
             <CardContent>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/sos" className="flex-1">
-                  <Button variant="emergency" size="lg" className="w-full">{t("common.emergencySos")}</Button>
+                  <Button variant="emergency" size="lg" className="w-full">
+                    {t("common.emergencySos")}
+                  </Button>
                 </Link>
                 <Link to="/support" className="flex-1">
-                  <Button variant="hero" size="lg" className="w-full">{t("support.title")}</Button>
+                  <Button variant="hero" size="lg" className="w-full">
+                    {t("support.title")}
+                  </Button>
                 </Link>
               </div>
             </CardContent>

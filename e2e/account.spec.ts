@@ -13,8 +13,14 @@ test("the session lives in an HttpOnly cookie that page scripts can't read", asy
   await page.goto("/account");
   await expect(page.getByRole("heading", { name: "Your account" })).toBeVisible();
   await page.goto("/");
-  if (await page.getByRole("button", { name: "Open menu" }).isVisible()) await page.getByRole("button", { name: "Open menu" }).click();
-  await page.getByRole("button", { name: /^Log out/ }).click();
+  // Phones: the bottom bar's "More" sheet. Desktop: the account menu in the top bar.
+  if (test.info().project.name === "phone") {
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Log out" }).click();
+  } else {
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("menuitem", { name: "Log out" }).click();
+  }
   await page.goto("/account");
   await expect(page).toHaveURL(/\/login\?next=%2Faccount|\/login\?next=\/account/);
 });

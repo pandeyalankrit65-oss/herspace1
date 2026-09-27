@@ -45,7 +45,7 @@ const Login = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-md">
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+          <Card>
             <CardHeader className="text-center space-y-2">
               <CardTitle className="text-2xl">{t("login.title")}</CardTitle>
               <CardDescription>{t("login.subtitle")}</CardDescription>
@@ -53,17 +53,41 @@ const Login = () => {
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="email">{t("common.email")}</label>
-                  <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="email">
+                    {t("common.email")}
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm block" htmlFor="password">{t("common.password")}</label>
-                    <Link to="/forgot-password" className="text-xs text-primary">{t("login.forgot")}</Link>
+                    <label className="text-sm block" htmlFor="password">
+                      {t("common.password")}
+                    </label>
+                    <Link to="/forgot-password" className="text-xs text-primary">
+                      {t("login.forgot")}
+                    </Link>
                   </div>
-                  <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
                 </div>
-                {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>
                   {loading ? t("login.submitting") : t("login.title")}
                 </Button>

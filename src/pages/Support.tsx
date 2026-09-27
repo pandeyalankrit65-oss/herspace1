@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import PageHeader from "@/components/PageHeader";
 
 interface Message {
   role: "user" | "assistant";
@@ -51,13 +52,14 @@ const Support = () => {
       });
       setMode(data.mode);
       const assistant = data.message;
-      const assistantMessage: Message = { role: "assistant", content: assistant?.content || t("support.emptyReply"), ts: new Date().toISOString() };
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: assistant?.content || t("support.emptyReply"),
+        ts: new Date().toISOString(),
+      };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: t("support.errorReply"), ts: new Date().toISOString() },
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", content: t("support.errorReply"), ts: new Date().toISOString() }]);
     } finally {
       setIsTyping(false);
     }
@@ -69,31 +71,14 @@ const Support = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-5xl">
-          {/* Header */}
-          <div className="text-center mb-8 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {t("support.title")}
-              </span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {t("support.subtitle")}
-            </p>
-          </div>
+          <PageHeader icon={MessageCircle} title={t("support.title")} subtitle={t("support.subtitle")} />
 
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Chat Interface */}
-            <Card className="lg:col-span-2 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-primary" />
-                  {t("support.cardTitle")}
-                </CardTitle>
-                <CardDescription>{t("support.cardDesc")}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <Card className="lg:col-span-2">
+              <CardContent className="space-y-4 pt-6">
                 {/* Messages */}
-                <ScrollArea className="h-[500px] pr-4">
+                <ScrollArea className="h-[52vh] min-h-[320px] pr-4 lg:h-[500px]">
                   <div className="space-y-4">
                     <div className="flex justify-start">
                       <Avatar className="mr-3">
@@ -104,10 +89,7 @@ const Support = () => {
                       </div>
                     </div>
                     {messages.map((message, index) => (
-                      <div
-                        key={index}
-                        className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                      >
+                      <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                         {message.role === "assistant" && (
                           <Avatar className="mr-3">
                             <AvatarFallback>{t("support.ai")}</AvatarFallback>
@@ -123,8 +105,12 @@ const Support = () => {
                           >
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                           </div>
-                          <span className={`mt-1 text-[10px] text-muted-foreground ${message.role === "user" ? "text-right" : "text-left"}`}>
-                            {message.ts ? new Date(message.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                          <span
+                            className={`mt-1 text-[10px] text-muted-foreground ${message.role === "user" ? "text-right" : "text-left"}`}
+                          >
+                            {message.ts
+                              ? new Date(message.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                              : ""}
                           </span>
                         </div>
                         {message.role === "user" && (
@@ -166,48 +152,49 @@ const Support = () => {
                 </div>
 
                 {mode === "fallback" && (
-                  <p className="text-xs text-center rounded-md bg-muted px-3 py-2">
-                    {t("support.fallbackNote")}
-                  </p>
+                  <p className="text-xs text-center rounded-md bg-muted px-3 py-2">{t("support.fallbackNote")}</p>
                 )}
-                <p className="text-xs text-muted-foreground text-center">
-                  {t("support.privacyNote")}
-                </p>
+                <p className="text-xs text-muted-foreground text-center">{t("support.privacyNote")}</p>
               </CardContent>
             </Card>
 
             {/* Support Resources */}
             <div className="space-y-6">
-              <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+              <Card>
                 <CardHeader>
                   <Heart className="h-8 w-8 text-primary mb-2" />
                   <CardTitle className="text-lg">{t("support.wellnessTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription>
-                    {t("support.wellnessDesc")}
-                  </CardDescription>
+                  <CardDescription>{t("support.wellnessDesc")}</CardDescription>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+              <Card>
                 <CardHeader>
                   <Brain className="h-8 w-8 text-primary mb-2" />
                   <CardTitle className="text-lg">{t("support.resourcesTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <CardDescription className="mb-4">
-                    {t("support.resourcesDesc")}
-                  </CardDescription>
+                  <CardDescription className="mb-4">{t("support.resourcesDesc")}</CardDescription>
                   <ul className="space-y-2 text-sm">
                     <li>
-                      <a className="text-primary underline" href="tel:181">181</a> {t("support.helplineWomen")}
+                      <a className="text-primary underline" href="tel:181">
+                        181
+                      </a>{" "}
+                      {t("support.helplineWomen")}
                     </li>
                     <li>
-                      <a className="text-primary underline" href="tel:14416">14416</a> {t("support.helplineTeleManas")}
+                      <a className="text-primary underline" href="tel:14416">
+                        14416
+                      </a>{" "}
+                      {t("support.helplineTeleManas")}
                     </li>
                     <li>
-                      <a className="text-primary underline" href="tel:988">988</a> {t("support.helpline988")}
+                      <a className="text-primary underline" href="tel:988">
+                        988
+                      </a>{" "}
+                      {t("support.helpline988")}
                     </li>
                     <li>
                       <a className="text-primary underline" href="https://findahelpline.com" target="_blank" rel="noreferrer">
@@ -219,16 +206,16 @@ const Support = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+              <Card className="bg-primary/5 border-primary/20">
                 <CardHeader>
                   <CardTitle className="text-lg">{t("support.crisisTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {t("support.crisisDesc", { number: EMERGENCY_NUMBER })}
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">{t("support.crisisDesc", { number: EMERGENCY_NUMBER })}</p>
                   <Link to="/sos">
-                    <Button variant="emergency" className="w-full">{t("common.emergencySos")}</Button>
+                    <Button variant="emergency" className="w-full">
+                      {t("common.emergencySos")}
+                    </Button>
                   </Link>
                 </CardContent>
               </Card>

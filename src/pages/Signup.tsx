@@ -47,7 +47,7 @@ const Signup = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-md">
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+          <Card>
             <CardHeader className="text-center space-y-2">
               <CardTitle className="text-2xl">{t("signup.title")}</CardTitle>
               <CardDescription>{t("signup.subtitle")}</CardDescription>
@@ -55,19 +55,44 @@ const Signup = () => {
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="name">{t("common.name")}</label>
+                  <label className="text-sm mb-1 block" htmlFor="name">
+                    {t("common.name")}
+                  </label>
                   <Input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="email">{t("common.email")}</label>
-                  <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="email">
+                    {t("common.email")}
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="password">{t("common.password")}</label>
-                  <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                  <label className="text-sm mb-1 block" htmlFor="password">
+                    {t("common.password")}
+                  </label>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    minLength={8}
+                    required
+                  />
                   <p className="text-xs text-muted-foreground mt-1">{t("common.minChars")}</p>
                 </div>
-                {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>
                   {loading ? t("signup.submitting") : t("signup.submit")}
                 </Button>

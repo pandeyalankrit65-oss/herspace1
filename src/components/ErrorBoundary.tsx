@@ -25,9 +25,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, State> {
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-md text-center space-y-4">
           <h1 className="text-2xl font-bold">{navigator.onLine ? t("error.title") : t("error.offlineTitle")}</h1>
-          <p className="text-muted-foreground">
-            {navigator.onLine ? t("error.desc") : t("error.offlineDesc")}
-          </p>
+          <p className="text-muted-foreground">{navigator.onLine ? t("error.desc") : t("error.offlineDesc")}</p>
           <div className="flex flex-col gap-2">
             <a
               href={`tel:${EMERGENCY_NUMBER}`}

@@ -14,6 +14,8 @@ import { api, ApiError } from "@/lib/api";
 import type { Contact } from "./Contacts";
 import { watchLocation } from "@/lib/location";
 import { cancelTimerWarning, scheduleTimerWarning } from "@/lib/timerNotifications";
+import PageHeader from "@/components/PageHeader";
+import LoadingRows from "@/components/LoadingRows";
 
 type CheckIn = {
   id: number;
@@ -47,7 +49,7 @@ function getPosition(): Promise<GeolocationPosition | undefined> {
       enableHighAccuracy: true,
       timeout: 8000,
       maximumAge: 30_000,
-    })
+    }),
   );
 }
 
@@ -113,7 +115,7 @@ const SafetyTimer = () => {
         api(`/api/check-ins/${activeId}/location`, { body: { coords: pos } }).catch(() => {});
       },
       () => {},
-      { title: t("native.timerTitle"), message: t("native.timerMessage") }
+      { title: t("native.timerTitle"), message: t("native.timerMessage") },
     );
     // t is only used for the notification text when the watch starts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,7 +124,8 @@ const SafetyTimer = () => {
   // App only: a system notification 2 minutes before the end, even if the app is closed.
   const activeDueAt = checkIn?.status === "active" ? checkIn.dueAt : null;
   useEffect(() => {
-    if (activeId && activeDueAt) scheduleTimerWarning(activeId, activeDueAt, t("timer.notificationTitle"), t("timer.notificationBody"));
+    if (activeId && activeDueAt)
+      scheduleTimerWarning(activeId, activeDueAt, t("timer.notificationTitle"), t("timer.notificationBody"));
   }, [activeId, activeDueAt, t]);
 
   const msLeft = checkIn ? new Date(checkIn.dueAt).getTime() - now : 0;
@@ -192,16 +195,20 @@ const SafetyTimer = () => {
           </CardHeader>
           <CardContent className="flex gap-2">
             <Link to="/login?next=/timer" className="flex-1">
-              <Button variant="hero" className="w-full">{t("common.logIn")}</Button>
+              <Button variant="hero" className="w-full">
+                {t("common.logIn")}
+              </Button>
             </Link>
             <Link to="/signup?next=/timer" className="flex-1">
-              <Button variant="outline" className="w-full">{t("common.signUp")}</Button>
+              <Button variant="outline" className="w-full">
+                {t("common.signUp")}
+              </Button>
             </Link>
           </CardContent>
         </Card>
       );
     }
-    if (!loaded) return <p className="text-muted-foreground">{t("common.loading")}</p>;
+    if (!loaded) return <LoadingRows rows={1} tall />;
 
     if (checkIn?.status === "alerted") {
       return (
@@ -244,8 +251,12 @@ const SafetyTimer = () => {
               <ShieldCheck className="h-6 w-6" /> {t("timer.safe")}
             </Button>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" onClick={() => extend(15)}>{t("timer.extend", { count: 15 })}</Button>
-              <Button variant="outline" onClick={() => extend(30)}>{t("timer.extend", { count: 30 })}</Button>
+              <Button variant="outline" onClick={() => extend(15)}>
+                {t("timer.extend", { count: 15 })}
+              </Button>
+              <Button variant="outline" onClick={() => extend(30)}>
+                {t("timer.extend", { count: 30 })}
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">{t("timer.keepOpen")}</p>
           </CardContent>
@@ -259,7 +270,9 @@ const SafetyTimer = () => {
           {confirmedContacts === 0 && (
             <div role="alert" className="rounded-md border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm space-y-2">
               <p>{t("timer.noContacts")}</p>
-              <Link to="/contacts" className="text-primary underline">{t("sos.contacts.manage")}</Link>
+              <Link to="/contacts" className="text-primary underline">
+                {t("sos.contacts.manage")}
+              </Link>
             </div>
           )}
           <fieldset className="space-y-2">
@@ -280,7 +293,13 @@ const SafetyTimer = () => {
           </fieldset>
           <div className="space-y-1">
             <Label htmlFor="timer-note">{t("timer.note")}</Label>
-            <Input id="timer-note" value={note} maxLength={120} onChange={(e) => setNote(e.target.value)} placeholder={t("timer.notePlaceholder")} />
+            <Input
+              id="timer-note"
+              value={note}
+              maxLength={120}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={t("timer.notePlaceholder")}
+            />
             <p className="text-xs text-muted-foreground">{t("timer.noteHint")}</p>
           </div>
           <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy}>
@@ -296,13 +315,7 @@ const SafetyTimer = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-xl space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold flex items-center gap-3">
-              <Timer className="h-9 w-9 text-primary" />
-              {t("timer.title")}
-            </h1>
-            <p className="text-muted-foreground">{t("timer.intro")}</p>
-          </div>
+          <PageHeader icon={Timer} title={t("timer.title")} subtitle={t("timer.intro")} />
           {body()}
         </div>
       </main>

@@ -4,8 +4,7 @@ import LegalPage, { ContactLine, Section } from "@/components/LegalPage";
 const Privacy = () => (
   <LegalPage title="Privacy Policy" updated="27 September 2026">
     <p className="text-lg text-muted-foreground leading-relaxed">
-      HerSpace exists to help keep you safe, so we collect only what the app needs to work, and we tell you plainly where it
-      goes.
+      HerSpace exists to help keep you safe, so we collect only what the app needs to work, and we tell you plainly where it goes.
     </p>
 
     <Section title="What we collect">
@@ -20,17 +19,17 @@ const Privacy = () => (
         </li>
         <li>
           <strong>SOS alerts:</strong> when you press SOS we store the time, your location if you allow location access, and
-          whether each message or call was delivered. If you're logged in, your contacts also get a private live-location
-          link: while the SOS page is open we keep only your latest position, and delete it as soon as you tap "I'm safe" or
-          after 4 hours.
+          whether each message or call was delivered. If you're logged in, your contacts also get a private live-location link:
+          while the SOS page is open we keep only your latest position, and delete it as soon as you tap "I'm safe" or after 4
+          hours.
         </li>
         <li>
-          <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose
-          to share. If you submit anonymously, the report is not linked to your account in any way.
+          <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose to
+          share. If you submit anonymously, the report is not linked to your account in any way.
         </li>
         <li>
-          <strong>Map flags:</strong> when you flag a map point we record your account, or a scrambled version of your IP
-          address if you're logged out, so each person counts once.
+          <strong>Map flags:</strong> when you flag a map point we record your account, or a scrambled version of your IP address
+          if you're logged out, so each person counts once.
         </li>
         <li>
           <strong>On your device:</strong> the app keeps a copy of your name and emergency contacts in your browser so the SOS
@@ -74,20 +73,23 @@ const Privacy = () => (
 
     <Section title="Your rights">
       <p>
-        From your <Link to="/account" className="text-primary underline">account page</Link> you can download everything we
-        store about you, delete individual reports, or delete your account and all personal data linked to it. Emergency
-        contacts can withdraw their agreement at any time using the link they were sent.
+        From your{" "}
+        <Link to="/account" className="text-primary underline">
+          account page
+        </Link>{" "}
+        you can download everything we store about you, delete individual reports, or delete your account and all personal data
+        linked to it. Emergency contacts can withdraw their agreement at any time using the link they were sent.
       </p>
       <p>
-        You also have rights under India's Digital Personal Data Protection Act, 2023, including to correct your data and to
-        raise a grievance. To exercise them, contact us below.
+        You also have rights under India's Digital Personal Data Protection Act, 2023, including to correct your data and to raise
+        a grievance. To exercise them, contact us below.
       </p>
     </Section>
 
     <Section title="Security">
       <p>
-        Passwords and login tokens are stored hashed, access to your data requires your login, and the server limits
-        repeated attempts. Your data is protected by access controls on our server; it is not end-to-end encrypted.
+        Passwords and login tokens are stored hashed, access to your data requires your login, and the server limits repeated
+        attempts. Your data is protected by access controls on our server; it is not end-to-end encrypted.
       </p>
     </Section>
 

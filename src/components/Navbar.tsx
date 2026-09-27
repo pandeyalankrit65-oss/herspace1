@@ -1,157 +1,189 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Shield, Menu, X, Languages } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { AlertCircle, ChevronDown, Languages, LogOut, Monitor, Moon, Shield, Sun, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme, type ThemeChoice } from "@/contexts/ThemeContext";
 import { LANGS, useI18n } from "@/i18n";
+import type { MessageKey } from "@/i18n/en";
+import { cn } from "@/lib/utils";
 
-const Navbar = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+export const PRIMARY_LINKS: Array<{ path: string; label: MessageKey }> = [
+  { path: "/timer", label: "nav.timer" },
+  { path: "/report", label: "nav.report" },
+  { path: "/map", label: "nav.map" },
+  { path: "/support", label: "nav.support" },
+];
+
+export const MORE_LINKS: Array<{ path: string; label: MessageKey }> = [
+  { path: "/about", label: "nav.about" },
+  { path: "/circles", label: "nav.circles" },
+  { path: "/corporate", label: "nav.corporate" },
+];
+
+const THEME_ICONS: Record<ThemeChoice, typeof Sun> = { system: Monitor, light: Sun, dark: Moon };
+
+export const LanguageToggle = () => {
   const { t, lang, setLang } = useI18n();
-  const otherLang = lang === "en" ? "hi" : "en";
+  const other = lang === "en" ? "hi" : "en";
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="gap-1.5 text-muted-foreground hover:text-foreground"
+      onClick={() => setLang(other)}
+      aria-label={t("nav.switchLanguage")}
+      lang={other}
+    >
+      <Languages className="h-4 w-4" />
+      {LANGS[other].label}
+    </Button>
+  );
+};
+
+export const ThemeMenu = () => {
+  const { t } = useI18n();
+  const { choice, setChoice } = useTheme();
+  const Icon = THEME_ICONS[choice];
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" aria-label={t("theme.label")}>
+          <Icon className="h-[18px] w-[18px]" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-36 rounded-xl">
+        {(["system", "light", "dark"] as ThemeChoice[]).map((c) => {
+          const ItemIcon = THEME_ICONS[c];
+          return (
+            <DropdownMenuItem
+              key={c}
+              onSelect={() => setChoice(c)}
+              className={cn("gap-2", choice === c && "font-semibold text-primary")}
+            >
+              <ItemIcon className="h-4 w-4" /> {t(`theme.${c}` as MessageKey)}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+  );
+
+// Top bar. On phones it's just the logo and quick settings; navigation lives in BottomNav.
+const Navbar = () => {
+  const { t } = useI18n();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const moreActive = MORE_LINKS.some((l) => location.pathname === l.path);
 
   const handleLogout = async () => {
-    setMobileMenuOpen(false);
     await logout();
     navigate("/");
   };
 
-  const navItems = [
-    { path: "/sos", label: t("nav.sos") },
-    { path: "/timer", label: t("nav.timer") },
-    { path: "/report", label: t("nav.report") },
-    { path: "/support", label: t("nav.support") },
-    { path: "/map", label: t("nav.map") },
-    { path: "/corporate", label: t("nav.corporate") },
-    { path: "/circles", label: t("nav.circles") },
-    { path: "/about", label: t("nav.about") },
-  ];
-
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border/50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-lg group-hover:shadow-[var(--glow-primary)] transition-all">
-              <Shield className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              HerSpace
-            </span>
-          </Link>
+    <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+      <div className="container mx-auto flex h-16 items-center gap-2 px-4">
+        <Link to="/" className="mr-2 flex items-center gap-2 rounded-lg" aria-label="HerSpace">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-raised">
+            <Shield className="h-5 w-5 text-white" />
+          </span>
+          <span className="text-lg font-extrabold tracking-tight">HerSpace</span>
+        </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden xl:flex items-center gap-1">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path}>
-                <Button
-                  variant="ghost"
-                  className={
-                    location.pathname === item.path
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }
-                >
-                  {item.label}
+        <nav aria-label={t("nav.mainNav")} className="hidden lg:flex items-center gap-1">
+          <NavLink
+            to="/sos"
+            className={({ isActive }) =>
+              cn(
+                "mr-1 inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-colors",
+                isActive
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-destructive/10 text-destructive hover:bg-destructive/15",
+              )
+            }
+          >
+            <AlertCircle className="h-4 w-4" /> SOS
+          </NavLink>
+          {PRIMARY_LINKS.map((l) => (
+            <NavLink key={l.path} to={l.path} className={linkClass}>
+              {t(l.label)}
+            </NavLink>
+          ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger className={linkClass({ isActive: moreActive }) + " inline-flex items-center gap-1"}>
+              {t("nav.more")} <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="rounded-xl">
+              {MORE_LINKS.map((l) => (
+                <DropdownMenuItem key={l.path} asChild>
+                  <Link to={l.path}>{t(l.label)}</Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </nav>
+
+        <div className="ml-auto flex items-center gap-1">
+          <LanguageToggle />
+          <ThemeMenu />
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="hidden lg:inline-flex gap-2 px-2" aria-label={t("nav.accountMenu")}>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+                    {user.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </Button>
-              </Link>
-            ))}
-            {user ? (
-              <>
-                <Link to="/contacts">
-                  <Button variant="ghost" className={location.pathname === "/contacts" ? "text-primary" : "text-muted-foreground hover:text-foreground"}>
-                    {t("nav.contacts")}
-                  </Button>
-                </Link>
-                <Link to="/account">
-                  <Button variant="ghost" className={location.pathname === "/account" ? "text-primary" : "text-muted-foreground hover:text-foreground"}>
-                    {t("nav.account")}
-                  </Button>
-                </Link>
-                <Button variant="outline" onClick={handleLogout} title={`Signed in as ${user.email}`}>
-                  {t("nav.logOut")}
-                </Button>
-              </>
-            ) : (
-              <Link to="/login">
-                <Button variant="hero">{t("common.logIn")}</Button>
-              </Link>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1">
-            {/* Always visible, so someone who can't read English can find it. */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
-              onClick={() => setLang(otherLang)}
-              aria-label={t("nav.switchLanguage")}
-              lang={otherLang}
-            >
-              <Languages className="h-4 w-4" />
-              {LANGS[otherLang].label}
-            </Button>
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="xl:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
-            >
-              {mobileMenuOpen ? <X /> : <Menu />}
-            </Button>
-          </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="font-semibold">{user.name}</div>
+                  <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild className="gap-2">
+                  <Link to="/contacts">
+                    <Users className="h-4 w-4" /> {t("nav.emergencyContacts")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="gap-2">
+                  <Link to="/account">
+                    <User className="h-4 w-4" /> {t("nav.account")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleLogout} className="gap-2">
+                  <LogOut className="h-4 w-4" /> {t("nav.logOut")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/login" className="hidden lg:block">
+              <Button variant="hero" size="sm">
+                {t("common.logIn")}
+              </Button>
+            </Link>
+          )}
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="xl:hidden pb-4 space-y-2">
-            {navItems.map((item) => (
-              <Link key={item.path} to={item.path} onClick={() => setMobileMenuOpen(false)}>
-                <Button
-                  variant="ghost"
-                  className={`w-full justify-start ${
-                    location.pathname === item.path
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
-            {user ? (
-              <>
-                <Link to="/contacts" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    {t("nav.emergencyContacts")}
-                  </Button>
-                </Link>
-                <Link to="/account" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    {t("nav.account")}
-                  </Button>
-                </Link>
-                <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
-                  {t("nav.logOutAs", { name: user.name })}
-                </Button>
-              </>
-            ) : (
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="hero" className="w-full">{t("common.logIn")}</Button>
-              </Link>
-            )}
-          </div>
-        )}
       </div>
-    </nav>
+    </header>
   );
 };
 

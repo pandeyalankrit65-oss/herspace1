@@ -65,7 +65,7 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         }
       },
       (err) => !cancelled && setError(err === "denied" ? "live.permission" : "live.noGeo"),
-      { title: t("native.liveTitle"), message: t("native.liveMessage") }
+      { title: t("native.liveTitle"), message: t("native.liveMessage") },
     );
 
     return () => {
@@ -106,7 +106,9 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
           {error
             ? t(error)
             : lastSent
-              ? t("live.lastSent", { time: lastSent.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) })
+              ? t("live.lastSent", {
+                  time: lastSent.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+                })
               : t("live.waiting")}
         </p>
         <Button variant="hero" size="lg" className="w-full sm:w-auto gap-2" onClick={stop} disabled={stopping}>

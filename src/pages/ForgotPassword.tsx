@@ -34,30 +34,34 @@ const ForgotPassword = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-md">
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+          <Card>
             <CardHeader className="text-center space-y-2">
               <CardTitle className="text-2xl">{t("forgot.title")}</CardTitle>
-              <CardDescription>
-                {sent
-                  ? t("forgot.sent")
-                  : t("forgot.prompt")}
-              </CardDescription>
+              <CardDescription>{sent ? t("forgot.sent") : t("forgot.prompt")}</CardDescription>
             </CardHeader>
             <CardContent>
               {!sent && (
                 <form className="space-y-4" onSubmit={onSubmit}>
                   <div>
-                    <label className="text-sm mb-1 block" htmlFor="email">{t("common.email")}</label>
+                    <label className="text-sm mb-1 block" htmlFor="email">
+                      {t("common.email")}
+                    </label>
                     <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
-                  {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+                  {error && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {error}
+                    </p>
+                  )}
                   <Button type="submit" variant="hero" className="w-full" disabled={loading}>
                     {loading ? t("forgot.sending") : t("forgot.submit")}
                   </Button>
                 </form>
               )}
               <p className="text-sm text-muted-foreground mt-4 text-center">
-                <Link to="/login" className="text-primary">{t("forgot.back")}</Link>
+                <Link to="/login" className="text-primary">
+                  {t("forgot.back")}
+                </Link>
               </p>
             </CardContent>
           </Card>

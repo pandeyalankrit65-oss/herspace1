@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer } from "lucide-react";
+import { AlertCircle, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -12,6 +12,7 @@ import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import FakeCall from "@/components/FakeCall";
 import type { Contact } from "./Contacts";
 import { useI18n } from "@/i18n";
+import PageHeader from "@/components/PageHeader";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import type { MessageKey } from "@/i18n/en";
 
@@ -67,7 +68,7 @@ function getLocation(): Promise<Coords | undefined> {
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
       () => resolve(undefined),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 },
     );
   });
 }
@@ -199,27 +200,30 @@ const SOS = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-8 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-destructive to-red-600 bg-clip-text text-transparent">{t("common.emergencySos")}</span>
-            </h1>
+          <PageHeader
+            icon={Siren}
+            tone="danger"
+            align="center"
+            title={t("common.emergencySos")}
+            subtitle={tr("sos.danger", {
+              number: (
+                <a href={`tel:${EMERGENCY_NUMBER}`} className="font-bold text-destructive underline underline-offset-2">
+                  {EMERGENCY_NUMBER}
+                </a>
+              ),
+            })}
+          >
             {!online && (
-              <p role="alert" className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 text-sm text-foreground">
+              <p
+                role="alert"
+                className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 text-sm text-foreground"
+              >
                 {t("sos.offline")}
               </p>
             )}
-            <p className="text-lg text-muted-foreground">
-              {tr("sos.danger", {
-                number: (
-                  <a href={`tel:${EMERGENCY_NUMBER}`} className="font-semibold text-destructive underline">
-                    {EMERGENCY_NUMBER}
-                  </a>
-                ),
-              })}
-            </p>
-          </div>
+          </PageHeader>
 
-          <Card className="mb-8 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-destructive/50">
+          <Card className="mb-8 border-destructive/40">
             <CardContent className="p-6 sm:p-12 text-center space-y-8">
               <div className="space-y-4">
                 <p className="text-muted-foreground">
@@ -232,28 +236,38 @@ const SOS = () => {
                     : t("sos.status.loggedOut")}
                 </p>
 
-                {countdown !== null ? (
-                  <div className="space-y-4">
-                    <div className="mx-auto w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-destructive/15 border-4 border-destructive flex flex-col items-center justify-center">
-                      <span className="text-7xl font-bold text-destructive" aria-live="assertive">{countdown}</span>
-                      <span className="text-sm text-muted-foreground">{t("sos.sendingAlert")}</span>
-                    </div>
-                    <Button variant="outline" size="lg" onClick={() => setCountdown(null)}>
-                      {t("common.cancel")}
-                    </Button>
+                {/* Concentric rings frame the button; the countdown uses the same space so nothing jumps. */}
+                <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-full bg-destructive/5 sm:h-72 sm:w-72">
+                  <div className="flex h-56 w-56 items-center justify-center rounded-full bg-destructive/10 sm:h-64 sm:w-64">
+                    {countdown !== null ? (
+                      <div className="flex h-48 w-48 flex-col items-center justify-center rounded-full border-4 border-destructive bg-card sm:h-56 sm:w-56">
+                        <span className="text-7xl font-extrabold tabular-nums text-destructive" aria-live="assertive">
+                          {countdown}
+                        </span>
+                        <span className="text-sm font-medium text-muted-foreground">{t("sos.sendingAlert")}</span>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="emergency"
+                        aria-label={sending ? t("sos.buttonSending") : t("sos.button")}
+                        className={`h-48 w-48 rounded-full p-0 sm:h-56 sm:w-56 ${sending ? "animate-pulse" : ""}`}
+                        onClick={startCountdown}
+                        disabled={sending}
+                      >
+                        <span className="flex flex-col items-center gap-1.5">
+                          <AlertCircle className="!size-12 sm:!size-14" />
+                          <span className="text-5xl font-black tracking-wide sm:text-6xl">SOS</span>
+                          <span className="max-w-[10rem] whitespace-normal text-center text-xs font-semibold leading-tight opacity-90 sm:text-sm">
+                            {sending ? t("sos.buttonSending") : t("sos.buttonCaption")}
+                          </span>
+                        </span>
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <Button
-                    variant="emergency"
-                    size="xl"
-                    className={`w-56 h-56 sm:w-64 sm:h-64 rounded-full text-2xl font-bold ${sending ? "animate-pulse" : ""}`}
-                    onClick={startCountdown}
-                    disabled={sending}
-                  >
-                    <div className="flex flex-col items-center gap-4">
-                      <AlertCircle className="!size-16 sm:!size-20" />
-                      {sending ? t("sos.buttonSending") : t("sos.button")}
-                    </div>
+                </div>
+                {countdown !== null && (
+                  <Button variant="outline" size="lg" className="min-w-40" onClick={() => setCountdown(null)}>
+                    {t("common.cancel")}
                   </Button>
                 )}
               </div>
@@ -354,7 +368,7 @@ const SOS = () => {
           )}
 
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+            <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <Timer className="h-8 w-8 text-primary mb-2" />
                 <CardTitle className="text-lg">{t("timer.ctaTitle")}</CardTitle>
@@ -362,7 +376,9 @@ const SOS = () => {
               </CardHeader>
               <CardContent>
                 <Link to="/timer">
-                  <Button variant="hero" className="w-full">{t("timer.ctaButton")}</Button>
+                  <Button variant="hero" className="w-full">
+                    {t("timer.ctaButton")}
+                  </Button>
                 </Link>
               </CardContent>
             </Card>
@@ -370,44 +386,38 @@ const SOS = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <Card>
               <CardHeader>
                 <MessageSquare className="h-8 w-8 text-primary mb-2" />
                 <CardTitle className="text-lg">{t("sos.card.smsTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  {t("sos.card.smsDesc")}
-                </CardDescription>
+                <CardDescription>{t("sos.card.smsDesc")}</CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <Card>
               <CardHeader>
                 <MapPin className="h-8 w-8 text-primary mb-2" />
                 <CardTitle className="text-lg">{t("sos.card.locationTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  {t("sos.card.locationDesc")}
-                </CardDescription>
+                <CardDescription>{t("sos.card.locationDesc")}</CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <Card>
               <CardHeader>
                 <Phone className="h-8 w-8 text-primary mb-2" />
                 <CardTitle className="text-lg">{t("sos.card.servicesTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  {t("sos.card.servicesDesc", { number: EMERGENCY_NUMBER })}
-                </CardDescription>
+                <CardDescription>{t("sos.card.servicesDesc", { number: EMERGENCY_NUMBER })}</CardDescription>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle>{t("sos.contacts.title")}</CardTitle>
               <CardDescription>{t("sos.contacts.desc")}</CardDescription>

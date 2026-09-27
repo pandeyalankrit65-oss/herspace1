@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { LocateFixed, Info } from "lucide-react";
+import { LocateFixed, Info, MapPin } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
+import PageHeader from "@/components/PageHeader";
 
 type Point = { id: number; incidentType: string; lat: number; lng: number; date: string };
 
@@ -76,14 +77,11 @@ const Map = () => {
         setLocateError(t("map.denied"));
         setLocating(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
-  const center = useMemo<[number, number]>(
-    () => (points.length ? [points[0].lat, points[0].lng] : DEFAULT_CENTER),
-    [points]
-  );
+  const center = useMemo<[number, number]>(() => (points.length ? [points[0].lat, points[0].lng] : DEFAULT_CENTER), [points]);
 
   return (
     <div className="min-h-screen">
@@ -91,16 +89,9 @@ const Map = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t("map.title")}</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {t("map.intro")}
-            </p>
-          </div>
+          <PageHeader icon={MapPin} title={t("map.title")} subtitle={t("map.intro")} />
 
-          <Card className="mb-6 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 overflow-hidden">
+          <Card className="mb-6 overflow-hidden">
             <CardContent className="p-0">
               <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border/50">
                 <div className="flex flex-wrap gap-3 text-xs">
@@ -121,7 +112,12 @@ const Map = () => {
               )}
               {/* z-0 keeps Leaflet's panes below the fixed navbar */}
               <div className="relative z-0 h-[60vh] min-h-[360px]">
-                <MapContainer center={center} zoom={points.length ? 11 : 5} className="h-full w-full" key={points.length ? "data" : "empty"}>
+                <MapContainer
+                  center={center}
+                  zoom={points.length ? 11 : 5}
+                  className="h-full w-full"
+                  key={points.length ? "data" : "empty"}
+                >
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -145,7 +141,11 @@ const Map = () => {
                           {flagged.has(p.id) ? (
                             <span style={{ fontSize: 11 }}>{t("map.flagged")}</span>
                           ) : (
-                            <button type="button" onClick={() => flag(p.id)} style={{ fontSize: 11, textDecoration: "underline", marginTop: 4 }}>
+                            <button
+                              type="button"
+                              onClick={() => flag(p.id)}
+                              style={{ fontSize: 11, textDecoration: "underline", marginTop: 4 }}
+                            >
                               {t("map.flag")}
                             </button>
                           )}
@@ -154,38 +154,36 @@ const Map = () => {
                     );
                   })}
                   {me && (
-                    <CircleMarker center={me} radius={8} pathOptions={{ color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9 }}>
+                    <CircleMarker
+                      center={me}
+                      radius={8}
+                      pathOptions={{ color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9 }}
+                    >
                       <Popup>{t("map.youAreHere")}</Popup>
                     </CircleMarker>
                   )}
                   <FlyTo target={me} />
                 </MapContainer>
               </div>
-              <p className="px-4 py-3 text-xs text-muted-foreground">
-                {tn("map.count", points.length)}
-              </p>
+              <p className="px-4 py-3 text-xs text-muted-foreground">{tn("map.count", points.length)}</p>
             </CardContent>
           </Card>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <Card>
               <CardHeader>
                 <Info className="h-8 w-8 text-primary mb-2" />
                 <CardTitle className="text-lg">{t("map.privacyTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
-                  {t("map.privacyDesc")}
-                </CardDescription>
+                <CardDescription>{t("map.privacyDesc")}</CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+            <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <CardTitle className="text-lg">{t("map.helpTitle")}</CardTitle>
-                <CardDescription>
-                  {t("map.helpDesc")}
-                </CardDescription>
+                <CardDescription>{t("map.helpDesc")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Link to="/report">

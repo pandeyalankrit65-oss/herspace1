@@ -87,7 +87,7 @@ const FakeCall = () => {
 
   return (
     <>
-      <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+      <Card>
         <CardHeader>
           <Phone className="h-8 w-8 text-primary mb-2" />
           <CardTitle className="text-lg">{t("fakeCall.title")}</CardTitle>
@@ -96,7 +96,9 @@ const FakeCall = () => {
         <CardContent className="space-y-3">
           {phase === "waiting" ? (
             <div className="space-y-2">
-              <p className="text-sm" aria-live="polite">{t("fakeCall.scheduled", { count: waitLeft })}</p>
+              <p className="text-sm" aria-live="polite">
+                {t("fakeCall.scheduled", { count: waitLeft })}
+              </p>
               <Button variant="outline" className="w-full" onClick={() => setPhase("idle")}>
                 {t("common.cancel")}
               </Button>
@@ -105,13 +107,26 @@ const FakeCall = () => {
             <>
               <div className="space-y-1">
                 <Label htmlFor="fake-caller">{t("fakeCall.caller")}</Label>
-                <Input id="fake-caller" value={caller} maxLength={40} placeholder={t("fakeCall.defaultCaller")} onChange={(e) => setCaller(e.target.value)} />
+                <Input
+                  id="fake-caller"
+                  value={caller}
+                  maxLength={40}
+                  placeholder={t("fakeCall.defaultCaller")}
+                  onChange={(e) => setCaller(e.target.value)}
+                />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium">{t("fakeCall.delay")}</p>
                 <div className="grid grid-cols-4 gap-2">
                   {DELAYS.map((d) => (
-                    <Button key={d} type="button" size="sm" variant={delay === d ? "hero" : "outline"} aria-pressed={delay === d} onClick={() => setDelay(d)}>
+                    <Button
+                      key={d}
+                      type="button"
+                      size="sm"
+                      variant={delay === d ? "hero" : "outline"}
+                      aria-pressed={delay === d}
+                      onClick={() => setDelay(d)}
+                    >
                       {d === 0 ? t("fakeCall.now") : t("fakeCall.seconds", { count: d })}
                     </Button>
                   ))}
@@ -145,12 +160,27 @@ const FakeCall = () => {
           <div className="w-full max-w-xs space-y-6">
             {phase === "ringing" ? (
               <div className="flex justify-between">
-                <CallButton label={t("fakeCall.decline")} color="bg-red-600" onClick={() => setPhase("idle")} icon={<PhoneOff className="h-8 w-8" />} />
-                <CallButton label={t("fakeCall.accept")} color="bg-green-600 animate-pulse" onClick={() => setPhase("onCall")} icon={<Phone className="h-8 w-8" />} />
+                <CallButton
+                  label={t("fakeCall.decline")}
+                  color="bg-red-600"
+                  onClick={() => setPhase("idle")}
+                  icon={<PhoneOff className="h-8 w-8" />}
+                />
+                <CallButton
+                  label={t("fakeCall.accept")}
+                  color="bg-green-600 animate-pulse"
+                  onClick={() => setPhase("onCall")}
+                  icon={<Phone className="h-8 w-8" />}
+                />
               </div>
             ) : (
               <div className="flex justify-center">
-                <CallButton label={t("fakeCall.end")} color="bg-red-600" onClick={() => setPhase("idle")} icon={<PhoneOff className="h-8 w-8" />} />
+                <CallButton
+                  label={t("fakeCall.end")}
+                  color="bg-red-600"
+                  onClick={() => setPhase("idle")}
+                  icon={<PhoneOff className="h-8 w-8" />}
+                />
               </div>
             )}
             <p className="text-center text-xs text-white/40">{t("fakeCall.disclaimer")}</p>
@@ -163,9 +193,24 @@ const FakeCall = () => {
 
 const formatDuration = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-const CallButton = ({ label, color, icon, onClick }: { label: string; color: string; icon: React.ReactNode; onClick: () => void }) => (
+const CallButton = ({
+  label,
+  color,
+  icon,
+  onClick,
+}: {
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) => (
   <div className="flex flex-col items-center gap-2">
-    <button type="button" onClick={onClick} aria-label={label} className={`flex h-16 w-16 items-center justify-center rounded-full ${color}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={`flex h-16 w-16 items-center justify-center rounded-full ${color}`}
+    >
       {icon}
     </button>
     <span className="text-sm text-white/80">{label}</span>

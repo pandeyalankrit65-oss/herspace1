@@ -5,23 +5,30 @@ import { EMERGENCY_NUMBER } from "@/lib/api";
 const Terms = () => (
   <LegalPage title="Terms of Use" updated="27 September 2026">
     <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-foreground">
-      <strong>HerSpace is not an emergency service.</strong> It does not contact the police, ambulance or any emergency
-      responder. If you are in danger, call <a className="underline" href={`tel:${EMERGENCY_NUMBER}`}>{EMERGENCY_NUMBER}</a>.
+      <strong>HerSpace is not an emergency service.</strong> It does not contact the police, ambulance or any emergency responder.
+      If you are in danger, call{" "}
+      <a className="underline" href={`tel:${EMERGENCY_NUMBER}`}>
+        {EMERGENCY_NUMBER}
+      </a>
+      .
     </div>
 
     <Section title="What HerSpace does">
       <p>
-        HerSpace lets you alert people you trust, document incidents, see community-reported incidents on a map, and talk to
-        an AI support companion. By using it you agree to these terms and to our{" "}
-        <Link to="/privacy" className="text-primary underline">Privacy Policy</Link>.
+        HerSpace lets you alert people you trust, document incidents, see community-reported incidents on a map, and talk to an AI
+        support companion. By using it you agree to these terms and to our{" "}
+        <Link to="/privacy" className="text-primary underline">
+          Privacy Policy
+        </Link>
+        .
       </p>
     </Section>
 
     <Section title="SOS alerts can fail">
       <p>
         Text messages and calls depend on phone networks, your internet connection, your device's location and third-party
-        providers. We show you whether each alert was sent, but we cannot guarantee that an alert will be delivered, read or
-        acted on. Always keep another way to get help, and use the test alert to check your setup.
+        providers. We show you whether each alert was sent, but we cannot guarantee that an alert will be delivered, read or acted
+        on. Always keep another way to get help, and use the test alert to check your setup.
       </p>
     </Section>
 
@@ -37,8 +44,8 @@ const Terms = () => (
 
     <Section title="AI support chat">
       <p>
-        The support companion is an AI. It can make mistakes and is not a doctor, therapist, counsellor or lawyer. Don't rely
-        on it for medical, legal or emergency decisions.
+        The support companion is an AI. It can make mistakes and is not a doctor, therapist, counsellor or lawyer. Don't rely on
+        it for medical, legal or emergency decisions.
       </p>
     </Section>
 
@@ -51,15 +58,18 @@ const Terms = () => (
 
     <Section title="Availability and changes">
       <p>
-        HerSpace is under active development. Features may change, and the service may occasionally be unavailable. We'll
-        update these terms when things change and show the new date above.
+        HerSpace is under active development. Features may change, and the service may occasionally be unavailable. We'll update
+        these terms when things change and show the new date above.
       </p>
     </Section>
 
     <Section title="Ending your use">
       <p>
         You can stop using HerSpace and delete your account at any time from your{" "}
-        <Link to="/account" className="text-primary underline">account page</Link>.
+        <Link to="/account" className="text-primary underline">
+          account page
+        </Link>
+        .
       </p>
     </Section>
 

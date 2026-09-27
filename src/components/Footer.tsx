@@ -6,22 +6,18 @@ import { Link } from "react-router-dom";
 const Footer = () => {
   const { t } = useI18n();
   return (
-    <footer className="bg-card border-t border-border/50 mt-20">
+    <footer className="mt-20 border-t bg-card">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-lg">
-                <Shield className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                HerSpace
+          <div className="space-y-3">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+                <Shield className="h-5 w-5 text-white" />
               </span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("footer.tagline")}
-            </p>
+              <span className="text-lg font-extrabold tracking-tight">HerSpace</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">{t("footer.tagline")}</p>
           </div>
 
           {/* Quick Links */}
@@ -68,12 +64,17 @@ const Footer = () => {
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
                 <span>
-                  {t("footer.emergency")} <a href={`tel:${EMERGENCY_NUMBER}`} className="text-primary hover:underline">{EMERGENCY_NUMBER}</a>
+                  {t("footer.emergency")}{" "}
+                  <a href={`tel:${EMERGENCY_NUMBER}`} className="text-primary hover:underline">
+                    {EMERGENCY_NUMBER}
+                  </a>
                 </span>
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <Link to="/map" className="hover:text-primary transition-colors">{t("nav.map")}</Link>
+                <Link to="/map" className="hover:text-primary transition-colors">
+                  {t("nav.map")}
+                </Link>
               </li>
             </ul>
           </div>

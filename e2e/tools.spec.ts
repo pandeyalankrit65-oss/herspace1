@@ -45,3 +45,25 @@ test("a signed-in user opening the login page goes straight on", async ({ page }
   await page.goto("/login?next=/timer");
   await expect(page).toHaveURL(/\/timer$/);
 });
+
+test("theme can be switched and is remembered", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Theme" }).click();
+  await page.getByRole("menuitem", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+  await page.reload();
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+  await page.getByRole("button", { name: "Theme" }).click();
+  await page.getByRole("menuitem", { name: "Light" }).click();
+  await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+});
+
+test("SOS is one tap away from every page on phones", async ({ page }) => {
+  test.skip(test.info().project.name !== "phone", "the bottom bar is phone-only");
+  for (const path of ["/", "/report", "/map"]) {
+    await page.goto(path);
+    await page.getByRole("link", { name: "Emergency SOS" }).last().click();
+    await expect(page).toHaveURL(/\/sos$/);
+    await expect(page.getByRole("button", { name: "EMERGENCY SOS" })).toBeVisible();
+  }
+});

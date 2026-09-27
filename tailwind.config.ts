@@ -14,7 +14,25 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        // Latin text uses Plus Jakarta Sans; Devanagari characters fall through to Noto Sans
+        // Devanagari, so Hindi and English share one consistent, self-hosted type system.
+        sans: [
+          '"Plus Jakarta Sans Variable"',
+          '"Noto Sans Devanagari Variable"',
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        raised: "var(--shadow-raised)",
+        sos: "var(--shadow-sos)",
+      },
       colors: {
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -59,6 +77,8 @@ export default {
         },
       },
       borderRadius: {
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

@@ -10,10 +10,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
+import LoadingRows from "@/components/LoadingRows";
 
 const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimination", "other"];
 
-type Report = { id: number; incidentType: string; description: string; location: string | null; date: string | null; createdAt: string };
+type Report = {
+  id: number;
+  incidentType: string;
+  description: string;
+  location: string | null;
+  date: string | null;
+  createdAt: string;
+};
 
 const Account = () => {
   const { user, loading, clearSession } = useAuth();
@@ -116,7 +124,7 @@ const Account = () => {
               <CardDescription>{t("account.reportsDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {reports === null && <p className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+              {reports === null && <LoadingRows tall />}
               {reports?.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   {tr("account.noReports", {
@@ -131,8 +139,12 @@ const Account = () => {
               {reports?.map((r) => (
                 <div key={r.id} className="rounded-md border border-border/50 p-3 space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{REPORT_TYPES.includes(r.incidentType) ? t(`report.types.${r.incidentType}` as MessageKey) : r.incidentType}</span>
-                    <Button variant="ghost" size="sm" onClick={() => deleteReport(r.id)}>{t("common.delete")}</Button>
+                    <span className="font-medium">
+                      {REPORT_TYPES.includes(r.incidentType) ? t(`report.types.${r.incidentType}` as MessageKey) : r.incidentType}
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={() => deleteReport(r.id)}>
+                      {t("common.delete")}
+                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {r.date ? `${t("account.happened", { date: new Date(r.date).toLocaleDateString() })} · ` : ""}
@@ -151,9 +163,28 @@ const Account = () => {
             </CardHeader>
             <CardContent>
               <form className="space-y-3" onSubmit={changePassword}>
-                <Input type="password" aria-label={t("account.currentPassword")} autoComplete="current-password" placeholder={t("account.currentPassword")} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
-                <Input type="password" aria-label={t("reset.new")} autoComplete="new-password" placeholder={t("account.newPassword")} minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-                <Button type="submit" variant="hero" disabled={changing}>{changing ? t("common.saving") : t("account.changePassword")}</Button>
+                <Input
+                  type="password"
+                  aria-label={t("account.currentPassword")}
+                  autoComplete="current-password"
+                  placeholder={t("account.currentPassword")}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  aria-label={t("reset.new")}
+                  autoComplete="new-password"
+                  placeholder={t("account.newPassword")}
+                  minLength={8}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                />
+                <Button type="submit" variant="hero" disabled={changing}>
+                  {changing ? t("common.saving") : t("account.changePassword")}
+                </Button>
               </form>
             </CardContent>
           </Card>
@@ -164,26 +195,47 @@ const Account = () => {
               <CardDescription>{t("account.dataDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" onClick={downloadData}>{t("account.download")}</Button>
+              <Button variant="outline" onClick={downloadData}>
+                {t("account.download")}
+              </Button>
             </CardContent>
           </Card>
 
           <Card className="border-destructive/40">
             <CardHeader>
               <CardTitle>{t("account.deleteTitle")}</CardTitle>
-              <CardDescription>
-                {t("account.deleteDesc")}
-              </CardDescription>
+              <CardDescription>{t("account.deleteDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               {!confirmDelete ? (
-                <Button variant="destructive" onClick={() => setConfirmDelete(true)}>{t("account.deleteButton")}</Button>
+                <Button variant="destructive" onClick={() => setConfirmDelete(true)}>
+                  {t("account.deleteButton")}
+                </Button>
               ) : (
                 <form className="space-y-3" onSubmit={deleteAccount}>
-                  <Input type="password" aria-label={t("common.password")} autoComplete="current-password" placeholder={t("account.deletePassword")} value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} required />
+                  <Input
+                    type="password"
+                    aria-label={t("common.password")}
+                    autoComplete="current-password"
+                    placeholder={t("account.deletePassword")}
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    required
+                  />
                   <div className="flex gap-2">
-                    <Button type="submit" variant="destructive" disabled={deleting}>{deleting ? t("account.deleting") : t("account.deleteConfirm")}</Button>
-                    <Button type="button" variant="ghost" onClick={() => { setConfirmDelete(false); setDeletePassword(""); }}>{t("common.cancel")}</Button>
+                    <Button type="submit" variant="destructive" disabled={deleting}>
+                      {deleting ? t("account.deleting") : t("account.deleteConfirm")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setConfirmDelete(false);
+                        setDeletePassword("");
+                      }}
+                    >
+                      {t("common.cancel")}
+                    </Button>
                   </div>
                 </form>
               )}

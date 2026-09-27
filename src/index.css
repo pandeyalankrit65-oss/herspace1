@@ -1,58 +1,100 @@
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/noto-sans-devanagari";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Design system. All colours are HSL channel values, used as hsl(var(--token)).
+   Light is the default; .dark (set by ThemeProvider from the user's choice or the system
+   setting) switches every token. */
 
 @layer base {
   :root {
-    --background: 240 10% 8%;
-    --foreground: 240 10% 98%;
+    --background: 250 33% 98%;
+    --foreground: 250 30% 11%;
 
-    --card: 240 10% 10%;
-    --card-foreground: 240 10% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 250 30% 11%;
 
-    --popover: 240 10% 10%;
-    --popover-foreground: 240 10% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 250 30% 11%;
 
-    --primary: 270 80% 65%;
+    --primary: 268 68% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 20% 15%;
-    --secondary-foreground: 240 10% 98%;
+    --secondary: 252 30% 95%;
+    --secondary-foreground: 250 30% 16%;
 
-    --muted: 240 15% 12%;
-    --muted-foreground: 240 10% 60%;
+    --muted: 252 26% 95%;
+    --muted-foreground: 250 10% 38%;
 
-    --accent: 280 85% 70%;
+    --accent: 284 72% 56%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 100% 60%;
+    --destructive: 0 76% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 15% 18%;
-    --input: 240 15% 18%;
-    --ring: 270 80% 65%;
+    --success: 152 60% 36%;
+    --warning: 35 92% 42%;
 
-    --radius: 0.75rem;
+    --border: 250 22% 89%;
+    --input: 250 22% 85%;
+    --ring: 268 68% 52%;
 
-    /* Custom design tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(270 80% 65%), hsl(230 85% 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(270 60% 25%) 0%, hsl(240 60% 15%) 50%, hsl(230 70% 20%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(240 15% 12% / 0.6), hsl(270 20% 15% / 0.4));
-    --gradient-emergency: linear-gradient(135deg, hsl(0 85% 55%), hsl(10 90% 50%));
-    
-    --glow-primary: 0 0 30px hsl(270 80% 65% / 0.4);
-    --glow-emergency: 0 0 40px hsl(0 85% 55% / 0.5);
-    --glow-accent: 0 0 25px hsl(190 85% 60% / 0.3);
-    
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    --cyan-accent: 190 85% 60%;
+    --radius: 0.875rem;
+
+    --hero-overlay: linear-gradient(180deg, hsl(250 33% 98% / 0.55) 0%, hsl(250 33% 98% / 0.35) 45%, hsl(250 33% 98% / 0.95) 100%);
+    --shadow-card: 0 1px 2px hsl(250 30% 11% / 0.04), 0 4px 16px -4px hsl(250 30% 11% / 0.08);
+    --shadow-raised: 0 8px 30px -8px hsl(268 68% 40% / 0.35);
+    --shadow-sos: 0 10px 40px -8px hsl(0 76% 45% / 0.55);
+
+    /* Kept for components that still reference them. */
+    --glow-primary: var(--shadow-raised);
+    --glow-emergency: var(--shadow-sos);
+    --gradient-hero: var(--hero-overlay);
+    --cyan-accent: 190 85% 45%;
     --violet-deep: 270 50% 30%;
-    --pink-soft: 320 70% 70%;
+    --pink-soft: 320 70% 60%;
+  }
+
+  .dark {
+    --background: 250 22% 7%;
+    --foreground: 250 20% 96%;
+
+    --card: 250 20% 10%;
+    --card-foreground: 250 20% 96%;
+
+    --popover: 250 20% 11%;
+    --popover-foreground: 250 20% 96%;
+
+    --primary: 268 80% 68%;
+    --primary-foreground: 250 30% 8%;
+
+    --secondary: 250 18% 15%;
+    --secondary-foreground: 250 20% 96%;
+
+    --muted: 250 18% 13%;
+    --muted-foreground: 250 12% 68%;
+
+    --accent: 284 80% 72%;
+    --accent-foreground: 250 30% 8%;
+
+    --destructive: 0 84% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 55% 50%;
+    --warning: 38 92% 58%;
+
+    --border: 250 16% 18%;
+    --input: 250 16% 22%;
+    --ring: 268 80% 68%;
+
+    --hero-overlay: linear-gradient(180deg, hsl(250 22% 7% / 0.55) 0%, hsl(250 22% 7% / 0.35) 45%, hsl(250 22% 7% / 0.95) 100%);
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 16px -4px hsl(0 0% 0% / 0.4);
+    --shadow-raised: 0 8px 30px -8px hsl(268 80% 50% / 0.45);
+    --shadow-sos: 0 10px 40px -8px hsl(0 84% 50% / 0.6);
+    --cyan-accent: 190 85% 60%;
   }
 }
 
@@ -61,7 +103,49 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* One consistent, clearly visible keyboard focus style. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Room for the phone bottom navigation (and the device's gesture bar). */
+  .pb-bottom-nav {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

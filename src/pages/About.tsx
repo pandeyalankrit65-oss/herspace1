@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
+import PageHeader from "@/components/PageHeader";
 
 const VALUES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
   { icon: Shield, title: "about.value1Title", text: "about.value1Text" },
@@ -30,14 +31,9 @@ const About = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16 space-y-6">
-            <h1 className="text-4xl md:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t("about.title")}</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">{t("about.intro")}</p>
-          </div>
+          <PageHeader icon={Heart} title={t("about.title")} subtitle={t("about.intro")} />
 
-          <Card className="mb-12 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+          <Card className="mb-12 bg-primary/5 border-primary/20">
             <CardHeader className="text-center">
               <Target className="h-12 w-12 mx-auto mb-4 text-primary" />
               <CardTitle className="text-3xl">{t("about.missionTitle")}</CardTitle>
@@ -62,10 +58,7 @@ const About = () => {
             <h2 className="text-3xl font-bold text-center mb-8">{t("about.valuesTitle")}</h2>
             <div className="grid md:grid-cols-2 gap-6">
               {VALUES.map(({ icon: Icon, title, text }) => (
-                <Card
-                  key={title}
-                  className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-[var(--glow-primary)]"
-                >
+                <Card key={title} className="hover:border-primary/50 transition-all">
                   <CardHeader>
                     <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit mb-4">
                       <Icon className="h-6 w-6 text-primary" />
@@ -80,7 +73,7 @@ const About = () => {
             </div>
           </div>
 
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 mb-12">
+          <Card className="mb-12">
             <CardHeader className="text-center">
               <CardTitle className="text-3xl">{t("about.journeyTitle")}</CardTitle>
             </CardHeader>
@@ -91,7 +84,7 @@ const About = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
             {STATS.map(([value, label]) => (
-              <Card key={value} className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 text-center">
+              <Card key={value} className="text-center">
                 <CardContent className="pt-6">
                   <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2 break-words">
                     {t(value)}
@@ -102,16 +95,20 @@ const About = () => {
             ))}
           </div>
 
-          <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30 text-center">
+          <Card className="bg-primary/5 border-primary/20 text-center">
             <CardContent className="py-12 space-y-6">
               <h2 className="text-3xl font-bold">{t("about.ctaTitle")}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("about.ctaText")}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/signup">
-                  <Button variant="hero" size="lg">{t("about.ctaSignup")}</Button>
+                  <Button variant="hero" size="lg">
+                    {t("about.ctaSignup")}
+                  </Button>
                 </Link>
                 <Link to="/support">
-                  <Button variant="glass" size="lg">{t("about.ctaSupport")}</Button>
+                  <Button variant="glass" size="lg">
+                    {t("about.ctaSupport")}
+                  </Button>
                 </Link>
               </div>
             </CardContent>

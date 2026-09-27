@@ -88,9 +88,7 @@ const Track = () => {
                   {view.endedAt ? t("track.safeTitle", { name: view.name }) : t("track.endedTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {view.endedAt
-                    ? t("track.safeDesc", { time: new Date(view.endedAt).toLocaleString() })
-                    : t("track.expiredDesc")}{" "}
+                  {view.endedAt ? t("track.safeDesc", { time: new Date(view.endedAt).toLocaleString() }) : t("track.expiredDesc")}{" "}
                   {t("track.stillWorried")}
                 </CardDescription>
               </CardHeader>
@@ -101,9 +99,7 @@ const Track = () => {
             <>
               <div className="space-y-1">
                 <h1 className="text-3xl font-bold text-destructive">{t("track.needsHelp", { name: view.name })}</h1>
-                <p className="text-muted-foreground">
-                  {t("track.intro", { name: view.name })}
-                </p>
+                <p className="text-muted-foreground">{t("track.intro", { name: view.name })}</p>
               </div>
 
               {error && <p className="text-sm text-destructive">{t(error)}</p>}
@@ -155,7 +151,9 @@ const Track = () => {
                     rel="noreferrer"
                     className="flex-1"
                   >
-                    <Button variant="hero" className="w-full">{t("track.directions")}</Button>
+                    <Button variant="hero" className="w-full">
+                      {t("track.directions")}
+                    </Button>
                   </a>
                 )}
                 <a href={`tel:${EMERGENCY_NUMBER}`} className="flex-1">

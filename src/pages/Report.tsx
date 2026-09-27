@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import PageHeader from "@/components/PageHeader";
 
 const Report = () => {
   const { toast } = useToast();
@@ -35,7 +36,7 @@ const Report = () => {
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => resolve(undefined),
-        { timeout: 8000 }
+        { timeout: 8000 },
       );
     });
 
@@ -83,28 +84,16 @@ const Report = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-4xl">
-          {/* Header */}
-          <div className="text-center mb-12 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {t("report.title")}
-              </span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {t("report.intro")}
-            </p>
-          </div>
+          <PageHeader icon={FileText} title={t("report.title")} subtitle={t("report.intro")} />
 
           {/* Report Form */}
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 mb-8">
+          <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
                 {t("report.formTitle")}
               </CardTitle>
-              <CardDescription>
-                {t("report.formDesc")}
-              </CardDescription>
+              <CardDescription>{t("report.formDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,9 +173,7 @@ const Report = () => {
                     <span className="flex items-center gap-2">
                       <LocateFixed className="h-4 w-4" /> {t("report.addLocation")}
                     </span>
-                    <span className="block text-xs text-muted-foreground font-normal mt-1">
-                      {t("report.addLocationHint")}
-                    </span>
+                    <span className="block text-xs text-muted-foreground font-normal mt-1">{t("report.addLocationHint")}</span>
                   </Label>
                 </div>
 
@@ -203,9 +190,7 @@ const Report = () => {
                   <Label htmlFor="anonymous" className="cursor-pointer leading-snug">
                     {t("report.anonymous")}
                     <span className="block text-xs text-muted-foreground font-normal mt-1">
-                      {user
-                        ? t("report.anonymousHintUser")
-                        : t("report.anonymousHintGuest")}
+                      {user ? t("report.anonymousHintUser") : t("report.anonymousHintGuest")}
                     </span>
                   </Label>
                 </div>
@@ -217,28 +202,28 @@ const Report = () => {
                   </Button>
                 </div>
 
-                <p className="text-xs text-muted-foreground text-center">
-                  {t("report.storageNote")}
-                </p>
+                <p className="text-xs text-muted-foreground text-center">{t("report.storageNote")}</p>
               </form>
             </CardContent>
           </Card>
 
           {/* Support Resources */}
-          <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle>{t("report.needHelpTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {t("report.needHelpDesc")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("report.needHelpDesc")}</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/sos" className="flex-1">
-                  <Button variant="emergency" className="w-full">{t("common.emergencySos")}</Button>
+                  <Button variant="emergency" className="w-full">
+                    {t("common.emergencySos")}
+                  </Button>
                 </Link>
                 <Link to="/support" className="flex-1">
-                  <Button variant="hero" className="w-full">{t("report.chat")}</Button>
+                  <Button variant="hero" className="w-full">
+                    {t("report.chat")}
+                  </Button>
                 </Link>
               </div>
             </CardContent>

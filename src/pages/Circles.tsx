@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
+import PageHeader from "@/components/PageHeader";
 
 const CIRCLES: Array<{ name: MessageKey; category: MessageKey; icon: typeof Users; text: MessageKey }> = [
   { name: "circles.tech", category: "circles.category.corporate", icon: Building2, text: "circles.techText" },
@@ -30,14 +31,9 @@ const Circles = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t("circles.title")}</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("circles.intro")}</p>
-          </div>
+          <PageHeader icon={Users} title={t("circles.title")} subtitle={t("circles.intro")} />
 
-          <Card className="mb-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+          <Card className="mb-8 bg-primary/5 border-primary/20">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-primary" />
@@ -53,12 +49,9 @@ const Circles = () => {
             <h2 className="text-2xl font-bold mb-6">{t("circles.planned")}</h2>
             <div className="grid md:grid-cols-2 gap-6">
               {CIRCLES.map(({ name, category, icon: Icon, text }) => (
-                <Card
-                  key={name}
-                  className="group bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-[var(--glow-primary)]"
-                >
+                <Card key={name} className="group hover:border-primary/50 transition-all">
                   <CardHeader>
-                    <div className="p-3 w-fit rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 group-hover:shadow-[var(--glow-primary)] transition-all">
+                    <div className="p-3 w-fit rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 group- transition-all">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="mt-4">{t(name)}</CardTitle>
@@ -79,7 +72,7 @@ const Circles = () => {
 
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             {FEATURES.map(({ icon: Icon, title, text }) => (
-              <Card key={title} className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+              <Card key={title}>
                 <CardHeader>
                   <Icon className="h-8 w-8 text-primary mb-2" />
                   <CardTitle className="text-lg">{t(title)}</CardTitle>
@@ -91,14 +84,16 @@ const Circles = () => {
             ))}
           </div>
 
-          <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle>{t("circles.createTitle")}</CardTitle>
               <CardDescription>{t("circles.createText")}</CardDescription>
             </CardHeader>
             <CardContent>
               <Link to="/about">
-                <Button variant="hero" size="lg">{t("circles.createButton")}</Button>
+                <Button variant="hero" size="lg">
+                  {t("circles.createButton")}
+                </Button>
               </Link>
             </CardContent>
           </Card>

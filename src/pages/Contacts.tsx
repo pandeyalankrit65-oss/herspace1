@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { offlineContacts } from "@/lib/offline";
 import { useI18n } from "@/i18n";
+import LoadingRows from "@/components/LoadingRows";
 
 export type ContactStatus = "pending" | "confirmed" | "declined";
 
@@ -200,7 +201,7 @@ const Contacts = () => {
         <Navbar />
         <main className="pt-24 pb-16 px-4">
           <div className="container mx-auto max-w-md">
-            <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <Card>
               <CardHeader>
                 <CardTitle>{t("contacts.title")}</CardTitle>
                 <CardDescription>{t("contacts.loginDesc")}</CardDescription>
@@ -243,7 +244,7 @@ const Contacts = () => {
               </CardContent>
             </Card>
           )}
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+          <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-4">
               <div>
                 <CardTitle>{t("contacts.title")}</CardTitle>
@@ -254,7 +255,7 @@ const Contacts = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              {!loaded && <p className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+              {!loaded && <LoadingRows />}
               {loaded && contacts.length === 0 && <p className="text-sm text-muted-foreground">{t("contacts.empty")}</p>}
               {contacts.length > 0 && (
                 <div className="space-y-3">
@@ -296,7 +297,7 @@ const Contacts = () => {
           </Card>
 
           {confirmedCount > 0 && (
-            <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+            <Card className="bg-primary/5 border-primary/20">
               <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6">
                 <p className="text-sm">{t("contacts.testPrompt")}</p>
                 <Button variant="hero" onClick={onTestAlert} disabled={testing} className="gap-2 shrink-0">

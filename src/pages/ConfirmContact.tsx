@@ -41,25 +41,19 @@ const ConfirmContact = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-lg">
-          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+          <Card>
             {error && (
               <CardHeader>
                 <CardTitle>{t("confirm.invalidTitle")}</CardTitle>
                 <CardDescription>{error}</CardDescription>
               </CardHeader>
             )}
-            {!error && !invite && (
-              <CardContent className="pt-6 text-sm text-muted-foreground">{t("common.loading")}</CardContent>
-            )}
+            {!error && !invite && <CardContent className="pt-6 text-sm text-muted-foreground">{t("common.loading")}</CardContent>}
             {invite && (
               <>
                 <CardHeader>
-                  <CardTitle>
-                    {t("confirm.title", { name: invite.userName })}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("confirm.desc", { name: invite.userName })}
-                  </CardDescription>
+                  <CardTitle>{t("confirm.title", { name: invite.userName })}</CardTitle>
+                  <CardDescription>{t("confirm.desc", { name: invite.userName })}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {invite.status === "confirmed" && (
@@ -68,9 +62,7 @@ const ConfirmContact = () => {
                     </p>
                   )}
                   {invite.status === "declined" && (
-                    <p className="text-sm rounded-md bg-muted px-3 py-2">
-                      {t("confirm.declined", { name: invite.userName })}
-                    </p>
+                    <p className="text-sm rounded-md bg-muted px-3 py-2">{t("confirm.declined", { name: invite.userName })}</p>
                   )}
                   <div className="flex flex-col sm:flex-row gap-2">
                     {invite.status !== "confirmed" && (
