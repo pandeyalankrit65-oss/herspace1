@@ -1,0 +1,81 @@
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth, type User } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+
+const ResetPassword = () => {
+  const { token = "" } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { setSession } = useAuth();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirm) {
+      setError("Passwords don't match.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api<{ token: string; user: User }>("/api/auth/reset", { body: { token, password } });
+      setSession(res.token, res.user);
+      toast({ title: "Password updated", description: "You've been signed out on other devices." });
+      navigate("/");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="pt-24 pb-16 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
+            <CardHeader className="text-center space-y-2">
+              <CardTitle className="text-2xl">Choose a new password</CardTitle>
+              <CardDescription>At least 8 characters.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={onSubmit}>
+                <div>
+                  <label className="text-sm mb-1 block" htmlFor="password">New password</label>
+                  <Input id="password" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <div>
+                  <label className="text-sm mb-1 block" htmlFor="confirm">Confirm new password</label>
+                  <Input id="confirm" type="password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                </div>
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}{" "}
+                    {/expired|invalid/i.test(error) && <Link to="/forgot-password" className="underline">Request a new link</Link>}
+                  </p>
+                )}
+                <Button type="submit" variant="hero" className="w-full" disabled={loading}>
+                  {loading ? "Saving..." : "Set new password"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default ResetPassword;
