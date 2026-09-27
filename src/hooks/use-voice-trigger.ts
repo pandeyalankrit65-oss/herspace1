@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isNative } from "@/lib/native";
 
 // Minimal typing for the Web Speech API, which isn't in TypeScript's DOM lib.
 type RecognitionResultList = ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
@@ -39,6 +40,9 @@ export type VoiceError = "unsupported" | "blocked" | "noMic" | "network" | "othe
 export type VoiceStatus = "idle" | "listening" | "error";
 
 const RESTART_DELAY_MS = 300;
+// Android's recognizer ends after each phrase or a few seconds of silence, and doesn't always
+// say so; check this often that it's still listening.
+const NATIVE_CHECK_MS = 2000;
 
 /**
  * Listens continuously for a call for help and calls `onTrigger` once when it hears one.
@@ -54,10 +58,13 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
   const timerRef = useRef<number>();
   const onTriggerRef = useRef(onTrigger);
   onTriggerRef.current = onTrigger;
+  const nativeStopRef = useRef<(() => void) | null>(null);
 
   const cleanup = useCallback(() => {
     wantRef.current = false;
     window.clearTimeout(timerRef.current);
+    nativeStopRef.current?.();
+    nativeStopRef.current = null;
     const rec = recRef.current;
     recRef.current = null;
     if (rec) {
@@ -87,7 +94,73 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
     [cleanup]
   );
 
+  // Checks what was heard (all of the recognizer's guesses) and triggers at most once.
+  const handleHeard = useCallback(
+    (candidates: string[]) => {
+      const text = candidates[0]?.trim();
+      if (!text) return;
+      setHeard(text);
+      if (candidates.some(isTriggerPhrase)) {
+        // One trigger per session: stop listening so continued speech can't start a second alert.
+        stop();
+        onTriggerRef.current();
+      }
+    },
+    [stop]
+  );
+
+  // In the Android app, WebView has no Web Speech API: use the phone's own speech recognizer.
+  const startNative = useCallback(async () => {
+    const { SpeechRecognition } = await import("@capacitor-community/speech-recognition");
+    const { available } = await SpeechRecognition.available().catch(() => ({ available: false }));
+    if (!available) return fail("unsupported");
+    let permission = await SpeechRecognition.checkPermissions().catch(() => null);
+    if (permission?.speechRecognition !== "granted") permission = await SpeechRecognition.requestPermissions().catch(() => null);
+    if (permission?.speechRecognition !== "granted") return fail("blocked");
+    if (!wantRef.current) return;
+
+    const language = lang === "hi" ? "hi-IN" : navigator.language || "en-IN";
+    let lastLaunch = 0;
+    const launch = () => {
+      // Starting again while the previous session is still closing makes the recognizer busy.
+      if (!wantRef.current || Date.now() - lastLaunch < 1000) return;
+      lastLaunch = Date.now();
+      SpeechRecognition.start({ language, partialResults: true, popup: false, maxResults: 5 }).catch((err: Error) => {
+        if (/permission/i.test(err?.message || "")) fail("blocked");
+      });
+    };
+
+    const handles = await Promise.all([
+      SpeechRecognition.addListener("partialResults", ({ matches }) => handleHeard(matches ?? [])),
+      SpeechRecognition.addListener("listeningState", ({ status }) => {
+        if (status === "stopped") timerRef.current = window.setTimeout(launch, RESTART_DELAY_MS);
+      }),
+    ]);
+    const check = window.setInterval(() => {
+      SpeechRecognition.isListening()
+        .then(({ listening }) => !listening && launch())
+        .catch(() => {});
+    }, NATIVE_CHECK_MS);
+    const stopNative = () => {
+      window.clearInterval(check);
+      handles.forEach((h) => h.remove());
+      SpeechRecognition.stop().catch(() => {});
+    };
+    if (!wantRef.current) return stopNative(); // stopped while we were asking for permission
+    nativeStopRef.current = stopNative;
+    launch();
+  }, [lang, fail, handleHeard]);
+
   const start = useCallback(() => {
+    if (isNative) {
+      cleanup();
+      setError(null);
+      setHeard("");
+      wantRef.current = true;
+      setStatus("listening");
+      startNative().catch((err) => fail("other", err instanceof Error ? err.message : String(err)));
+      return;
+    }
     const Ctor = getRecognition();
     if (!Ctor) return fail("unsupported");
     cleanup();
@@ -107,14 +180,7 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
       rec.onresult = (e) => {
         let text = "";
         for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
-        text = text.trim();
-        if (!text) return;
-        setHeard(text);
-        if (isTriggerPhrase(text)) {
-          // One trigger per session: stop listening so continued speech can't start a second alert.
-          stop();
-          onTriggerRef.current();
-        }
+        handleHeard([text]);
       };
 
       rec.onerror = (e) => {
@@ -143,7 +209,7 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
 
     launch();
     setStatus("listening");
-  }, [lang, cleanup, fail, stop]);
+  }, [lang, cleanup, fail, handleHeard, startNative]);
 
   // Stop when leaving the page; restart in the new language if it changes mid-session.
   useEffect(() => cleanup, [cleanup]);
@@ -152,5 +218,5 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
-  return { supported: Boolean(getRecognition()), status, error, errorDetail, heard, start, stop };
+  return { supported: isNative || Boolean(getRecognition()), status, error, errorDetail, heard, start, stop };
 }

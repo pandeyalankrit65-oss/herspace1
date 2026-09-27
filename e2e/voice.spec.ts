@@ -103,3 +103,12 @@ test("in Hindi it listens in hi-IN and responds to बचाओ", async ({ page 
   await page.evaluate(() => (window as never as { __speech: Speech }).__speech.say("बचाओ"));
   await expect(page.getByText("अलर्ट भेजा जा रहा है...")).toBeVisible();
 });
+
+test("the listening button's label fits inside it on small screens", async ({ page }) => {
+  const button = page.getByRole("button", { name: /Listening for/ });
+  const box = (await button.boundingBox())!;
+  const icon = (await button.locator("svg").boundingBox())!;
+  const fits = await button.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+  expect(fits).toBe(true);
+  expect(icon.x).toBeGreaterThanOrEqual(box.x);
+});

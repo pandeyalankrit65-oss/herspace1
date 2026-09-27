@@ -675,6 +675,13 @@ const en = {
   "mod.failed": "Couldn't update the report",
   "mod.forbidden": "Only HerSpace moderators can see this page.",
 
+  // Shake trigger
+  "sos.shakeLabel": "Shake to start SOS",
+  "sos.shakeHint": "Shake your phone hard 3 times to start the countdown, which you can cancel. Works while this page is open and the screen is on.",
+
+  // Voice trigger in the app
+  "sos.voiceUnsupportedApp": "This phone has no speech recognition service. Turn on Google's speech services in your phone's settings, or use the SOS button.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

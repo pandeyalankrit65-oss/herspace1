@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer } from "lucide-react";
+import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
+import { isNative } from "@/lib/native";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import FakeCall from "@/components/FakeCall";
@@ -15,6 +16,8 @@ import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
+import { useShakeTrigger } from "@/hooks/use-shake-trigger";
+import { Switch } from "@/components/ui/switch";
 import type { MessageKey } from "@/i18n/en";
 
 type T = (key: MessageKey, vars?: Record<string, string | number>) => string;
@@ -174,8 +177,9 @@ const SOS = () => {
   }, []);
 
   const voice = useVoiceTrigger({ lang, onTrigger: startCountdown });
+  const shake = useShakeTrigger(startCountdown);
   const VOICE_ERRORS = {
-    unsupported: "sos.voiceUnsupportedDesc",
+    unsupported: isNative ? "sos.voiceUnsupportedApp" : "sos.voiceUnsupportedDesc",
     blocked: "sos.micBlockedDesc",
     noMic: "sos.voiceNoMic",
     network: "sos.voiceNetwork",
@@ -286,10 +290,10 @@ const SOS = () => {
                   variant="glass"
                   size="lg"
                   onClick={voice.status === "listening" ? voice.stop : voice.start}
-                  className="gap-2"
+                  className="h-auto min-h-11 gap-2 whitespace-normal py-2 text-center"
                   aria-pressed={voice.status === "listening"}
                 >
-                  {voice.status === "listening" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  {voice.status === "listening" ? <MicOff className="h-5 w-5 shrink-0" /> : <Mic className="h-5 w-5 shrink-0" />}
                   {voice.status === "listening" ? t("sos.voiceListening") : t("sos.voiceStart")}
                 </Button>
               </div>
@@ -306,6 +310,18 @@ const SOS = () => {
                 <p role="alert" className="text-sm text-destructive">
                   {t(VOICE_ERRORS[voice.error], { error: voice.errorDetail })}
                 </p>
+              )}
+              {shake.supported && (
+                <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
+                  <Vibrate className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="shake-toggle" className="text-sm font-semibold">
+                      {t("sos.shakeLabel")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">{t("sos.shakeHint")}</p>
+                  </div>
+                  <Switch id="shake-toggle" checked={shake.enabled} onCheckedChange={shake.setEnabled} />
+                </div>
               )}
             </CardContent>
           </Card>

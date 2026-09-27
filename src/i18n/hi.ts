@@ -676,6 +676,13 @@ const hi: Record<MessageKey, string> = {
   "mod.failed": "रिपोर्ट अपडेट नहीं हो सकी",
   "mod.forbidden": "यह पेज केवल HerSpace मॉडरेटर देख सकते हैं।",
 
+  // Shake trigger
+  "sos.shakeLabel": "हिलाकर SOS शुरू करें",
+  "sos.shakeHint": "काउंटडाउन शुरू करने के लिए फ़ोन को ज़ोर से 3 बार हिलाएं, जिसे आप रद्द कर सकती हैं। यह तब काम करता है जब यह पेज खुला हो और स्क्रीन चालू हो।",
+
+  // Voice trigger in the app
+  "sos.voiceUnsupportedApp": "इस फ़ोन में आवाज़ पहचानने की सेवा नहीं है। फ़ोन की सेटिंग में Google की स्पीच सेवाएं चालू करें, या SOS बटन इस्तेमाल करें।",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",
