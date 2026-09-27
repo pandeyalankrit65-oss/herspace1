@@ -553,6 +553,12 @@ const en = {
   "notFound.home": "Go to home",
   "legal.englishOnly": "",
 
+  // Android app: persistent notification while location is shared in the background
+  "native.liveTitle": "HerSpace is sharing your location",
+  "native.liveMessage": "Your emergency contacts can see where you are. Open HerSpace and tap \"I'm safe\" to stop.",
+  "native.timerTitle": "Safety timer is running",
+  "native.timerMessage": "HerSpace keeps your last known location up to date in case your contacts need it.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

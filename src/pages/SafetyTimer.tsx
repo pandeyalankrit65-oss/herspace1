@@ -12,6 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import { api, ApiError } from "@/lib/api";
 import type { Contact } from "./Contacts";
+import { watchLocation } from "@/lib/location";
+import { cancelTimerWarning, scheduleTimerWarning } from "@/lib/timerNotifications";
 
 type CheckIn = {
   id: number;
@@ -99,21 +101,29 @@ const SafetyTimer = () => {
   }, [checkIn, load]);
 
   // While active and open, keep the last known location fresh for the alert.
+  // In the Android app this keeps going with the screen locked (showing a notification).
   const activeId = checkIn?.status === "active" ? checkIn.id : null;
   useEffect(() => {
-    if (!activeId || !navigator.geolocation) return;
+    if (!activeId) return;
     let last = 0;
-    const watch = navigator.geolocation.watchPosition(
+    return watchLocation(
       (pos) => {
         if (Date.now() - last < LOCATION_EVERY_MS) return;
         last = Date.now();
-        api(`/api/check-ins/${activeId}/location`, { body: { coords: coordsOf(pos) } }).catch(() => {});
+        api(`/api/check-ins/${activeId}/location`, { body: { coords: pos } }).catch(() => {});
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 30_000 }
+      { title: t("native.timerTitle"), message: t("native.timerMessage") }
     );
-    return () => navigator.geolocation.clearWatch(watch);
+    // t is only used for the notification text when the watch starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
+
+  // App only: a system notification 2 minutes before the end, even if the app is closed.
+  const activeDueAt = checkIn?.status === "active" ? checkIn.dueAt : null;
+  useEffect(() => {
+    if (activeId && activeDueAt) scheduleTimerWarning(activeId, activeDueAt, t("timer.notificationTitle"), t("timer.notificationBody"));
+  }, [activeId, activeDueAt, t]);
 
   const msLeft = checkIn ? new Date(checkIn.dueAt).getTime() - now : 0;
   const endingSoon = checkIn?.status === "active" && msLeft <= WARN_BEFORE_MS;
@@ -163,6 +173,7 @@ const SafetyTimer = () => {
     setBusy(true);
     try {
       const res = await api<{ wasAlerted: boolean }>(`/api/check-ins/${checkIn.id}/complete`, { method: "POST" });
+      cancelTimerWarning(checkIn.id);
       setCheckIn(null);
       toast({ title: t("timer.safeTitle"), description: t(res.wasAlerted ? "timer.safeAfterAlertDesc" : "timer.safeDesc") });
     } catch (err) {

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import { watchLocation, type Position } from "@/lib/location";
 
 export type LiveShare = { id: number; expiresAt: string; url?: string };
 
@@ -12,10 +13,10 @@ const SEND_EVERY_MS = 20_000;
 const SEND_IF_MOVED_M = 30;
 
 // Rough distance in metres; plenty accurate for "has she moved?".
-function metresBetween(a: GeolocationCoordinates, b: GeolocationCoordinates) {
-  const dLat = ((b.latitude - a.latitude) * Math.PI) / 180;
-  const dLng = ((b.longitude - a.longitude) * Math.PI) / 180;
-  const x = dLng * Math.cos((((a.latitude + b.latitude) / 2) * Math.PI) / 180);
+function metresBetween(a: Position, b: Position) {
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const x = dLng * Math.cos((((a.lat + b.lat) / 2) * Math.PI) / 180);
   return Math.sqrt(x * x + dLat * dLat) * 6_371_000;
 }
 
@@ -31,13 +32,9 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
   // Holds a message key, so it re-renders in the current language.
   const [error, setError] = useState<"" | "live.noGeo" | "live.updateFailed" | "live.permission">("");
   const [stopping, setStopping] = useState(false);
-  const lastRef = useRef<{ at: number; coords: GeolocationCoordinates } | null>(null);
+  const lastRef = useRef<{ at: number; coords: Position } | null>(null);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setError("live.noGeo");
-      return;
-    }
     let cancelled = false;
     let wakeLock: WakeLockSentinel | null = null;
     const nav = navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<WakeLockSentinel> } };
@@ -49,16 +46,15 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
       })
       .catch(() => {});
 
-    const watch = navigator.geolocation.watchPosition(
+    // In the Android app this keeps running with the screen locked (with a notification).
+    const stop = watchLocation(
       async (pos) => {
         const last = lastRef.current;
-        const due = !last || Date.now() - last.at >= SEND_EVERY_MS || metresBetween(last.coords, pos.coords) >= SEND_IF_MOVED_M;
+        const due = !last || Date.now() - last.at >= SEND_EVERY_MS || metresBetween(last.coords, pos) >= SEND_IF_MOVED_M;
         if (!due) return;
-        lastRef.current = { at: Date.now(), coords: pos.coords };
+        lastRef.current = { at: Date.now(), coords: pos };
         try {
-          await api(`/api/location-shares/${share.id}/location`, {
-            body: { coords: { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy } },
-          });
+          await api(`/api/location-shares/${share.id}/location`, { body: { coords: pos } });
           if (!cancelled) {
             setLastSent(new Date());
             setError("");
@@ -68,15 +64,17 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
           else if (!cancelled) setError("live.updateFailed");
         }
       },
-      () => !cancelled && setError("live.permission"),
-      { enableHighAccuracy: true, maximumAge: 10_000 }
+      (err) => !cancelled && setError(err === "denied" ? "live.permission" : "live.noGeo"),
+      { title: t("native.liveTitle"), message: t("native.liveMessage") }
     );
 
     return () => {
       cancelled = true;
-      navigator.geolocation.clearWatch(watch);
+      stop();
       wakeLock?.release().catch(() => {});
     };
+    // t is only used for the notification text when the watch starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [share.id, onEnded]);
 
   const stop = async () => {

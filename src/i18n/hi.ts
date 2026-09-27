@@ -554,6 +554,12 @@ const hi: Record<MessageKey, string> = {
   "notFound.home": "होम पर जाएं",
   "legal.englishOnly": "यह पेज अभी सिर्फ़ अंग्रेज़ी में उपलब्ध है। अंग्रेज़ी संस्करण ही मान्य है।",
 
+  // Android app: persistent notification while location is shared in the background
+  "native.liveTitle": "HerSpace आपकी लोकेशन शेयर कर रहा है",
+  "native.liveMessage": "आपके आपातकालीन संपर्क देख सकते हैं कि आप कहां हैं। रोकने के लिए HerSpace खोलें और \"मैं सुरक्षित हूं\" दबाएं।",
+  "native.timerTitle": "सुरक्षा टाइमर चल रहा है",
+  "native.timerMessage": "ज़रूरत पड़ने पर आपके संपर्कों के लिए HerSpace आपकी आखिरी लोकेशन अपडेट रखता है।",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

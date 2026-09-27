@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="sos"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_sos"
+        android:shortcutShortLabel="@string/shortcut_sos_short"
+        android:shortcutLongLabel="@string/shortcut_sos_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.herspace"
+            android:targetClass="app.herspace.MainActivity"
+            android:data="herspace://sos" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="timer"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_timer"
+        android:shortcutShortLabel="@string/shortcut_timer_short"
+        android:shortcutLongLabel="@string/shortcut_timer_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="app.herspace"
+            android:targetClass="app.herspace.MainActivity"
+            android:data="herspace://timer" />
+    </shortcut>
+</shortcuts>

@@ -1,3 +1,5 @@
+import { apiUrl } from "./native";
+
 // The session lives in an HttpOnly cookie set by the server, so page scripts never see it.
 // Every request carries X-Requested-With, which the server requires on state-changing
 // requests to block cross-site request forgery.
@@ -14,7 +16,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
 
   let res: Response;
   try {
-    res = await fetch(path, {
+    res = await fetch(apiUrl(path), {
       method: options.method || (options.body !== undefined ? "POST" : "GET"),
       headers,
       credentials: "same-origin",

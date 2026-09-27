@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HerSpace</string>
+    <string name="title_activity_main">HerSpace</string>
+    <string name="package_name">app.herspace</string>
+    <string name="custom_url_scheme">app.herspace</string>
+
+    <string name="shortcut_sos_short">SOS</string>
+    <string name="shortcut_sos_long">Emergency SOS</string>
+    <string name="shortcut_timer_short">Safety timer</string>
+    <string name="shortcut_timer_long">Start a safety timer</string>
+
+    <!-- Background location (live sharing and safety timer) -->
+    <string name="capacitor_background_geolocation_notification_channel_name">Location sharing</string>
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_herspace</string>
+    <string name="capacitor_background_geolocation_notification_color">#A855F7</string>
+</resources>

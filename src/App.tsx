@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { I18nProvider } from "./i18n";
 import ErrorBoundary from "./components/ErrorBoundary";
+import NativeBridge from "./components/NativeBridge";
 // Home and SOS ship in the main bundle so the emergency page never waits on a download.
 import Index from "./pages/Index";
 import SOS from "./pages/SOS";
@@ -39,6 +40,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <BrowserRouter>
+              <NativeBridge />
               <Suspense fallback={<div className="min-h-screen" />}>
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -57,7 +59,7 @@ const App = () => (
                   <Route path="/reset-password/:token" element={<ResetPassword />} />
                   <Route path="/account" element={<Account />} />
                   <Route path="/track/:token" element={<Track />} />
-                <Route path="/timer" element={<SafetyTimer />} />
+                  <Route path="/timer" element={<SafetyTimer />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -77,6 +77,31 @@ The web app reads two settings from a root `.env` file (see `.env.example`). `VI
 
 Offline support uses a service worker (`public/sw.js`) that is only registered in production builds. Try it with `npm run build && npx vite preview`.
 
+## Android app
+
+The Android app (`android/`, built with [Capacitor](https://capacitorjs.com)) wraps the same web app and adds what a browser can't do:
+
+- **Location with the screen locked.** During live sharing and safety timers, location keeps updating in the background. Android shows a persistent notification while it does.
+- **Timer reminders as system notifications.** The "2 minutes left" warning is scheduled with the system, so it arrives even if the app is closed.
+- **Shortcuts.** Long-press the icon for **Emergency SOS** or **Safety timer** (these open `herspace://sos` and `herspace://timer`).
+- **Android integration.** The back button behaves as expected, `tel:` and `sms:` links open the dialler and messaging app, and the app has its own icon and splash screen.
+
+API calls go through Android's native HTTP stack (CapacitorHttp): no CORS, cookies are kept in the native store, and requests aren't throttled in the background. The app needs the API's full address in `VITE_API_BASE_URL`. `.env.android` points it at `http://10.0.2.2:3001`, which is your PC as seen from the emulator. Plain HTTP is allowed only to that address, and only in debug builds.
+
+Not yet in the app: the voice trigger (Android's WebView has no speech recognition), and iOS.
+
+### Building
+
+Requires JDK 21 and the Android SDK (platform 36, build-tools 36.1). Android Studio installs both.
+
+```sh
+npm run build:android            # build the web app for Android and copy it into android/
+npm run android:apk              # ...and build android/app/build/outputs/apk/debug/app-debug.apk
+npx cap open android             # or open the project in Android Studio
+```
+
+For a real phone, deploy the API over HTTPS, set `VITE_API_BASE_URL` to it, and build a signed release in Android Studio (Build → Generate Signed Bundle/APK).
+
 ## Tests and CI
 
 ```sh

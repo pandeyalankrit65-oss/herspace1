@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="shortcut_sos_short">SOS</string>
+    <string name="shortcut_sos_long">आपातकालीन SOS</string>
+    <string name="shortcut_timer_short">सुरक्षा टाइमर</string>
+    <string name="shortcut_timer_long">सुरक्षा टाइमर लगाएं</string>
+    <string name="capacitor_background_geolocation_notification_channel_name">लोकेशन शेयरिंग</string>
+</resources>

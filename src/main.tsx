@@ -1,11 +1,13 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { isNative } from "./lib/native";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Offline support (production only; a service worker would fight Vite's dev server).
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
+// (Not in the Android app: its pages are already stored on the phone.)
+if (import.meta.env.PROD && !isNative && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
