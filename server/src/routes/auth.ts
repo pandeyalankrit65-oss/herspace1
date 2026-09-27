@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
-import { bearerToken, createSession, deleteAllSessions, deleteSession, hashPassword, requireAuth, verifyPassword } from '../auth';
+import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
 import { emailConfigured, sendEmail } from '../messaging';
 import { rateLimit } from '../rateLimit';
 import { appUrl, now, parse, passwordSchema, randomToken, sha256 } from '../util';
@@ -29,7 +29,8 @@ authRouter.post('/signup', authLimiter, (req, res) => {
     .prepare('INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)')
     .run(body.name, body.email, hashPassword(body.password), now());
   const id = Number(result.lastInsertRowid);
-  res.status(201).json({ token: createSession(id), user: { id, name: body.name, email: body.email } });
+  startSession(res, id);
+  res.status(201).json({ user: { id, name: body.name, email: body.email } });
 });
 
 authRouter.post('/login', authLimiter, (req, res) => {
@@ -41,12 +42,12 @@ authRouter.post('/login', authLimiter, (req, res) => {
   if (!user || !verifyPassword(body.password, user.password_hash)) {
     return res.status(401).json({ error: 'Incorrect email or password.' });
   }
-  res.json({ token: createSession(user.id), user: { id: user.id, name: user.name, email: user.email } });
+  startSession(res, user.id);
+  res.json({ user: { id: user.id, name: user.name, email: user.email } });
 });
 
 authRouter.post('/logout', (req, res) => {
-  const token = bearerToken(req);
-  if (token) deleteSession(token);
+  endSession(req, res);
   res.json({ success: true });
 });
 
@@ -96,5 +97,6 @@ authRouter.post('/reset', authLimiter, (req, res) => {
   db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(row.user_id);
   deleteAllSessions(row.user_id);
   const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(row.user_id);
-  res.json({ token: createSession(row.user_id), user });
+  startSession(res, row.user_id);
+  res.json({ user });
 });

@@ -13,7 +13,7 @@ const ResetPassword = () => {
   const { token = "" } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setSession } = useAuth();
+  const { signedIn } = useAuth();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,8 +28,8 @@ const ResetPassword = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await api<{ token: string; user: User }>("/api/auth/reset", { body: { token, password } });
-      setSession(res.token, res.user);
+      const res = await api<{ user: User }>("/api/auth/reset", { body: { token, password } });
+      signedIn(res.user);
       toast({ title: "Password updated", description: "You've been signed out on other devices." });
       navigate("/");
     } catch (err) {

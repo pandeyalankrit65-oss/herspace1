@@ -47,14 +47,44 @@ export function deleteAllSessions(userId: number) {
   db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
 }
 
-export function bearerToken(req: Request): string | undefined {
-  const header = req.headers.authorization;
-  return header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+export const SESSION_COOKIE = 'herspace_session';
+// Browsers only send this header when our own frontend sets it, and a cross-site page can't
+// add it without a CORS preflight we'd reject. Required on state-changing requests.
+export const CSRF_HEADER = 'x-requested-with';
+export const CSRF_VALUE = 'HerSpace';
+
+const cookieOptions = () => ({
+  httpOnly: true, // page scripts can't read it, so an XSS bug can't steal the session
+  sameSite: 'lax' as const,
+  secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : process.env.NODE_ENV === 'production',
+  path: '/',
+});
+
+// Creates a session and hands it to the browser as a cookie.
+export function startSession(res: Response, userId: number) {
+  const token = createSession(userId);
+  res.cookie(SESSION_COOKIE, token, { ...cookieOptions(), maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000 });
 }
 
-// Attaches req.user when a valid session token is present; never rejects.
+export function endSession(req: Request, res: Response) {
+  const token = sessionToken(req);
+  if (token) deleteSession(token);
+  res.clearCookie(SESSION_COOKIE, cookieOptions());
+}
+
+export function sessionToken(req: Request): string | undefined {
+  const header = req.headers.cookie;
+  if (!header) return undefined;
+  for (const part of header.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name === SESSION_COOKIE) return decodeURIComponent(rest.join('='));
+  }
+  return undefined;
+}
+
+// Attaches req.user when a valid session cookie is present; never rejects.
 export function loadUser(req: Request, _res: Response, next: NextFunction) {
-  const token = bearerToken(req);
+  const token = sessionToken(req);
   if (token) {
     const row = db
       .prepare(
@@ -65,6 +95,17 @@ export function loadUser(req: Request, _res: Response, next: NextFunction) {
     if (row && new Date(row.expires_at) > new Date()) {
       req.user = { id: row.id, name: row.name, email: row.email };
     }
+  }
+  next();
+}
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+// Blocks cross-site request forgery: a state-changing request that carries the session
+// cookie must also carry our custom header.
+export function csrfGuard(req: Request, res: Response, next: NextFunction) {
+  if (!SAFE_METHODS.has(req.method) && sessionToken(req) && req.get(CSRF_HEADER) !== CSRF_VALUE) {
+    return res.status(403).json({ error: 'Request blocked: missing X-Requested-With header.' });
   }
   next();
 }

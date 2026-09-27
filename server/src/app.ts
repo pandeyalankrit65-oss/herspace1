@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import { z } from 'zod';
-import { loadUser } from './auth';
+import { csrfGuard, loadUser } from './auth';
 import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
 import { supportReply } from './chat';
 import { rateLimit } from './rateLimit';
@@ -24,10 +24,11 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'no-referrer');
   next();
 });
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 // Twilio posts form-encoded callbacks; mount before the JSON parser.
 app.use('/api/twilio', twilioRouter);
 app.use(express.json({ limit: '100kb' }));
+app.use(csrfGuard);
 app.use(loadUser);
 
 app.get('/api/health', (_req, res) => {

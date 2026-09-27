@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
-import { createSession, deleteAllSessions, hashPassword, requireAuth, verifyPassword } from '../auth';
+import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
 import { rateLimit } from '../rateLimit';
 import { parse, passwordSchema } from '../util';
 
@@ -24,7 +24,8 @@ accountRouter.post('/password', passwordLimiter, (req, res) => {
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(body.newPassword), userId);
   // Sign out other devices; this one gets a fresh session.
   deleteAllSessions(userId);
-  res.json({ token: createSession(userId) });
+  startSession(res, userId);
+  res.json({ success: true });
 });
 
 accountRouter.get('/export', (req, res) => {
@@ -63,5 +64,6 @@ accountRouter.delete('/', passwordLimiter, (req, res) => {
     db.exec('ROLLBACK');
     throw err;
   }
+  endSession(req, res);
   res.json({ success: true });
 });

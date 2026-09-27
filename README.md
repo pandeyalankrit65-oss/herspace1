@@ -17,7 +17,7 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | **Safe Map moderation** | Anyone can flag a point as false or abusive. Points flagged by 3 different people are hidden. |
 | **Works offline, installable** | After the first visit, the app (and especially the SOS page) opens with no connection. Offline, SOS can't send alerts itself, but it shows your contacts with one-tap **Text** (location included) and **Call** buttons, which work over the phone network. It can be installed to the home screen, with an SOS shortcut. |
 | **Privacy Policy & Terms** (`/privacy`, `/terms`) | Written to match exactly what the app collects and shares. |
-| **Accounts** (`/account`) | Email + password with password reset by email, password change (signs out other devices), download of all your data, and account deletion. Passwords are hashed with scrypt, and session tokens are stored hashed. Login, SOS, invites, reports and chat are rate-limited. SOS locations are deleted automatically after 90 days. |
+| **Accounts** (`/account`) | Email + password with password reset by email, password change (signs out other devices), download of all your data, and account deletion. Passwords are hashed with scrypt. Sessions live in an HttpOnly, SameSite cookie that page scripts can't read, and are stored hashed on the server. Changing requests must carry an `X-Requested-With` header, which blocks cross-site request forgery. Login, SOS, invites, reports and chat are rate-limited. SOS locations are deleted automatically after 90 days. |
 
 ## Not built yet
 
@@ -59,6 +59,7 @@ Open http://localhost:8080. The Vite dev server forwards `/api` requests to the 
 | `PUBLIC_API_URL` | Public URL of the API. Enables Twilio delivery-status callbacks (signature-verified), which turn "sent" into "delivered" or "answered". |
 | `APP_URL` | Frontend URL used in invite and password-reset links (default `http://localhost:8080`). |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Sends password-reset emails through [Resend](https://resend.com). Without them, reset links are printed to the server console (development only). |
+| `COOKIE_SECURE` | Force the `Secure` cookie flag on or off (default: on when `NODE_ENV=production`). The frontend and API must be served from the same origin, e.g. behind one reverse proxy. |
 | `TRUST_PROXY` | Number of reverse proxies in front of the API in production, so rate limits see real client IPs. |
 | `SOS_RETENTION_DAYS`, `MAP_FLAG_THRESHOLD` | Data retention (default 90 days) and flags needed to hide a map point (default 3). |
 | `ANTHROPIC_API_KEY` | Powers the AI support chat. Without it, the chat uses scripted fallback replies. |

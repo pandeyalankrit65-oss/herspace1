@@ -16,16 +16,24 @@ before(async () => {
 });
 after(() => server.close());
 
-async function call(path: string, { body, token, method }: { body?: unknown; token?: string; method?: string } = {}) {
+// Sessions live in an HttpOnly cookie; `token` is that cookie's value. The CSRF header is sent
+// by default, as the real frontend does.
+async function call(
+  path: string,
+  { body, token, method, csrf = true }: { body?: unknown; token?: string; method?: string; csrf?: boolean } = {}
+) {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token) headers.Cookie = `herspace_session=${token}`;
+  if (csrf) headers['X-Requested-With'] = 'HerSpace';
   const res = await fetch(base + path, {
     method: method || (body !== undefined ? 'POST' : 'GET'),
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  return { status: res.status, data: (await res.json().catch(() => ({}))) as any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  const setCookie = res.headers.getSetCookie().find((c) => c.startsWith('herspace_session='));
+  const cookieToken = setCookie ? decodeURIComponent(setCookie.split(';')[0].split('=')[1]) : undefined;
+  return { status: res.status, data: (await res.json().catch(() => ({}))) as any, token: cookieToken || undefined, setCookie }; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 let counter = 0;
@@ -33,7 +41,7 @@ async function newUser(name = 'Asha') {
   const email = `user${++counter}@example.com`;
   const res = await call('/auth/signup', { body: { name, email, password: 'password123' } });
   assert.equal(res.status, 201);
-  return { token: res.data.token as string, email };
+  return { token: res.token as string, email };
 }
 
 describe('auth', () => {
@@ -48,9 +56,26 @@ describe('auth', () => {
     assert.equal((await call('/auth/login', { body: { email, password: 'wrong-password' } })).status, 401);
     const login = await call('/auth/login', { body: { email: email.toUpperCase(), password: 'password123' } });
     assert.equal(login.status, 200);
-    assert.equal((await call('/auth/me', { token: login.data.token })).data.user.email, email);
-    await call('/auth/logout', { method: 'POST', token: login.data.token });
-    assert.equal((await call('/auth/me', { token: login.data.token })).status, 401);
+    assert.equal((await call('/auth/me', { token: login.token })).data.user.email, email);
+    assert.equal(login.data.token, undefined, 'session token is never exposed to page scripts');
+    const logout = await call('/auth/logout', { method: 'POST', token: login.token });
+    assert.match(logout.setCookie ?? '', /herspace_session=;/, 'logout clears the cookie');
+    assert.equal((await call('/auth/me', { token: login.token })).status, 401);
+  });
+
+  test('session cookie is HttpOnly and SameSite', async () => {
+    const res = await call('/auth/signup', { body: { name: 'C', email: 'cookie@example.com', password: 'password123' } });
+    assert.match(res.setCookie!, /HttpOnly/);
+    assert.match(res.setCookie!, /SameSite=Lax/);
+    assert.match(res.setCookie!, /Path=\//);
+  });
+
+  test('cookie-authenticated writes require the CSRF header', async () => {
+    const { token } = await newUser();
+    const blocked = await call('/contacts', { token, csrf: false, body: { name: 'Mom', phone: '+919876500000' } });
+    assert.equal(blocked.status, 403);
+    assert.equal((await call('/contacts', { token, csrf: false })).status, 200, 'reads are allowed');
+    assert.equal((await call('/sos', { csrf: false, body: {} })).status, 201, 'anonymous SOS never needs it');
   });
 
   test('password reset flow', async () => {
@@ -192,12 +217,12 @@ describe('account', () => {
 
   test('changing password signs out other sessions', async () => {
     const { token, email } = await newUser();
-    const other = (await call('/auth/login', { body: { email, password: 'password123' } })).data.token;
+    const other = (await call('/auth/login', { body: { email, password: 'password123' } })).token;
     assert.equal((await call('/account/password', { token, body: { currentPassword: 'nope', newPassword: 'newpassword1' } })).status, 401);
     const changed = await call('/account/password', { token, body: { currentPassword: 'password123', newPassword: 'newpassword1' } });
     assert.equal(changed.status, 200);
     assert.equal((await call('/auth/me', { token: other })).status, 401);
-    assert.equal((await call('/auth/me', { token: changed.data.token })).status, 200);
+    assert.equal((await call('/auth/me', { token: changed.token })).status, 200);
   });
 });
 

@@ -1,21 +1,6 @@
-const TOKEN_KEY = "herspace_token";
-
-export const getToken = () => {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-};
-
-export const setToken = (token: string | null) => {
-  try {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // Storage unavailable (private mode); the session just won't persist.
-  }
-};
+// The session lives in an HttpOnly cookie set by the server, so page scripts never see it.
+// Every request carries X-Requested-With, which the server requires on state-changing
+// requests to block cross-site request forgery.
 
 export class ApiError extends Error {
   constructor(message: string, public status: number) {
@@ -24,9 +9,7 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const headers: Record<string, string> = {};
-  const token = getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers: Record<string, string> = { "X-Requested-With": "HerSpace" };
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
 
   let res: Response;
@@ -34,6 +17,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     res = await fetch(path, {
       method: options.method || (options.body !== undefined ? "POST" : "GET"),
       headers,
+      credentials: "same-origin",
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
   } catch {

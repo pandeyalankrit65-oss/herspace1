@@ -12,7 +12,7 @@ import { api } from "@/lib/api";
 type Report = { id: number; incidentType: string; description: string; location: string | null; date: string | null; createdAt: string };
 
 const Account = () => {
-  const { user, loading, setSession, clearSession } = useAuth();
+  const { user, loading, clearSession } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [reports, setReports] = useState<Report[] | null>(null);
@@ -50,8 +50,8 @@ const Account = () => {
     e.preventDefault();
     setChanging(true);
     try {
-      const res = await api<{ token: string }>("/api/account/password", { body: { currentPassword, newPassword } });
-      setSession(res.token);
+      // The server swaps in a fresh session cookie and signs out other devices.
+      await api("/api/account/password", { body: { currentPassword, newPassword } });
       setCurrentPassword("");
       setNewPassword("");
       toast({ title: "Password changed", description: "You've been signed out on other devices." });
