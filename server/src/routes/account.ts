@@ -45,7 +45,10 @@ accountRouter.get('/export', (req, res) => {
     deliveries: db.prepare('SELECT contact_name AS name, phone, channel, status FROM sos_deliveries WHERE sos_id = ?').all(e.id),
   }));
   res.setHeader('Content-Disposition', 'attachment; filename="herspace-data.json"');
-  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
+  const locationShares = db
+    .prepare('SELECT created_at AS createdAt, expires_at AS expiresAt, ended_at AS endedAt, lat, lng, updated_at AS updatedAt FROM location_shares WHERE user_id = ?')
+    .all(userId);
+  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
 });
 
 accountRouter.delete('/', passwordLimiter, (req, res) => {

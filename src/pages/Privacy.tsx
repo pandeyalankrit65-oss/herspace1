@@ -20,7 +20,9 @@ const Privacy = () => (
         </li>
         <li>
           <strong>SOS alerts:</strong> when you press SOS we store the time, your location if you allow location access, and
-          whether each message or call was delivered.
+          whether each message or call was delivered. If you're logged in, your contacts also get a private live-location
+          link: while the SOS page is open we keep only your latest position, and delete it as soon as you tap "I'm safe" or
+          after 4 hours.
         </li>
         <li>
           <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose

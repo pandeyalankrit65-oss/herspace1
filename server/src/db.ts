@@ -95,6 +95,24 @@ const migrations: string[] = [
     PRIMARY KEY (report_id, flagger)
   );
   `,
+  `
+  -- Live location shared with emergency contacts after an SOS, via a secret link.
+  -- Only the latest position is kept, and it's cleared when sharing stops.
+  CREATE TABLE location_shares (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sos_id INTEGER REFERENCES sos_events(id) ON DELETE SET NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    ended_at TEXT,
+    lat REAL,
+    lng REAL,
+    accuracy REAL,
+    updated_at TEXT
+  );
+  CREATE INDEX location_shares_user ON location_shares(user_id);
+  `,
 ];
 
 function migrate() {
@@ -128,4 +146,7 @@ export function purgeExpiredData() {
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM password_resets WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM sos_events WHERE created_at < ?').run(sosCutoff);
+  // Finished shares are kept a day so a contact opening the link late sees "ended", not "not found".
+  const shareCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  db.prepare('DELETE FROM location_shares WHERE COALESCE(ended_at, expires_at) < ?').run(shareCutoff);
 }

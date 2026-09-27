@@ -9,6 +9,7 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | Feature | What it does |
 |---|---|
 | **Emergency SOS** (`/sos`) | Starts a 3-second countdown you can cancel, then texts your confirmed emergency contacts a map link to your current location. It can also ring them with an automated voice call (optional). It shows what happened for each contact, and upgrades "sent" to "delivered" or "answered" as Twilio confirms. Anyone the alert missed can be texted or called from your own phone with one tap. There's always a button to call the emergency number (default `112`). **HerSpace does not contact police or emergency services.** |
+| **Live location** (`/track/:token`) | A logged-in user's SOS text includes a private live-map link. While the SOS page stays open, the phone sends its position about every 20 seconds (it asks the browser to keep the screen on). Contacts see it update on a map, with a warning if it goes stale. Tapping **"I'm safe"** ends sharing and deletes the position immediately. Links expire after 4 hours. |
 | **Voice trigger** | Say "help me" while the SOS page is open to start the countdown. It uses the browser's Web Speech API (Chrome/Edge), and only works while the page is open. |
 | **Emergency contacts** (`/contacts`) | Up to 10 contacts, stored on your account. Each contact gets an invite link and must **agree** before they receive alerts. This stops SOS from being used to spam strangers, and means they know what an alert means. The invite can be sent by SMS automatically or shared by the user over SMS or WhatsApp. A **test alert** checks that messages actually arrive. |
 | **Incident reports** (`/report`) | You can submit anonymously, in which case no account is linked, even if you're logged in. You can also add your current location to the Safe Map. |
@@ -22,7 +23,6 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 ## Not built yet
 
 - **Corporate Connect** and **Safe Circles**: the pages describe planned features and say so on the page.
-- Live location tracking after the SOS is sent. Contacts currently get your location from the moment you pressed SOS.
 - A native mobile app. As a web page, SOS only works while the page is open. There's no lock-screen, power-button or shake trigger.
 - Phone-number verification for the user's own account.
 - Audio recording, and uploading photos or files with reports.
@@ -61,6 +61,7 @@ Open http://localhost:8080. The Vite dev server forwards `/api` requests to the 
 | `RESEND_API_KEY`, `EMAIL_FROM` | Sends password-reset emails through [Resend](https://resend.com). Without them, reset links are printed to the server console (development only). |
 | `COOKIE_SECURE` | Force the `Secure` cookie flag on or off (default: on when `NODE_ENV=production`). The frontend and API must be served from the same origin, e.g. behind one reverse proxy. |
 | `TRUST_PROXY` | Number of reverse proxies in front of the API in production, so rate limits see real client IPs. |
+| `LIVE_SHARE_HOURS` | How long a live-location link stays active (default 4). |
 | `SOS_RETENTION_DAYS`, `MAP_FLAG_THRESHOLD` | Data retention (default 90 days) and flags needed to hide a map point (default 3). |
 | `ANTHROPIC_API_KEY` | Powers the AI support chat. Without it, the chat uses scripted fallback replies. |
 | `EMERGENCY_NUMBER` | Emergency number the chat assistant mentions (default `112`). |
@@ -94,17 +95,19 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 | Method & path | Auth | Description |
 |---|---|---|
 | `POST /api/auth/signup`, `POST /api/auth/login` | – | Returns `{ token, user }` |
-| `POST /api/auth/logout`, `GET /api/auth/me` | Bearer | |
+| `POST /api/auth/logout`, `GET /api/auth/me` | Session | |
 | `POST /api/auth/forgot`, `POST /api/auth/reset` | – | Password reset by email |
-| `POST /api/account/password`, `GET /api/account/export`, `DELETE /api/account` | Bearer | Change password, download data, delete account |
-| `GET/POST/PUT/DELETE /api/contacts`, `POST /api/contacts/:id/resend` | Bearer | Your emergency contacts and their invites |
+| `POST /api/account/password`, `GET /api/account/export`, `DELETE /api/account` | Session | Change password, download data, delete account |
+| `GET/POST/PUT/DELETE /api/contacts`, `POST /api/contacts/:id/resend` | Session | Your emergency contacts and their invites |
 | `GET/POST /api/contact-invites/:token` | – | Used by an invited contact to accept or decline |
 | `POST /api/sos` | Optional | Sends SMS to your contacts; returns per-contact delivery status |
-| `POST /api/sos/test` | Bearer | Test alert (max 3/day) |
-| `GET /api/sos`, `GET /api/sos/:id` | Bearer | Your past SOS events / live delivery status |
+| `POST /api/sos/test` | Session | Test alert (max 3/day) |
+| `GET /api/sos`, `GET /api/sos/:id` | Session | Your past SOS events / live delivery status |
+| `GET /api/location-shares/active`, `POST /api/location-shares/:id/location`, `POST /api/location-shares/:id/stop` | Session | Live location: resume, update position, "I'm safe" |
+| `GET /api/track/:token` | Link token | What a contact sees: name, latest position, active/ended |
 | `POST /api/twilio/status` | Twilio signature | Delivery-status callbacks |
 | `POST /api/reports` | Optional | Submit a report (`anonymous: true` never stores the user) |
-| `GET /api/reports`, `DELETE /api/reports/:id` | Bearer | Your own non-anonymous reports |
+| `GET /api/reports`, `DELETE /api/reports/:id` | Session | Your own non-anonymous reports |
 | `POST /api/reports/:id/flag` | – | Flag a map point |
 | `GET /api/reports/map` | – | Public, coarsened points for the map |
 | `POST /api/chat` | – | Support chat reply (`mode: "ai"` or `"fallback"`) |

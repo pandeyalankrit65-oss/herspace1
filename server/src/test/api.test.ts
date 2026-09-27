@@ -232,3 +232,45 @@ describe('chat', () => {
     assert.equal((await call('/chat', { body: { messages: [{ role: 'system', content: 'x' }] } })).status, 400);
   });
 });
+
+describe('live location', () => {
+  test('SOS creates a share; contacts can follow it until the user is safe', async () => {
+    const { token } = await newUser('Kavya');
+    const sos = await call('/sos', { token, body: { coords: { lat: 12.9716, lng: 77.5946, accuracy: 15 } } });
+    assert.ok(sos.data.share, 'logged-in SOS starts a live share');
+    assert.ok(sos.data.message.includes(sos.data.share.url), 'the SOS text includes the live link');
+    const trackToken = sos.data.share.url.split('/track/')[1];
+
+    let view = await call(`/track/${trackToken}`);
+    assert.equal(view.data.name, 'Kavya');
+    assert.equal(view.data.active, true);
+    assert.deepEqual([view.data.position.lat, view.data.position.lng], [12.9716, 77.5946]);
+
+    assert.equal((await call(`/location-shares/${sos.data.share.id}/location`, { token, body: { coords: { lat: 12.98, lng: 77.6 } } })).status, 200);
+    view = await call(`/track/${trackToken}`);
+    assert.deepEqual([view.data.position.lat, view.data.position.lng], [12.98, 77.6]);
+
+    // Only the owner can move or stop it.
+    const other = await newUser();
+    assert.equal((await call(`/location-shares/${sos.data.share.id}/location`, { token: other.token, body: { coords: { lat: 0, lng: 0 } } })).status, 404);
+    assert.equal((await call('/location-shares/active', { token })).data.share.id, sos.data.share.id);
+
+    assert.equal((await call(`/location-shares/${sos.data.share.id}/stop`, { token, method: 'POST' })).status, 200);
+    view = await call(`/track/${trackToken}`);
+    assert.equal(view.data.active, false);
+    assert.equal(view.data.position, null, 'position is hidden once safe');
+    assert.equal((await call(`/location-shares/${sos.data.share.id}/location`, { token, body: { coords: { lat: 1, lng: 1 } } })).status, 410);
+    assert.equal((await call('/location-shares/active', { token })).data.share, null);
+  });
+
+  test('a new SOS replaces the previous share; anonymous and test alerts share nothing', async () => {
+    const { token } = await newUser();
+    const first = await call('/sos', { token, body: {} });
+    const second = await call('/sos', { token, body: {} });
+    assert.equal((await call(`/track/${first.data.share.url.split('/track/')[1]}`)).data.active, false);
+    assert.equal((await call(`/track/${second.data.share.url.split('/track/')[1]}`)).data.active, true);
+    assert.equal((await call('/sos', { body: {} })).data.share, null);
+    assert.equal((await call('/sos/test', { token, method: 'POST' })).data.share, null);
+    assert.equal((await call('/track/not-a-real-token')).status, 404);
+  });
+});

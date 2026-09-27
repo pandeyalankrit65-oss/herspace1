@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { offlineContacts, useOnline } from "@/lib/offline";
+import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import type { Contact } from "./Contacts";
 
 type Coords = { lat: number; lng: number; accuracy?: number };
@@ -18,6 +19,7 @@ type SosResult = {
   deliveries: Delivery[];
   smsConfigured: boolean;
   trackingDelivery?: boolean;
+  share?: LiveShare | null;
   message: string;
   serverError?: string;
 };
@@ -114,6 +116,16 @@ const SOS = () => {
   }, [user]);
   const online = useOnline();
 
+  // Resume live sharing after a reload, so "I'm safe" is always reachable.
+  const [liveShare, setLiveShare] = useState<LiveShare | null>(null);
+  useEffect(() => {
+    if (!user) return setLiveShare(null);
+    api<{ share: LiveShare | null }>("/api/location-shares/active")
+      .then((res) => setLiveShare((current) => current ?? res.share))
+      .catch(() => {});
+  }, [user]);
+  const endLiveShare = useCallback(() => setLiveShare(null), []);
+
   const sendSOS = useCallback(async () => {
     setSending(true);
     setResult(null);
@@ -121,6 +133,7 @@ const SOS = () => {
     try {
       const res = await api<SosResult>("/api/sos", { body: { coords } });
       setResult(res);
+      if (res.share) setLiveShare(res.share);
     } catch (err) {
       setResult({
         deliveries: [],
@@ -314,6 +327,8 @@ const SOS = () => {
             </CardContent>
           </Card>
 
+          {liveShare && <LiveLocation share={liveShare} onEnded={endLiveShare} />}
+
           {result && (
             <Card className={`mb-8 ${deliveredAll ? "border-green-500/50" : "border-destructive"}`} aria-live="polite">
               <CardHeader>
@@ -392,7 +407,8 @@ const SOS = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  If you allow location access, the message includes a map link to where you were when you pressed SOS. It is not tracked continuously.
+                  The message includes where you were when you pressed SOS, plus a live map link that follows you while this page
+                  is open, until you tap "I'm safe".
                 </CardDescription>
               </CardContent>
             </Card>

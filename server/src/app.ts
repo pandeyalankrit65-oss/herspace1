@@ -11,6 +11,7 @@ import { contactInvitesRouter, contactsRouter } from './routes/contacts';
 import { sosRouter, twilioRouter } from './routes/sos';
 import { reportsRouter } from './routes/reports';
 import { accountRouter } from './routes/account';
+import { locationSharesRouter, trackRouter } from './routes/location';
 
 export const app = express();
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8080').split(',').map((o) => o.trim());
@@ -47,6 +48,8 @@ app.use('/api/contacts', contactsRouter);
 app.use('/api/contact-invites', contactInvitesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/sos', sosRouter);
+app.use('/api/location-shares', locationSharesRouter);
+app.use('/api/track', trackRouter);
 
 const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 15 });
 const chatSchema = z.object({

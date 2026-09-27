@@ -6,6 +6,7 @@ import { placeCall, sendSms, SendResult, smsConfigured, statusCallbackUrl, valid
 import { perUser, rateLimit } from '../rateLimit';
 import { coordsSchema, now, parse } from '../util';
 import { listContacts } from './contacts';
+import { createShare } from './location';
 
 export const sosRouter = Router();
 export const twilioRouter = Router();
@@ -52,9 +53,12 @@ async function triggerAlert(user: User | undefined, coords: z.infer<typeof coord
       (coords.accuracy ? ` (within ~${Math.round(coords.accuracy)} m)` : '')
     : 'Their location could not be determined.';
   const time = new Date(createdAt).toUTCString();
+  // Real alerts from a logged-in user get a live-location link that keeps updating.
+  const share = user && !isTest ? createShare(user.id, sosId, coords) : undefined;
+  const live = share ? ` Live location: ${share.url}` : '';
   const message = isTest
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`
-    : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where} Please call them now. If you can't reach them, contact local emergency services.`;
+    : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live} Please call them now. If you can't reach them, contact local emergency services.`;
 
   const insert = db.prepare(
     'INSERT INTO sos_deliveries (sos_id, contact_name, phone, channel, status, error, provider_sid, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
@@ -77,6 +81,7 @@ async function triggerAlert(user: User | undefined, coords: z.infer<typeof coord
   console.log(`[SOS] ${isTest ? 'Test ' : ''}event ${sosId} user=${user?.id ?? 'anonymous'} confirmed=${confirmed.length}/${contacts.length}`);
   return {
     id: sosId,
+    share: share ? { id: share.id, url: share.url, expiresAt: share.expiresAt } : null,
     createdAt,
     smsConfigured: smsConfigured(),
     // Whether "sent" will later be upgraded to "delivered" via Twilio callbacks.
