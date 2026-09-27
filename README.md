@@ -15,6 +15,8 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | **Safe Map** (`/map`) | An OpenStreetMap/Leaflet map of reported incidents. Locations are rounded to about 1 km, and only the incident type and date are shown. Descriptions and identities never appear on the map. |
 | **AI support chat** (`/support`) | A supportive companion powered by Claude (`claude-opus-5`), prompted to put safety first and point to emergency help. If no Anthropic credentials are configured, it switches to simple scripted replies and the UI says so. |
 | **Safe Map moderation** | Anyone can flag a point as false or abusive. Points flagged by 3 different people are hidden. |
+| **Works offline, installable** | After the first visit, the app (and especially the SOS page) opens with no connection. Offline, SOS can't send alerts itself, but it shows your contacts with one-tap **Text** (location included) and **Call** buttons, which work over the phone network. It can be installed to the home screen, with an SOS shortcut. |
+| **Privacy Policy & Terms** (`/privacy`, `/terms`) | Written to match exactly what the app collects and shares. |
 | **Accounts** (`/account`) | Email + password with password reset by email, password change (signs out other devices), download of all your data, and account deletion. Passwords are hashed with scrypt, and session tokens are stored hashed. Login, SOS, invites, reports and chat are rate-limited. SOS locations are deleted automatically after 90 days. |
 
 ## Not built yet
@@ -64,7 +66,9 @@ Open http://localhost:8080. The Vite dev server forwards `/api` requests to the 
 | `CORS_ORIGIN` | Comma-separated origins allowed to call the API directly (default `http://localhost:8080`). |
 | `DATABASE_PATH` | SQLite file location (default `server/data/herspace.db`). |
 
-The web app reads `VITE_EMERGENCY_NUMBER` (default `112`) from a root `.env` file. It sets the number used by the call buttons.
+The web app reads two settings from a root `.env` file (see `.env.example`). `VITE_EMERGENCY_NUMBER` (default `112`) sets the number used by the call buttons. `VITE_CONTACT_EMAIL` is the privacy contact shown on the Privacy and Terms pages.
+
+Offline support uses a service worker (`public/sw.js`) that is only registered in production builds. Try it with `npm run build && npx vite preview`.
 
 ## Tests and CI
 
@@ -108,5 +112,5 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 
 - Serve over HTTPS. Geolocation and the microphone require it outside `localhost`.
 - Test SOS end to end with real phones in the countries you support. Twilio trial accounts can only text verified numbers. For Indian numbers, business SMS requires TRAI DLT registration (sender ID and message templates), or messages are silently dropped.
-- Add real contact details, a privacy policy and terms (the footer links are placeholders).
+- Set `VITE_CONTACT_EMAIL`, and have a lawyer review the Privacy Policy and Terms of Use. They describe the app accurately, but they are not legal advice.
 - Moderate map reports. Anyone can submit one, so false reports are possible.

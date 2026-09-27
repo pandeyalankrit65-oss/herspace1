@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
+import { offlineContacts, useOnline } from "@/lib/offline";
 import type { Contact } from "./Contacts";
 
 type Coords = { lat: number; lng: number; accuracy?: number };
@@ -102,10 +103,16 @@ const SOS = () => {
       setContacts([]);
       return;
     }
+    // Show the last-known contacts immediately (works offline), then refresh from the server.
+    setContacts(offlineContacts.get<Contact>());
     api<{ contacts: Contact[] }>("/api/contacts")
-      .then((res) => setContacts(res.contacts))
+      .then((res) => {
+        setContacts(res.contacts);
+        offlineContacts.set(res.contacts);
+      })
       .catch(() => {});
   }, [user]);
+  const online = useOnline();
 
   const sendSOS = useCallback(async () => {
     setSending(true);
@@ -233,6 +240,12 @@ const SOS = () => {
             <h1 className="text-4xl md:text-5xl font-bold">
               <span className="bg-gradient-to-r from-destructive to-red-600 bg-clip-text text-transparent">Emergency SOS</span>
             </h1>
+            {!online && (
+              <p role="alert" className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 text-sm text-foreground">
+                You're offline, so HerSpace can't send alerts for you. Calls and text messages from your phone still work: use
+                the buttons below.
+              </p>
+            )}
             <p className="text-lg text-muted-foreground">
               In immediate danger? Call{" "}
               <a href={`tel:${EMERGENCY_NUMBER}`} className="font-semibold text-destructive underline">
@@ -274,7 +287,7 @@ const SOS = () => {
                     disabled={sending}
                   >
                     <div className="flex flex-col items-center gap-4">
-                      <AlertCircle className="h-20 w-20" />
+                      <AlertCircle className="!size-16 sm:!size-20" />
                       {sending ? "SENDING..." : "EMERGENCY SOS"}
                     </div>
                   </Button>
@@ -367,7 +380,7 @@ const SOS = () => {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Each saved contact gets a text message. You'll see exactly who received it, and can text anyone it missed from your own phone.
+                  Each confirmed contact gets a text message. You'll see exactly who received it, and can text anyone it missed from your own phone.
                 </CardDescription>
               </CardContent>
             </Card>

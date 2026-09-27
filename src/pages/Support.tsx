@@ -30,8 +30,11 @@ const Support = () => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // auto-scroll to bottom on new message
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Keep the newest message in view by scrolling the chat panel only. scrollIntoView would
+    // also scroll the page, which jumps phones past the header on first load.
+    if (messages.length === 1 && !isTyping) return;
+    const viewport = scrollRef.current?.closest<HTMLElement>("[data-radix-scroll-area-viewport]");
+    viewport?.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
 
   const handleSend = async () => {
@@ -143,13 +146,14 @@ const Support = () => {
                 <div className="flex gap-2">
                   <Input
                     placeholder="Type your message..."
+                    aria-label="Message"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !isTyping && handleSend()}
                     className="flex-1"
                     disabled={isTyping}
                   />
-                  <Button onClick={handleSend} variant="hero" size="icon" disabled={isTyping}>
+                  <Button onClick={handleSend} variant="hero" size="icon" disabled={isTyping} aria-label="Send message">
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>

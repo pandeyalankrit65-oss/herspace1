@@ -151,7 +151,7 @@ const Report = () => {
                   <Input
                     id="date"
                     type="date"
-                    max={new Date().toISOString().slice(0, 10)}
+                    max={new Date().toLocaleDateString("en-CA")}
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   />

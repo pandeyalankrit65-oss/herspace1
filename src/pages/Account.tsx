@@ -139,8 +139,8 @@ const Account = () => {
             </CardHeader>
             <CardContent>
               <form className="space-y-3" onSubmit={changePassword}>
-                <Input type="password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
-                <Input type="password" placeholder="New password (at least 8 characters)" minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+                <Input type="password" aria-label="Current password" autoComplete="current-password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
+                <Input type="password" aria-label="New password" autoComplete="new-password" placeholder="New password (at least 8 characters)" minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
                 <Button type="submit" variant="hero" disabled={changing}>{changing ? "Saving..." : "Change password"}</Button>
               </form>
             </CardContent>
@@ -168,7 +168,7 @@ const Account = () => {
                 <Button variant="destructive" onClick={() => setConfirmDelete(true)}>Delete my account</Button>
               ) : (
                 <form className="space-y-3" onSubmit={deleteAccount}>
-                  <Input type="password" placeholder="Enter your password to confirm" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} required />
+                  <Input type="password" aria-label="Password" autoComplete="current-password" placeholder="Enter your password to confirm" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} required />
                   <div className="flex gap-2">
                     <Button type="submit" variant="destructive" disabled={deleting}>{deleting ? "Deleting..." : "Permanently delete"}</Button>
                     <Button type="button" variant="ghost" onClick={() => { setConfirmDelete(false); setDeletePassword(""); }}>Cancel</Button>

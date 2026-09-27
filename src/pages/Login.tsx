@@ -46,15 +46,15 @@ const Login = () => {
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block">Email</label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="email">Email</label>
+                  <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm block">Password</label>
+                    <label className="text-sm block" htmlFor="password">Password</label>
                     <Link to="/forgot-password" className="text-xs text-primary">Forgot password?</Link>
                   </div>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>

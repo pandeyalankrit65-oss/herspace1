@@ -20,8 +20,12 @@ class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-bold">Something went wrong</h1>
-          <p className="text-muted-foreground">This page hit an error. If you're in danger, call for help now.</p>
+          <h1 className="text-2xl font-bold">{navigator.onLine ? "Something went wrong" : "You're offline"}</h1>
+          <p className="text-muted-foreground">
+            {navigator.onLine
+              ? "This page hit an error. If you're in danger, call for help now."
+              : "This page isn't available offline. The SOS page and calling still work."}
+          </p>
           <div className="flex flex-col gap-2">
             <a
               href={`tel:${EMERGENCY_NUMBER}`}

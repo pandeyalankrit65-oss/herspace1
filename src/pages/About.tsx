@@ -1,5 +1,7 @@
 import { Shield, Heart, Users, Target, Eye, Lightbulb } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -119,7 +121,7 @@ const About = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
             {[
               { number: "1 tap", label: "SOS to trusted contacts" },
-              { number: "Anonymous", label: "Incident reporting" },
+              { number: "Optional", label: "Anonymous reporting" },
               { number: "~1 km", label: "Map privacy radius" },
               { number: "Any time", label: "AI support chat" },
             ].map((stat, index) => (
@@ -128,7 +130,7 @@ const About = () => {
                 className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 text-center"
               >
                 <CardContent className="pt-6">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
+                  <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2 break-words">
                     {stat.number}
                   </div>
                   <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -145,16 +147,12 @@ const About = () => {
                 Be part of a movement that's making the world safer for women everywhere. Together, we're stronger.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/circles" className="inline-block">
-                  <button className="px-8 py-3 rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold hover:shadow-[var(--glow-primary)] transition-all">
-                    Join Safe Circles
-                  </button>
-                </a>
-                <a href="/support" className="inline-block">
-                  <button className="px-8 py-3 rounded-lg bg-card/40 backdrop-blur-lg border border-border/50 text-card-foreground font-semibold hover:bg-card/60 transition-all">
-                    Get Support
-                  </button>
-                </a>
+                <Link to="/signup">
+                  <Button variant="hero" size="lg">Create a free account</Button>
+                </Link>
+                <Link to="/support">
+                  <Button variant="glass" size="lg">Get Support</Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

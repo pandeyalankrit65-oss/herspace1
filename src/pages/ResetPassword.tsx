@@ -53,11 +53,11 @@ const ResetPassword = () => {
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
                   <label className="text-sm mb-1 block" htmlFor="password">New password</label>
-                  <Input id="password" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Input id="password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <div>
                   <label className="text-sm mb-1 block" htmlFor="confirm">Confirm new password</label>
-                  <Input id="confirm" type="password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                  <Input id="confirm" type="password" autoComplete="new-password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
                 </div>
                 {error && (
                   <p className="text-sm text-destructive" role="alert">

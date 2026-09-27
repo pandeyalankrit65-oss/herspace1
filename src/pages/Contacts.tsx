@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import { offlineContacts } from "@/lib/offline";
 
 export type ContactStatus = "pending" | "confirmed" | "declined";
 
@@ -63,6 +64,7 @@ const Contacts = () => {
     try {
       const res = await api<{ contacts: Contact[] }>("/api/contacts");
       setContacts(res.contacts);
+      offlineContacts.set(res.contacts);
     } catch (err) {
       toast({ title: "Couldn't load contacts", description: (err as Error).message, variant: "destructive" });
     } finally {
@@ -89,11 +91,13 @@ const Contacts = () => {
       const res = editing
         ? await api<{ contact: Contact } & Partial<InviteResult>>(`/api/contacts/${editing.id}`, { method: "PUT", body })
         : await api<{ contact: Contact } & InviteResult>("/api/contacts", { body });
-      setOpen(false);
-      resetForm();
       await load();
-      if (res.inviteLink) setInvite({ ...(res as InviteResult), contact: res.contact });
-      else toast({ title: "Contact updated" });
+      if (res.inviteLink) {
+        setInvite({ ...(res as InviteResult), contact: res.contact });
+      } else {
+        setOpen(false);
+        toast({ title: "Contact updated" });
+      }
     } catch (err) {
       toast({ title: "Couldn't save contact", description: (err as Error).message, variant: "destructive" });
     } finally {
@@ -101,7 +105,15 @@ const Contacts = () => {
     }
   };
 
+  // Content is reset when the dialog opens, never while it animates closed.
+  const openAdd = () => {
+    resetForm();
+    setInvite(null);
+    setOpen(true);
+  };
+
   const onEdit = (c: Contact) => {
+    setInvite(null);
     setEditing(c);
     setName(c.name);
     setPhone(c.phone);
@@ -123,6 +135,7 @@ const Contacts = () => {
     try {
       const res = await api<InviteResult>(`/api/contacts/${c.id}/resend`, { method: "POST" });
       setInvite({ ...res, contact: c });
+      setOpen(true);
       await load();
     } catch (err) {
       toast({ title: "Couldn't resend invite", description: (err as Error).message, variant: "destructive" });
@@ -136,12 +149,15 @@ const Contacts = () => {
       const sent = res.deliveries.filter((d) => d.status === "sent").length;
       toast(
         sent > 0
-          ? { title: "Test alert sent", description: `${sent} confirmed contact${sent === 1 ? "" : "s"} should get a test SMS now. Ask them if it arrived.` }
+          ? {
+              title: "Test alert sent",
+              description: `${sent} confirmed contact${sent === 1 ? "" : "s"} should get a test SMS now. Ask them if it arrived.`,
+            }
           : {
               title: "Test alert not delivered",
               description: "No SMS was sent. Either no contact has confirmed yet, or SMS isn't set up on this server.",
               variant: "destructive",
-            }
+            },
       );
     } catch (err) {
       toast({ title: "Couldn't send test", description: (err as Error).message, variant: "destructive" });
@@ -169,7 +185,7 @@ const Contacts = () => {
     toast(
       failed.length
         ? { title: "Some contacts need fixing", description: failed.join("\n"), variant: "destructive" }
-        : { title: "Contacts imported", description: "Each one needs to confirm before they'll receive alerts." }
+        : { title: "Contacts imported", description: "Each one needs to confirm before they'll receive alerts." },
     );
   };
 
@@ -188,10 +204,14 @@ const Contacts = () => {
               </CardHeader>
               <CardContent className="flex gap-2">
                 <Link to="/login?next=/contacts" className="flex-1">
-                  <Button variant="hero" className="w-full">Log in</Button>
+                  <Button variant="hero" className="w-full">
+                    Log in
+                  </Button>
                 </Link>
                 <Link to="/signup?next=/contacts" className="flex-1">
-                  <Button variant="outline" className="w-full">Sign up</Button>
+                  <Button variant="outline" className="w-full">
+                    Sign up
+                  </Button>
                 </Link>
               </CardContent>
             </Card>
@@ -216,9 +236,12 @@ const Contacts = () => {
             <Card className="border-primary/40">
               <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6">
                 <p className="text-sm">
-                  {legacy.length} contact{legacy.length === 1 ? " is" : "s are"} saved only in this browser from an older version. Import them into your account?
+                  {legacy.length} contact{legacy.length === 1 ? " is" : "s are"} saved only in this browser from an older version.
+                  Import them into your account?
                 </p>
-                <Button variant="hero" onClick={importLegacy}>Import</Button>
+                <Button variant="hero" onClick={importLegacy}>
+                  Import
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -227,43 +250,13 @@ const Contacts = () => {
               <div>
                 <CardTitle>Emergency Contacts</CardTitle>
                 <CardDescription>
-                  Confirmed contacts get an SMS with your location when you trigger SOS. Each person has to agree first, so
-                  they know what the message means when it arrives.
+                  Confirmed contacts get an SMS with your location when you trigger SOS. Each person has to agree first, so they
+                  know what the message means when it arrives.
                 </CardDescription>
               </div>
-              <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
-                <DialogTrigger asChild>
-                  <Button variant="hero" className="shrink-0">Add Contact</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editing ? "Edit Contact" : "Add New Contact"}</DialogTitle>
-                    {!editing && (
-                      <DialogDescription>We'll send them a link to confirm they're happy to be your emergency contact.</DialogDescription>
-                    )}
-                  </DialogHeader>
-                  <form className="space-y-4" onSubmit={onSubmit}>
-                    <div>
-                      <Label htmlFor="name">Name</Label>
-                      <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone (with country code)</Label>
-                      <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. +91 98765 43210" required />
-                    </div>
-                    <div>
-                      <Label htmlFor="relation">Relation (optional)</Label>
-                      <Input id="relation" value={relation} onChange={(e) => setRelation(e.target.value)} />
-                    </div>
-                    <div className="flex gap-2 justify-end pt-2">
-                      <Button type="button" variant="ghost" onClick={() => { setOpen(false); resetForm(); }}>Cancel</Button>
-                      <Button type="submit" variant="hero" disabled={saving}>
-                        {saving ? "Saving..." : editing ? "Save Changes" : "Add"}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <Button variant="hero" className="shrink-0" onClick={openAdd}>
+                Add Contact
+              </Button>
             </CardHeader>
             <CardContent>
               {!loaded && <p className="text-sm text-muted-foreground">Loading...</p>}
@@ -273,7 +266,10 @@ const Contacts = () => {
               {contacts.length > 0 && (
                 <div className="space-y-3">
                   {contacts.map((c) => (
-                    <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-md border border-border/50 p-3">
+                    <div
+                      key={c.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-md border border-border/50 p-3"
+                    >
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium truncate">{c.name}</span>
@@ -281,14 +277,23 @@ const Contacts = () => {
                             {STATUS_BADGE[c.status].label}
                           </Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground">{c.phone}{c.relation ? ` • ${c.relation}` : ""}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {c.phone}
+                          {c.relation ? ` • ${c.relation}` : ""}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2 shrink-0">
                         {c.status !== "confirmed" && (
-                          <Button variant="outline" size="sm" onClick={() => onResend(c)}>Resend invite</Button>
+                          <Button variant="outline" size="sm" onClick={() => onResend(c)}>
+                            Resend invite
+                          </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => onEdit(c)}>Edit</Button>
-                        <Button variant="destructive" size="sm" onClick={() => onDelete(c.id)}>Delete</Button>
+                        <Button variant="outline" size="sm" onClick={() => onEdit(c)}>
+                          Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => onDelete(c.id)}>
+                          Delete
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -313,40 +318,103 @@ const Contacts = () => {
         </div>
       </main>
 
-      <Dialog open={invite !== null} onOpenChange={(v) => !v && setInvite(null)}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Ask {invite?.contact.name} to confirm</DialogTitle>
-            <DialogDescription>
-              {invite?.inviteSms === "sent"
-                ? `We've texted ${invite.contact.name} a confirmation link. You can also send it yourself so they know it's really from you.`
-                : `We couldn't text ${invite?.contact.name} automatically. Send them this link yourself. They won't receive SOS alerts until they confirm.`}
-            </DialogDescription>
-          </DialogHeader>
-          {invite && (
-            <div className="space-y-3">
-              <Input readOnly value={invite.inviteLink} onFocus={(e) => e.target.select()} />
-              <div className="grid sm:grid-cols-3 gap-2">
-                <a href={`sms:${invite.contact.phone}?&body=${encodeURIComponent(shareText)}`}>
-                  <Button variant="hero" className="w-full gap-2"><MessageSquare className="h-4 w-4" /> Text</Button>
-                </a>
-                <a href={`https://wa.me/${invite.contact.phone.replace("+", "")}?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer">
-                  <Button variant="outline" className="w-full">WhatsApp</Button>
-                </a>
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() =>
-                    navigator.clipboard
-                      .writeText(shareText)
-                      .then(() => toast({ title: "Copied" }))
-                      .catch(() => toast({ title: "Couldn't copy", description: "Select the link and copy it manually.", variant: "destructive" }))
-                  }
-                >
-                  <Copy className="h-4 w-4" /> Copy
+          {invite ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Ask {invite.contact.name} to confirm</DialogTitle>
+                <DialogDescription>
+                  {invite.inviteSms === "sent"
+                    ? `We've texted ${invite.contact.name} a confirmation link. You can also send it yourself so they know it's really from you.`
+                    : `We couldn't text ${invite.contact.name} automatically. Send them this link yourself. They won't receive SOS alerts until they confirm.`}
+                </DialogDescription>
+              </DialogHeader>
+              {invite && (
+                <div className="space-y-3">
+                  <Input readOnly value={invite.inviteLink} onFocus={(e) => e.target.select()} />
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    <a href={`sms:${invite.contact.phone}?&body=${encodeURIComponent(shareText)}`}>
+                      <Button variant="hero" className="w-full gap-2">
+                        <MessageSquare className="h-4 w-4" /> Text
+                      </Button>
+                    </a>
+                    <a
+                      href={`https://wa.me/${invite.contact.phone.replace("+", "")}?text=${encodeURIComponent(shareText)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Button variant="outline" className="w-full">
+                        WhatsApp
+                      </Button>
+                    </a>
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() =>
+                        navigator.clipboard
+                          .writeText(shareText)
+                          .then(() => toast({ title: "Copied" }))
+                          .catch(() =>
+                            toast({
+                              title: "Couldn't copy",
+                              description: "Select the link and copy it manually.",
+                              variant: "destructive",
+                            }),
+                          )
+                      }
+                    >
+                      <Copy className="h-4 w-4" /> Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button variant="ghost" onClick={() => setOpen(false)}>
+                  Done
                 </Button>
               </div>
-            </div>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>{editing ? "Edit Contact" : "Add New Contact"}</DialogTitle>
+                {!editing && (
+                  <DialogDescription>
+                    We'll send them a link to confirm they're happy to be your emergency contact.
+                  </DialogDescription>
+                )}
+              </DialogHeader>
+              <form className="space-y-4" onSubmit={onSubmit}>
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone (with country code)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="relation">Relation (optional)</Label>
+                  <Input id="relation" value={relation} onChange={(e) => setRelation(e.target.value)} />
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="hero" disabled={saving}>
+                    {saving ? "Saving..." : editing ? "Save Changes" : "Add"}
+                  </Button>
+                </div>
+              </form>
+            </>
           )}
         </DialogContent>
       </Dialog>

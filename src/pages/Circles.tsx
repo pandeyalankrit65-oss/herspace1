@@ -83,9 +83,9 @@ const Circles = () => {
                       </div>
                     </div>
                     <CardTitle className="mt-4">{circle.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Badge variant="outline">{circle.category}</Badge>
-                    </CardDescription>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">{circle.description}</p>

@@ -48,22 +48,27 @@ const Signup = () => {
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block">Name</label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="name">Name</label>
+                  <Input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block">Email</label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label className="text-sm mb-1 block" htmlFor="email">Email</label>
+                  <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block">Password</label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                  <label className="text-sm mb-1 block" htmlFor="password">Password</label>
+                  <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
                   <p className="text-xs text-muted-foreground mt-1">At least 8 characters.</p>
                 </div>
                 {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  By creating an account you agree to our{" "}
+                  <Link to="/terms" className="underline">Terms of Use</Link> and{" "}
+                  <Link to="/privacy" className="underline">Privacy Policy</Link>.
+                </p>
               </form>
               <p className="text-sm text-muted-foreground mt-4 text-center">
                 Already have an account? <Link to={`/login${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary">Login</Link>

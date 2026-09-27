@@ -1,4 +1,4 @@
-import { Shield, Phone, MapPin, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Shield, Phone, MapPin } from "lucide-react";
 import { EMERGENCY_NUMBER } from "@/lib/api";
 import { Link } from "react-router-dom";
 
@@ -71,35 +71,26 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Social */}
+          {/* Legal */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">Follow Us</h3>
-            <div className="flex gap-3">
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-secondary hover:bg-primary hover:shadow-[var(--glow-primary)] transition-all"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-secondary hover:bg-primary hover:shadow-[var(--glow-primary)] transition-all"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-secondary hover:bg-primary hover:shadow-[var(--glow-primary)] transition-all"
-              >
-                <Linkedin className="h-5 w-5" />
-              </a>
-            </div>
+            <h3 className="font-semibold mb-4 text-foreground">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Terms of Use
+                </Link>
+              </li>
+              <li>
+                <Link to="/account" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Download or delete your data
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -107,20 +98,7 @@ const Footer = () => {
           <p className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">HerSpace</span> — Building a Safer Digital World for Women
           </p>
-          <p className="text-sm text-muted-foreground">
-            © 2025 HerSpace. All rights reserved. |{" "}
-            <a href="#" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </a>{" "}
-            |{" "}
-            <a href="#" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>{" "}
-            |{" "}
-            <a href="#" className="hover:text-primary transition-colors">
-              Contact Us
-            </a>
-          </p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} HerSpace. All rights reserved.</p>
           <p className="text-sm text-muted-foreground">Made by Sistla and Alan with love</p>
         </div>
       </div>

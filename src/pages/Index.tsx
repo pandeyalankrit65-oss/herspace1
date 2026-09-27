@@ -90,16 +90,16 @@ const Index = () => {
               Building a safer digital world where every woman has access to instant help, trusted support, and a community that stands together.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
-              <Link to="/corporate">
+              <Link to="/sos">
                 <Button variant="hero" size="xl" className="gap-2 text-lg px-12 transition-all hover:scale-105">
-                  <Building2 className="h-6 w-6" />
-                  Corporate Connect
+                  <AlertCircle className="h-6 w-6" />
+                  Set up SOS
                 </Button>
               </Link>
-              <Link to="/circles">
+              <Link to="/report">
                 <Button variant="glass" size="xl" className="gap-2 text-lg px-12 transition-all hover:scale-105">
-                  <Users className="h-6 w-6" />
-                  Connect to Circles
+                  <Shield className="h-6 w-6" />
+                  Report an incident
                 </Button>
               </Link>
             </div>
@@ -304,17 +304,17 @@ const Index = () => {
       <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-accent/10">
         <div className="container mx-auto max-w-4xl text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-bold">
-            Ready to Join Our{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Community?</span>
+            Be ready{" "}
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">before you need it</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Be part of a movement building a safer digital world for women everywhere. Together, we're stronger.
+            Create a free account, add the people you trust, and send a test alert. It takes two minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/circles">
+            <Link to="/signup">
               <Button variant="hero" size="lg" className="gap-2">
                 <Users className="h-5 w-5" />
-                Join Safe Circles
+                Create a free account
               </Button>
             </Link>
             <Link to="/about">
