@@ -4,30 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useI18n } from "@/i18n";
+import type { MessageKey } from "@/i18n/en";
+
+const VALUES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
+  { icon: Shield, title: "about.value1Title", text: "about.value1Text" },
+  { icon: Heart, title: "about.value2Title", text: "about.value2Text" },
+  { icon: Users, title: "about.value3Title", text: "about.value3Text" },
+  { icon: Lightbulb, title: "about.value4Title", text: "about.value4Text" },
+];
+
+const STATS: Array<[MessageKey, MessageKey]> = [
+  ["about.stat1", "about.stat1Label"],
+  ["about.stat2", "about.stat2Label"],
+  ["about.stat3", "about.stat3Label"],
+  ["about.stat4", "about.stat4Label"],
+];
 
 const About = () => {
-  const values = [
-    {
-      icon: Shield,
-      title: "Safety First",
-      description: "Providing tools and resources that prioritize women's physical and emotional safety in every situation.",
-    },
-    {
-      icon: Heart,
-      title: "Empathy & Support",
-      description: "Creating compassionate spaces where every voice is heard and every experience is validated.",
-    },
-    {
-      icon: Users,
-      title: "Community Power",
-      description: "Building strength through connection, shared experiences, and collective action.",
-    },
-    {
-      icon: Lightbulb,
-      title: "Innovation",
-      description: "Leveraging technology to create accessible, effective safety and support solutions.",
-    },
-  ];
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen">
@@ -35,123 +30,88 @@ const About = () => {
 
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          {/* Header */}
           <div className="text-center mb-16 space-y-6">
             <h1 className="text-4xl md:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                About HerSpace
-              </span>
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t("about.title")}</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              We're on a mission to create a world where every woman feels safe, supported, and empowered to live freely
-              without fear.
-            </p>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">{t("about.intro")}</p>
           </div>
 
-          {/* Mission Section */}
           <Card className="mb-12 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
             <CardHeader className="text-center">
               <Target className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <CardTitle className="text-3xl">Our Mission</CardTitle>
+              <CardTitle className="text-3xl">{t("about.missionTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-center max-w-3xl mx-auto">
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                HerSpace was born from a simple yet powerful idea: every woman deserves to feel safe and supported, no
-                matter where she is or what challenges she faces. We combine cutting-edge technology with deep empathy to
-                create tools that make a real difference in women's lives.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Through SOS alerts to trusted contacts, AI-powered emotional support, incident reporting, and a
-                community safety map, we're building tools for protection and empowerment.
-              </p>
+              <p className="text-lg text-muted-foreground leading-relaxed">{t("about.mission1")}</p>
+              <p className="text-lg text-muted-foreground leading-relaxed">{t("about.mission2")}</p>
             </CardContent>
           </Card>
 
-          {/* Vision */}
           <div className="mb-12 text-center space-y-4">
             <div className="flex justify-center mb-6">
               <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
                 <Eye className="h-12 w-12 text-primary" />
               </div>
             </div>
-            <h2 className="text-3xl font-bold">Our Vision</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              A world where technology serves as a shield and support system, where women can connect with trusted
-              communities, access immediate help when needed, and find emotional support at any time of day or night.
-            </p>
+            <h2 className="text-3xl font-bold">{t("about.visionTitle")}</h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">{t("about.vision")}</p>
           </div>
 
-          {/* Values Grid */}
           <div className="mb-12">
-            <h2 className="text-3xl font-bold text-center mb-8">Our Core Values</h2>
+            <h2 className="text-3xl font-bold text-center mb-8">{t("about.valuesTitle")}</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              {values.map((value, index) => (
+              {VALUES.map(({ icon: Icon, title, text }) => (
                 <Card
-                  key={index}
+                  key={title}
                   className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-[var(--glow-primary)]"
                 >
                   <CardHeader>
                     <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit mb-4">
-                      <value.icon className="h-6 w-6 text-primary" />
+                      <Icon className="h-6 w-6 text-primary" />
                     </div>
-                    <CardTitle className="text-xl">{value.title}</CardTitle>
+                    <CardTitle className="text-xl">{t(title)}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">{value.description}</p>
+                    <p className="text-muted-foreground">{t(text)}</p>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
 
-          {/* Team Section */}
           <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 mb-12">
             <CardHeader className="text-center">
-              <CardTitle className="text-3xl">Our Journey</CardTitle>
+              <CardTitle className="text-3xl">{t("about.journeyTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-center max-w-3xl mx-auto">
-              <p className="text-muted-foreground leading-relaxed">
-                HerSpace was created by a passionate team dedicated to meaningful change. It began as a hackathon
-                project and won 1st prize at the AI Hackathon 2025.
-              </p>
+              <p className="text-muted-foreground leading-relaxed">{t("about.journey")}</p>
             </CardContent>
           </Card>
 
-          {/* Impact Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-            {[
-              { number: "1 tap", label: "SOS to trusted contacts" },
-              { number: "Optional", label: "Anonymous reporting" },
-              { number: "~1 km", label: "Map privacy radius" },
-              { number: "Any time", label: "AI support chat" },
-            ].map((stat, index) => (
-              <Card
-                key={index}
-                className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 text-center"
-              >
+            {STATS.map(([value, label]) => (
+              <Card key={value} className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 text-center">
                 <CardContent className="pt-6">
                   <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2 break-words">
-                    {stat.number}
+                    {t(value)}
                   </div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <div className="text-sm text-muted-foreground">{t(label)}</div>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          {/* Call to Action */}
           <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30 text-center">
             <CardContent className="py-12 space-y-6">
-              <h2 className="text-3xl font-bold">Join Our Community</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Be part of a movement that's making the world safer for women everywhere. Together, we're stronger.
-              </p>
+              <h2 className="text-3xl font-bold">{t("about.ctaTitle")}</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("about.ctaText")}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link to="/signup">
-                  <Button variant="hero" size="lg">Create a free account</Button>
+                  <Button variant="hero" size="lg">{t("about.ctaSignup")}</Button>
                 </Link>
                 <Link to="/support">
-                  <Button variant="glass" size="lg">Get Support</Button>
+                  <Button variant="glass" size="lg">{t("about.ctaSupport")}</Button>
                 </Link>
               </div>
             </CardContent>

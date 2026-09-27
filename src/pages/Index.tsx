@@ -1,65 +1,49 @@
 import { Link } from "react-router-dom";
-import { Shield, Heart, Users, AlertCircle, MessageCircle, Map, Building2, Quote } from "lucide-react";
+import { Shield, Heart, Users, AlertCircle, MessageCircle, Map, Building2, Quote, Timer, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-safety.jpg";
+import { useI18n } from "@/i18n";
+import type { MessageKey } from "@/i18n/en";
+
+const FEATURES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey; link: string }> = [
+  { icon: AlertCircle, title: "home.feature.sosTitle", text: "home.feature.sosText", link: "/sos" },
+  { icon: Timer, title: "home.feature.timerTitle", text: "home.feature.timerText", link: "/timer" },
+  { icon: Shield, title: "home.feature.reportTitle", text: "home.feature.reportText", link: "/report" },
+  { icon: MessageCircle, title: "home.feature.supportTitle", text: "home.feature.supportText", link: "/support" },
+  { icon: Map, title: "home.feature.mapTitle", text: "home.feature.mapText", link: "/map" },
+  { icon: Phone, title: "home.feature.fakeCallTitle", text: "home.feature.fakeCallText", link: "/sos" },
+];
+
+const MISSION: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
+  { icon: Shield, title: "home.mission1Title", text: "home.mission1Text" },
+  { icon: Heart, title: "home.mission2Title", text: "home.mission2Text" },
+  { icon: Users, title: "home.mission3Title", text: "home.mission3Text" },
+  { icon: Building2, title: "home.mission4Title", text: "home.mission4Text" },
+];
+
+const WHY: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
+  { icon: Shield, title: "home.why1Title", text: "home.why1Text" },
+  { icon: Heart, title: "home.why2Title", text: "home.why2Text" },
+  { icon: Users, title: "home.why3Title", text: "home.why3Text" },
+];
+
+const QUOTES: Array<{ quote: MessageKey; author: MessageKey }> = [
+  { quote: "home.quote1", author: "home.quote1Author" },
+  { quote: "home.quote2", author: "home.quote2Author" },
+  { quote: "home.quote3", author: "home.quote3Author" },
+];
+
+const CORPORATE_POINTS: MessageKey[] = ["home.corporatePoint1", "home.corporatePoint2", "home.corporatePoint3", "home.corporatePoint4"];
+
+const cardClass =
+  "bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:scale-105 duration-300";
+const gradientText = "bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent";
 
 const Index = () => {
-  const features = [
-    {
-      icon: AlertCircle,
-      title: "Instant SOS Alerts",
-      description: "One tap sends an SMS with your location to your trusted contacts, with a quick way to call for help.",
-      link: "/sos",
-    },
-    {
-      icon: Shield,
-      title: "Report Incidents",
-      description: "Document incidents, optionally anonymously, and add them to the community map.",
-      link: "/report",
-    },
-    {
-      icon: MessageCircle,
-      title: "AI-Powered Support",
-      description: "A compassionate AI companion to talk things through, any time.",
-      link: "/support",
-    },
-    {
-      icon: Map,
-      title: "Safe Map",
-      description: "See incidents reported by the community near you, shown with privacy-preserving approximate locations.",
-      link: "/map",
-    },
-    {
-      icon: Building2,
-      title: "Corporate Connect",
-      description: "Planned: workplace reporting channels connected to HR. Coming soon.",
-      link: "/corporate",
-    },
-    {
-      icon: Users,
-      title: "Community Circles",
-      description: "Planned: private communities for support and connection. Coming soon.",
-      link: "/circles",
-    },
-  ];
-
-  const testimonials = [
-    {
-      quote: "We seek to be safe, heard, and empowered.",
-      author: "Our belief",
-    },
-    {
-      quote: "Safety isn't just about feeling secure—it's about having the tools and community to ensure it.",
-      author: "Our vision",
-    },
-    {
-      quote: "Every woman deserves to walk freely without fear. Together, we make that possible.",
-      author: "Our promise",
-    },
-  ];
+  const { t, tr } = useI18n();
 
   return (
     <div className="min-h-screen">
@@ -68,38 +52,34 @@ const Index = () => {
       {/* Hero Section */}
       <section
         className="relative px-4 overflow-hidden min-h-[80vh] md:min-h-[90vh] pt-32 pb-24 md:pt-40 md:pb-40"
-        style={{
-          background: "var(--gradient-hero)",
-        }}
+        style={{ background: "var(--gradient-hero)" }}
       >
         <div className="absolute inset-0 opacity-60">
-          <img src={heroImage} alt="Women Standing Together" className="w-full h-full object-cover object-center" />
+          <img src={heroImage} alt={t("home.heroImageAlt")} className="w-full h-full object-cover object-center" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background/80" />
-        
+
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in mt-28 md:mt-40">
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
               <span className="bg-gradient-to-r from-primary via-accent to-cyan bg-clip-text text-transparent">
-                Empowering Women
+                {t("home.heroTitle1")}
               </span>
               <br />
-              <span className="text-foreground">Through Safety, Support & Community</span>
+              <span className="text-foreground">{t("home.heroTitle2")}</span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Building a safer digital world where every woman has access to instant help, trusted support, and a community that stands together.
-            </p>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">{t("home.heroText")}</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center pt-4">
               <Link to="/sos">
                 <Button variant="hero" size="xl" className="gap-2 text-lg px-12 transition-all hover:scale-105">
                   <AlertCircle className="h-6 w-6" />
-                  Set up SOS
+                  {t("home.setUpSos")}
                 </Button>
               </Link>
               <Link to="/report">
                 <Button variant="glass" size="xl" className="gap-2 text-lg px-12 transition-all hover:scale-105">
                   <Shield className="h-6 w-6" />
-                  Report an incident
+                  {t("home.reportIncident")}
                 </Button>
               </Link>
             </div>
@@ -112,52 +92,44 @@ const Index = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="text-center space-y-8">
             <h2 className="text-4xl md:text-5xl font-bold mb-8">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Our Mission
-              </span>
+              <span className={gradientText}>{t("home.missionTitle")}</span>
             </h2>
             <div className="grid md:grid-cols-2 gap-8 text-left">
-              <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:scale-105 duration-300">
-                <CardContent className="p-8 space-y-4">
-                  <Shield className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-2xl font-bold">Prevent Harassment</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Community reporting makes patterns of harassment visible, so people can stay aware and act before
-                    things escalate.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:scale-105 duration-300">
-                <CardContent className="p-8 space-y-4">
-                  <Heart className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-2xl font-bold">Connect with Help</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    One tap to alert your trusted contacts or call emergency services, and an AI companion to talk to
-                    whenever you need it.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:scale-105 duration-300">
-                <CardContent className="p-8 space-y-4">
-                  <Users className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-2xl font-bold">Empower Community</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    We're building private circles where women can share experiences, support each other, and create
-                    lasting connections.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:scale-105 duration-300">
-                <CardContent className="p-8 space-y-4">
-                  <Building2 className="h-12 w-12 text-primary mb-4" />
-                  <h3 className="text-2xl font-bold">Secure Digital Spaces</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Privacy by design: anonymous reporting, hashed passwords, and a public map that never shows who
-                    reported or what they wrote.
-                  </p>
-                </CardContent>
-              </Card>
+              {MISSION.map(({ icon: Icon, title, text }) => (
+                <Card key={title} className={cardClass}>
+                  <CardContent className="p-8 space-y-4">
+                    <Icon className="h-12 w-12 text-primary mb-4" />
+                    <h3 className="text-2xl font-bold">{t(title)}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{t(text)}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">
+            <span className={gradientText}>{t("home.featuresTitle")}</span>
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.featuresText")}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURES.map(({ icon: Icon, title, text, link }) => (
+              <Link key={title} to={link}>
+                <Card className={`group h-full cursor-pointer hover:shadow-[var(--glow-primary)] ${cardClass}`}>
+                  <CardContent className="p-6 space-y-4">
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit group-hover:shadow-[var(--glow-primary)] transition-all">
+                      <Icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">{t(title)}</h3>
+                    <p className="text-muted-foreground">{t(text)}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -171,71 +143,39 @@ const Index = () => {
                 <Building2 className="h-12 w-12 text-primary" />
               </div>
               <h2 className="text-4xl md:text-5xl font-bold">
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Corporate Connect
-                </span>
+                <span className={gradientText}>{t("nav.corporate")}</span>
               </h2>
-              <p className="text-xl text-muted-foreground leading-relaxed">
-                Coming soon: a way for women in workplaces to report incidents, connect with HR channels, and access
-                counseling confidentially.
-              </p>
+              <p className="text-xl text-muted-foreground leading-relaxed">{t("home.corporateText")}</p>
               <ul className="space-y-4">
-                {[
-                  "Anonymous workplace incident reporting",
-                  "Connection to HR departments",
-                  "Professional counselor access",
-                  "Privacy-first design",
-                ].map((item, index) => (
-                  <li key={index} className="flex items-center gap-3">
+                {CORPORATE_POINTS.map((key) => (
+                  <li key={key} className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full bg-primary" />
-                    <span className="text-muted-foreground">{item}</span>
+                    <span className="text-muted-foreground">{t(key)}</span>
                   </li>
                 ))}
               </ul>
               <Link to="/corporate">
                 <Button variant="hero" size="lg" className="gap-2 mt-4">
                   <Building2 className="h-5 w-5" />
-                  Explore Corporate Connect
+                  {t("home.corporateButton")}
                 </Button>
               </Link>
             </div>
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-primary/30 hover:shadow-[var(--glow-primary)] transition-all">
               <CardContent className="p-8 space-y-6">
-                <h3 className="text-2xl font-bold">Why It Matters</h3>
+                <h3 className="text-2xl font-bold">{t("home.whyTitle")}</h3>
                 <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Shield className="h-5 w-5 text-primary" />
+                  {WHY.map(({ icon: Icon, title, text }) => (
+                    <div key={title} className="flex gap-4">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">{t(title)}</h4>
+                        <p className="text-sm text-muted-foreground">{t(text)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Safe Reporting</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Report incidents without fear of retaliation or exposure
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Heart className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Professional Support</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Connecting people with counselors and HR professionals
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Culture Change</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Building safer, more inclusive workplace environments
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -243,56 +183,20 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Key Features</span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 text-lg">
-            Comprehensive tools for safety, support, and community empowerment
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <Link key={index} to={feature.link}>
-                <Card className="group h-full bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-[var(--glow-primary)] cursor-pointer hover:scale-105 duration-300">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit group-hover:shadow-[var(--glow-primary)] transition-all">
-                      <feature.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials / Awareness Quotes */}
+      {/* Quotes */}
       <section className="py-20 px-4 bg-gradient-to-b from-background to-card/40">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4">
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Voices of Empowerment
-            </span>
+            <span className={gradientText}>{t("home.quotesTitle")}</span>
           </h2>
-          <p className="text-center text-muted-foreground mb-12 text-lg">
-            Inspiring messages about women's safety and empowerment
-          </p>
+          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.quotesText")}</p>
           <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card
-                key={index}
-                className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:shadow-[var(--glow-primary)] hover:scale-105 duration-300"
-              >
+            {QUOTES.map(({ quote, author }) => (
+              <Card key={quote} className={`hover:shadow-[var(--glow-primary)] ${cardClass}`}>
                 <CardContent className="p-8 space-y-4">
                   <Quote className="h-10 w-10 text-primary/50" />
-                  <p className="text-lg italic text-muted-foreground leading-relaxed">"{testimonial.quote}"</p>
-                  <p className="text-sm font-semibold text-primary">— {testimonial.author}</p>
+                  <p className="text-lg italic text-muted-foreground leading-relaxed">"{t(quote)}"</p>
+                  <p className="text-sm font-semibold text-primary">— {t(author)}</p>
                 </CardContent>
               </Card>
             ))}
@@ -304,21 +208,18 @@ const Index = () => {
       <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-accent/10">
         <div className="container mx-auto max-w-4xl text-center space-y-8">
           <h2 className="text-4xl md:text-5xl font-bold">
-            Be ready{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">before you need it</span>
+            {tr("home.ctaTitle", { highlight: <span className={gradientText}>{t("home.ctaHighlight")}</span> })}
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            Create a free account, add the people you trust, and send a test alert. It takes two minutes.
-          </p>
+          <p className="text-xl text-muted-foreground leading-relaxed">{t("home.ctaText")}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/signup">
               <Button variant="hero" size="lg" className="gap-2">
                 <Users className="h-5 w-5" />
-                Create a free account
+                {t("home.ctaSignup")}
               </Button>
             </Link>
             <Link to="/about">
-              <Button variant="glass" size="lg">Learn More About Us</Button>
+              <Button variant="glass" size="lg">{t("home.ctaAbout")}</Button>
             </Link>
           </div>
         </div>
