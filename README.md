@@ -76,12 +76,25 @@ Offline support uses a service worker (`public/sw.js`) that is only registered i
 ## Tests and CI
 
 ```sh
-npm test --prefix server   # API tests (Node's built-in test runner, in-memory database)
+npm test --prefix server      # API tests (Node's built-in test runner, in-memory database)
+npm run test:e2e              # browser tests (Playwright), desktop and phone
 npm run lint
 npm run build
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs lint, type-check, build and the API tests on every push and pull request. The tests never read `server/.env`, so they can't send real messages.
+The **browser tests** (`e2e/`) build the app and drive it in Chromium, at desktop and phone sizes:
+- the full SOS journey: invite a contact, the contact accepts, test alert, SOS, live tracking, "I'm safe"
+- cancelling the countdown
+- unconfirmed contacts
+- cookie security and password reset
+- reporting and the map
+- Hindi
+- offline SOS
+- every page checked for console errors and phone-width overflow
+
+They run against an isolated API server (its own port and database) in **outbox mode**. `MESSAGE_OUTBOX` makes the server write SMS, calls and emails to a file instead of sending them, and tests read invite, SOS and reset links from that file. The server refuses outbox mode when `NODE_ENV=production`. To run them locally without downloading Chromium, use your installed Chrome: `PW_CHANNEL=chrome npm run test:e2e`.
+
+Neither test suite reads `server/.env`, so they can't send real messages. GitHub Actions (`.github/workflows/ci.yml`) runs lint, type-check, build, the API tests and the browser tests on every push and pull request.
 
 Database schema changes go in `server/src/db.ts` as new entries in the `migrations` list. They're applied automatically on startup.
 

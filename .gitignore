@@ -26,3 +26,8 @@ dist-ssr
 # Local env and database
 .env
 server/data/
+
+# End-to-end test output
+e2e/.tmp/
+test-results/
+playwright-report/

@@ -139,7 +139,7 @@ const hi: Record<MessageKey, string> = {
   "track.intro": "{name} ने HerSpace में SOS दबाया है और आपके साथ अपनी लाइव लोकेशन शेयर कर रहे हैं। उन्हें अभी कॉल करें। बात न हो पाए तो आपातकालीन सेवाओं को कॉल करें।",
   "track.updated": "{ago} अपडेट हुआ",
   "track.stale": "यह पुराना हो सकता है: हो सकता है उनका फ़ोन लॉक हो या इंटरनेट बंद हो।",
-  "track.accuracy": "लगभग {meters} मीटर तक सटीक",
+  "track.accuracy": "लगभग {meters} मीटर तक सटीक",
   "track.secondsAgo_one": "{count} सेकंड पहले",
   "track.secondsAgo_other": "{count} सेकंड पहले",
   "track.minutesAgo_one": "{count} मिनट पहले",

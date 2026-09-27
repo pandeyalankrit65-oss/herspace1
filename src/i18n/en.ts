@@ -138,7 +138,7 @@ const en = {
   "track.intro": "{name} pressed SOS in HerSpace and is sharing their live location with you. Call them now. If you can't reach them, call emergency services.",
   "track.updated": "Updated {ago}",
   "track.stale": "This may be out of date: their phone may be locked or offline.",
-  "track.accuracy": "accurate to about {meters} m",
+  "track.accuracy": "accurate to about {meters} m",
   "track.secondsAgo_one": "{count} second ago",
   "track.secondsAgo_other": "{count} seconds ago",
   "track.minutesAgo_one": "{count} minute ago",

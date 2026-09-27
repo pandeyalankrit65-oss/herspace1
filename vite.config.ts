@@ -9,7 +9,8 @@ export default defineConfig({
     port: 8080,
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        // The end-to-end tests point this at their own isolated API server.
+        target: process.env.API_PROXY_TARGET || "http://localhost:3001",
         changeOrigin: true,
       },
     },

@@ -1,10 +1,24 @@
 import crypto from 'crypto';
+import fs from 'fs';
 
 // Outbound SMS and voice calls go through Twilio's REST API; email goes through Resend.
 // Everything is optional: without credentials each function reports "not_configured"
 // so callers can tell the user honestly that nothing was sent.
 
 export type SendResult = { status: 'sent' | 'failed' | 'not_configured'; sid?: string; error?: string };
+
+// Test mode: with MESSAGE_OUTBOX set, messages are appended to that file (one JSON object per
+// line) instead of being sent, and reported as sent. Used by the end-to-end tests.
+const outboxPath = process.env.MESSAGE_OUTBOX;
+if (outboxPath && process.env.NODE_ENV === 'production') {
+  throw new Error('MESSAGE_OUTBOX must not be set in production: it would swallow real SOS messages.');
+}
+let outboxCount = 0;
+function toOutbox(entry: Record<string, string>): SendResult {
+  const sid = `outbox-${++outboxCount}`;
+  fs.appendFileSync(outboxPath!, `${JSON.stringify({ ...entry, sid, at: new Date().toISOString() })}\n`);
+  return { status: 'sent', sid };
+}
 
 const twilio = () => ({
   sid: process.env.TWILIO_ACCOUNT_SID,
@@ -14,7 +28,7 @@ const twilio = () => ({
 
 export const smsConfigured = () => {
   const t = twilio();
-  return Boolean(t.sid && t.token && t.from);
+  return Boolean(outboxPath || (t.sid && t.token && t.from));
 };
 
 export const voiceCallsEnabled = () => smsConfigured() && process.env.SOS_VOICE_CALLS === 'true';
@@ -25,6 +39,7 @@ export const statusCallbackUrl = () => (publicApiUrl() ? `${publicApiUrl()}/api/
 
 async function twilioPost(resource: 'Messages' | 'Calls', params: Record<string, string>): Promise<SendResult> {
   if (!smsConfigured()) return { status: 'not_configured' };
+  if (outboxPath) return toOutbox({ channel: resource === 'Messages' ? 'sms' : 'call', to: params.To, body: params.Body ?? params.Twiml });
   const t = twilio();
   const callback = statusCallbackUrl();
   if (callback) params.StatusCallback = callback;
@@ -70,10 +85,11 @@ export function validTwilioSignature(signature: string | undefined, url: string,
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-export const emailConfigured = () => Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+export const emailConfigured = () => Boolean(outboxPath || (process.env.RESEND_API_KEY && process.env.EMAIL_FROM));
 
 export async function sendEmail(to: string, subject: string, text: string): Promise<SendResult> {
   if (!emailConfigured()) return { status: 'not_configured' };
+  if (outboxPath) return toOutbox({ channel: 'email', to, subject, body: text });
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
