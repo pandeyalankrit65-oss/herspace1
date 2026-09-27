@@ -49,5 +49,5 @@ test("when the timer runs out, the server alerts contacts and the user can resol
 
   await expect(page.getByText("Your contacts have been alerted")).toBeVisible({ timeout: 20_000 });
   await page.getByRole("button", { name: "I'm safe, stop the alert" }).click();
-  await expect(page.getByText(/Your live location link has stopped/)).toBeVisible();
+  await expect(page.getByText(/Your live location link has stopped/).first()).toBeVisible();
 });
