@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { Phone, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Footprints, Phone, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,16 @@ import { api, ApiError, EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
 
 type Position = { lat: number; lng: number; accuracy: number | null; updatedAt: string };
-type TrackView = { name: string; active: boolean; endedAt: string | null; expiresAt: string; position: Position | null };
+type TrackView = {
+  name: string;
+  kind: "sos" | "walk";
+  note: string | null;
+  active: boolean;
+  acked: boolean;
+  endedAt: string | null;
+  expiresAt: string;
+  position: Position | null;
+};
 
 const POLL_MS = 15_000;
 const STALE_MS = 2 * 60_000;
@@ -32,7 +41,11 @@ function ago(iso: string, now: number, tn: (key: string, count: number) => strin
 // Opened by an emergency contact from the SOS text message. No account needed.
 const Track = () => {
   const { token = "" } = useParams();
+  // Personal code from the contact's own link, so their response says who they are.
+  const [params] = useSearchParams();
+  const code = params.get("c") ?? "";
   const { t, tn } = useI18n();
+  const [acking, setAcking] = useState(false);
   const [view, setView] = useState<TrackView | null>(null);
   const [error, setError] = useState<"" | "track.invalid" | "track.retrying">("");
   const [now, setNow] = useState(Date.now());
@@ -40,7 +53,7 @@ const Track = () => {
   useEffect(() => {
     let stopped = false;
     const load = () =>
-      api<TrackView>(`/api/track/${encodeURIComponent(token)}`)
+      api<TrackView>(`/api/track/${encodeURIComponent(token)}${code ? `?c=${encodeURIComponent(code)}` : ""}`)
         .then((v) => {
           if (stopped) return;
           setView(v);
@@ -61,7 +74,19 @@ const Track = () => {
       clearInterval(poll);
       clearInterval(tick);
     };
-  }, [token]);
+  }, [token, code]);
+
+  const acknowledge = async () => {
+    setAcking(true);
+    try {
+      await api(`/api/track/${encodeURIComponent(token)}/ack`, { body: { c: code } });
+      setView((v) => (v ? { ...v, acked: true } : v));
+    } catch {
+      // The button stays available to try again.
+    } finally {
+      setAcking(false);
+    }
+  };
 
   const stale = view?.position && now - new Date(view.position.updatedAt).getTime() > STALE_MS;
 
@@ -85,11 +110,17 @@ const Track = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="h-6 w-6 text-green-500" />
-                  {view.endedAt ? t("track.safeTitle", { name: view.name }) : t("track.endedTitle")}
+                  {view.kind === "walk"
+                    ? t("track.walkEndedTitle", { name: view.name })
+                    : view.endedAt
+                      ? t("track.safeTitle", { name: view.name })
+                      : t("track.endedTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {view.endedAt ? t("track.safeDesc", { time: new Date(view.endedAt).toLocaleString() }) : t("track.expiredDesc")}{" "}
-                  {t("track.stillWorried")}
+                  {view.endedAt
+                    ? t(view.kind === "walk" ? "track.walkEndedDesc" : "track.safeDesc", { time: new Date(view.endedAt).toLocaleString() })
+                    : t("track.expiredDesc")}{" "}
+                  {view.kind !== "walk" && t("track.stillWorried")}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -97,10 +128,42 @@ const Track = () => {
 
           {view?.active && (
             <>
-              <div className="space-y-1">
-                <h1 className="text-3xl font-bold text-destructive">{t("track.needsHelp", { name: view.name })}</h1>
-                <p className="text-muted-foreground">{t("track.intro", { name: view.name })}</p>
+              <div className="space-y-2">
+                {view.kind === "walk" ? (
+                  <>
+                    <h1 className="flex items-center gap-2 text-3xl font-extrabold">
+                      <Footprints className="h-7 w-7 text-primary" />
+                      {t("track.walkTitle", { name: view.name })}
+                    </h1>
+                    <p className="text-muted-foreground">{t("track.walkIntro", { name: view.name })}</p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-3xl font-extrabold text-destructive">{t("track.needsHelp", { name: view.name })}</h1>
+                    <p className="text-muted-foreground">{t("track.intro", { name: view.name })}</p>
+                  </>
+                )}
+                {view.note && <p className="font-semibold">"{view.note}"</p>}
               </div>
+
+              {/* Tell them someone is responding: very reassuring in an emergency. */}
+              {view.acked ? (
+                <p role="status" className="flex items-center gap-2 rounded-xl border border-success/40 bg-success/10 p-3 text-sm font-semibold">
+                  <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
+                  {t(view.kind === "walk" ? "track.followingThanks" : "track.ackThanks", { name: view.name })}
+                </p>
+              ) : (
+                <Button
+                  variant={view.kind === "walk" ? "glass" : "hero"}
+                  size="lg"
+                  className="w-full gap-2"
+                  onClick={acknowledge}
+                  disabled={acking}
+                >
+                  <CheckCircle2 className="h-5 w-5" />
+                  {t(view.kind === "walk" ? "track.following" : "track.onMyWay")}
+                </Button>
+              )}
 
               {error && <p className="text-sm text-destructive">{t(error)}</p>}
               {view.position ? (

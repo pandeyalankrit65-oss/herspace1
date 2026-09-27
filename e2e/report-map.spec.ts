@@ -27,3 +27,25 @@ test("a report with location appears on the map, coarsened, and can be flagged",
   await page.goto("/account");
   await expect(page.getByText("Followed from the bus stop")).toBeVisible();
 });
+
+test("the map shows police, hospitals and pharmacies near the user", async ({ page }) => {
+  await page.goto("/map");
+  await expect(page.getByText(/Tap "Show my location"/)).toBeVisible();
+  await page.getByRole("button", { name: "Show my location" }).click();
+
+  // Places come from the stubbed Overpass server (e2e/stub-osm.mjs).
+  const police = page.getByRole("button", { name: /Police/ });
+  await expect(police).toContainText("1");
+  await expect(page.locator(".leaflet-marker-icon")).toHaveCount(3);
+
+  await page.locator(".leaflet-marker-icon").filter({ hasText: "P" }).click();
+  const popup = page.locator(".leaflet-popup");
+  await expect(popup).toContainText("Parliament Street Police Station");
+  await expect(popup.getByRole("link", { name: "Call" })).toHaveAttribute("href", "tel:+911123361233");
+  await expect(popup.getByRole("link", { name: "Directions" })).toHaveAttribute("href", /destination=/);
+
+  // Filter chips hide a category.
+  await police.click();
+  await expect(police).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".leaflet-marker-icon")).toHaveCount(2);
+});

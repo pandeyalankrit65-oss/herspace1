@@ -6,6 +6,8 @@ import type { Server } from 'node:http';
 import { app } from '../app';
 import { db } from '../db';
 import { processOverdueCheckIns } from '../routes/checkins';
+import { contactCode } from '../routes/location';
+import { formatAddress, parsePlaces } from '../geo';
 
 let server: Server;
 let base: string;
@@ -373,5 +375,83 @@ describe('safety timer', () => {
     const other = await newUser();
     assert.equal((await call(`/check-ins/${second.data.checkIn.id}/complete`, { token: other.token, method: 'POST' })).status, 404);
     assert.equal((await call('/check-ins', { token, body: { minutes: 0 } })).status, 400);
+  });
+});
+
+async function userWithConfirmedContact(name = 'Nisha') {
+  const { token } = await newUser(name);
+  const c = await call('/contacts', { token, body: { name: 'Mom', phone: `+9193${String(Date.now()).slice(-8)}` } });
+  await call(`/contact-invites/${c.data.inviteLink.split('/confirm-contact/')[1]}`, { body: { accept: true } });
+  return { token, contactId: c.data.contact.id as number };
+}
+
+describe('contact acknowledgements', () => {
+  test("\"I'm on my way\" from a personal link tells the user who is coming", async () => {
+    const { token, contactId } = await userWithConfirmedContact();
+    const sos = await call('/sos', { token, body: { coords: { lat: 28.6, lng: 77.2 } } });
+    const shareToken = sos.data.share.url.split('/track/')[1];
+    const code = contactCode(sos.data.share.id, contactId);
+
+    assert.equal((await call(`/track/${shareToken}?c=${code}`)).data.acked, false);
+    assert.equal((await call(`/track/${shareToken}/ack`, { body: { c: code } })).status, 200);
+    assert.equal((await call(`/track/${shareToken}/ack`, { body: { c: code } })).status, 200, 'repeat is harmless');
+    assert.equal((await call(`/track/${shareToken}?c=${code}`)).data.acked, true);
+
+    const active = await call('/location-shares/active', { token });
+    assert.deepEqual(active.data.share.acks.map((a: { name: string }) => a.name), ['Mom']);
+
+    // A forged code doesn't impersonate a contact; it counts as an unnamed responder.
+    await call(`/track/${shareToken}/ack`, { body: { c: 'aaaaaaaaaaaaaaaa' } });
+    const after = await call('/location-shares/active', { token });
+    assert.deepEqual(after.data.share.acks.map((a: { name: string | null }) => a.name), ['Mom', null]);
+
+    await call(`/location-shares/${sos.data.share.id}/stop`, { token, method: 'POST' });
+    assert.equal((await call(`/track/${shareToken}/ack`, { body: { c: code } })).status, 410);
+  });
+});
+
+describe('walk with me', () => {
+  test('shares live location without an alert, and needs a confirmed contact', async () => {
+    const lonely = await newUser();
+    assert.equal((await call('/location-shares', { token: lonely.token, body: { minutes: 30 } })).status, 400);
+
+    const { token } = await userWithConfirmedContact('Rhea');
+    const walk = await call('/location-shares', { token, body: { minutes: 30, note: 'Metro to home', coords: { lat: 19.07, lng: 72.87 } } });
+    assert.equal(walk.status, 201);
+    assert.equal(walk.data.share.kind, 'walk');
+    assert.equal(walk.data.total, 1);
+    const view = await call(`/track/${walk.data.share.url.split('/track/')[1]}`);
+    assert.equal(view.data.kind, 'walk');
+    assert.equal(view.data.note, 'Metro to home');
+    assert.equal(view.data.active, true);
+    assert.equal((await call('/location-shares', { token, body: { minutes: 5 } })).status, 400, 'too short');
+  });
+});
+
+describe('places', () => {
+  test('nearby is disabled in tests and validates input', async () => {
+    assert.equal((await call('/nearby')).status, 400);
+    const res = await call('/nearby?lat=28.6&lng=77.2');
+    assert.deepEqual(res.data, { available: false, radius: 3000, places: [] });
+  });
+
+  test('address formatting and place parsing', () => {
+    assert.equal(formatAddress({ neighbourhood: 'Connaught Place', city: 'New Delhi', state: 'Delhi' }), 'Connaught Place, New Delhi');
+    assert.equal(formatAddress({ road: 'MG Road', town: 'Gurugram' }), 'MG Road, Gurugram');
+    assert.equal(formatAddress({ city: 'Mumbai' }), 'Mumbai');
+    assert.equal(formatAddress({}), null);
+    const places = parsePlaces([
+      { type: 'node', id: 1, lat: 1, lon: 2, tags: { amenity: 'police', name: 'Thana', phone: '100' } },
+      { type: 'way', id: 2, center: { lat: 3, lon: 4 }, tags: { amenity: 'hospital', 'name:en': 'City Hospital', name: 'शहर अस्पताल' } },
+      { type: 'node', id: 3, lat: 5, lon: 6, tags: { amenity: 'school' } },
+      { type: 'node', id: 4, tags: { amenity: 'pharmacy' } },
+    ]);
+    assert.deepEqual(
+      places.map((p) => [p.id, p.type, p.name, p.lat, p.phone]),
+      [
+        ['node/1', 'police', 'Thana', 1, '100'],
+        ['way/2', 'hospital', 'City Hospital', 3, null],
+      ]
+    );
   });
 });

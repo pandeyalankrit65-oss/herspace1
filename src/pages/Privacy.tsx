@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import LegalPage, { ContactLine, Section } from "@/components/LegalPage";
 
 const Privacy = () => (
-  <LegalPage title="Privacy Policy" updated="27 September 2026">
+  <LegalPage title="Privacy Policy" updated="28 September 2026">
     <p className="text-lg text-muted-foreground leading-relaxed">
       HerSpace exists to help keep you safe, so we collect only what the app needs to work, and we tell you plainly where it goes.
     </p>
@@ -21,7 +21,11 @@ const Privacy = () => (
           <strong>SOS alerts:</strong> when you press SOS we store the time, your location if you allow location access, and
           whether each message or call was delivered. If you're logged in, your contacts also get a private live-location link:
           while the SOS page is open we keep only your latest position, and delete it as soon as you tap "I'm safe" or after 4
-          hours.
+          hours. If a contact taps "I'm on my way" on that page, we record their reply so you can see it.
+        </li>
+        <li>
+          <strong>Walk with me and safety timers:</strong> the same live-location sharing, started by you, with an optional note
+          about where you're going. We keep only your latest position and delete it when you stop sharing or the time runs out.
         </li>
         <li>
           <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose to
@@ -55,6 +59,12 @@ const Privacy = () => (
           <strong>Service providers</strong> that run parts of the app for us: Twilio (text messages and calls), Resend
           (password-reset emails), Anthropic (the AI support chat) and OpenStreetMap (map images, which your browser loads
           directly). They receive only what they need for that task.
+        </li>
+        <li>
+          <strong>OpenStreetMap's Nominatim and Overpass services</strong>, contacted by our server, not your device. To add
+          an area name such as "Near Connaught Place" to SOS texts, we send your location rounded to about 10 m; to show police
+          stations, hospitals and pharmacies near you on the map, we send it rounded to about 1 km. Neither request includes
+          your name or account, and we cache the answers so the same area isn't looked up twice.
         </li>
       </ul>
       <p>

@@ -25,6 +25,7 @@ test("SOS alerts a confirmed contact, who can follow live location until the use
 
   const sos = await waitForMessage((m) => m.to === mom.phone && m.body.startsWith("HerSpace SOS"));
   expect(sos.body).toContain("maps.google.com/?q=28.6139,77.209");
+  expect(sos.body).toContain("Near Connaught Place, New Delhi"); // from the stubbed reverse geocoder
 
   // The contact opens the live link from the SMS.
   const contact = await browser.newContext();
@@ -33,6 +34,12 @@ test("SOS alerts a confirmed contact, who can follow live location until the use
   await expect(contactPage.getByRole("heading", { name: "Asha needs help" })).toBeVisible();
   await expect(contactPage.locator(".leaflet-interactive").first()).toBeVisible();
   await expect(contactPage.getByRole("link", { name: "Get directions" })).toHaveAttribute("href", /destination=28\.6139,77\.209/);
+
+  // The contact replies from the page, and the user sees who is coming.
+  await expect(page.getByText("No one has responded yet")).toBeVisible();
+  await contactPage.getByRole("button", { name: "I'm on my way" }).click();
+  await expect(contactPage.getByText("Thank you. Asha can see that you're on your way.")).toBeVisible();
+  await expect(page.getByText("Mom is on the way")).toBeVisible({ timeout: 20_000 });
 
   // "I'm safe" ends sharing; the contact sees it and no longer gets a position.
   await page.getByRole("button", { name: "I'm safe, stop sharing" }).click();

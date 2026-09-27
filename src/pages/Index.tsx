@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Shield, Heart, Users, AlertCircle, MessageCircle, Map, MapPin, Building2, Quote, Timer, Phone, CheckCircle2 } from "lucide-react";
+import { Shield, Heart, Users, AlertCircle, MessageCircle, Map, MapPin, Building2, Quote, Timer, Phone, CheckCircle2, Footprints, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -11,10 +11,12 @@ import type { MessageKey } from "@/i18n/en";
 const FEATURES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey; link: string }> = [
   { icon: AlertCircle, title: "home.feature.sosTitle", text: "home.feature.sosText", link: "/sos" },
   { icon: Timer, title: "home.feature.timerTitle", text: "home.feature.timerText", link: "/timer" },
+  { icon: Footprints, title: "home.feature.walkTitle", text: "home.feature.walkText", link: "/walk" },
   { icon: Shield, title: "home.feature.reportTitle", text: "home.feature.reportText", link: "/report" },
   { icon: MessageCircle, title: "home.feature.supportTitle", text: "home.feature.supportText", link: "/support" },
   { icon: Map, title: "home.feature.mapTitle", text: "home.feature.mapText", link: "/map" },
   { icon: Phone, title: "home.feature.fakeCallTitle", text: "home.feature.fakeCallText", link: "/sos" },
+  { icon: Languages, title: "home.feature.langTitle", text: "home.feature.langText", link: "/about" },
 ];
 
 const MISSION: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
@@ -118,7 +120,7 @@ const Index = () => {
             <span className={gradientText}>{t("home.featuresTitle")}</span>
           </h2>
           <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.featuresText")}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
             {FEATURES.map(({ icon: Icon, title, text, link }) => (
               <Link key={title} to={link}>
                 <Card className={`group h-full cursor-pointer ${cardClass}`}>

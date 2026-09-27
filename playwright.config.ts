@@ -7,6 +7,7 @@ import path from "path";
 // server/.env, so real credentials can't be used.
 const API_PORT = 3101;
 const WEB_PORT = 4174;
+const OSM_PORT = 3102;
 const tmp = path.resolve("e2e/.tmp");
 
 // Set once in the main process; worker processes inherit these values.
@@ -35,6 +36,12 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command: "node e2e/stub-osm.mjs",
+      url: `http://localhost:${OSM_PORT}/health`,
+      reuseExistingServer: false,
+      env: { STUB_OSM_PORT: String(OSM_PORT) },
+    },
+    {
       command: "npm run build --prefix server && node server/dist/index.js",
       url: `http://localhost:${API_PORT}/api/health`,
       reuseExistingServer: false,
@@ -48,6 +55,8 @@ export default defineConfig({
         APP_URL: `http://localhost:${WEB_PORT}`,
         DISABLE_IP_RATE_LIMIT: "1",
         CHECK_IN_POLL_MS: "1000", // so an expired safety timer alerts within a second
+        NOMINATIM_URL: `http://localhost:${OSM_PORT}`,
+        OVERPASS_URL: `http://localhost:${OSM_PORT}/interpreter`,
       },
     },
     {

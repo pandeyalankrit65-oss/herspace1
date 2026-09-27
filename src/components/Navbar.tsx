@@ -23,6 +23,7 @@ export const PRIMARY_LINKS: Array<{ path: string; label: MessageKey }> = [
 ];
 
 export const MORE_LINKS: Array<{ path: string; label: MessageKey }> = [
+  { path: "/walk", label: "nav.walk" },
   { path: "/about", label: "nav.about" },
   { path: "/circles", label: "nav.circles" },
   { path: "/corporate", label: "nav.corporate" },

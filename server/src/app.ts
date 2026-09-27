@@ -6,6 +6,7 @@ import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
 import { supportReply } from './chat';
 import { rateLimit } from './rateLimit';
 import { parse } from './util';
+import { nearbyPlaces, NEARBY_RADIUS_M } from './geo';
 import { authRouter } from './routes/auth';
 import { contactInvitesRouter, contactsRouter } from './routes/contacts';
 import { sosRouter, twilioRouter } from './routes/sos';
@@ -54,6 +55,18 @@ app.use('/api/sos', sosRouter);
 app.use('/api/location-shares', locationSharesRouter);
 app.use('/api/track', trackRouter);
 app.use('/api/check-ins', checkInsRouter);
+
+// Police stations, hospitals and pharmacies near a point, from OpenStreetMap (looked up by the
+// server with coordinates rounded to ~1 km, so the user's exact position isn't shared).
+const nearbyLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
+const nearbySchema = z.object({ lat: z.coerce.number().min(-90).max(90), lng: z.coerce.number().min(-180).max(180) });
+
+app.get('/api/nearby', nearbyLimiter, async (req, res) => {
+  const q = nearbySchema.safeParse(req.query);
+  if (!q.success) return res.status(400).json({ error: 'lat and lng are required' });
+  const places = await nearbyPlaces(q.data.lat, q.data.lng);
+  res.json({ available: places !== null, radius: NEARBY_RADIUS_M, places: places ?? [] });
+});
 
 const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 15 });
 const chatSchema = z.object({

@@ -138,6 +138,37 @@ const migrations: string[] = [
   );
   CREATE INDEX check_ins_due ON check_ins(status, due_at);
   `,
+  `
+  -- "Walk with me": live shares that aren't emergencies.
+  ALTER TABLE location_shares ADD COLUMN kind TEXT NOT NULL DEFAULT 'sos';
+  ALTER TABLE location_shares ADD COLUMN note TEXT;
+
+  -- Contacts replying "I'm on my way" from their tracking link.
+  CREATE TABLE share_acks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    share_id INTEGER NOT NULL REFERENCES location_shares(id) ON DELETE CASCADE,
+    contact_id INTEGER,
+    contact_name TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX share_acks_contact ON share_acks(share_id, contact_id);
+
+  -- Moderators review flagged map points (role is granted via ADMIN_EMAILS).
+  ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user';
+  -- visible: normal; approved: a moderator kept it, flags no longer hide it; removed: off the map.
+  ALTER TABLE reports ADD COLUMN map_status TEXT NOT NULL DEFAULT 'visible';
+
+  -- Photo evidence attached to reports (files on disk, metadata stripped).
+  ALTER TABLE reports ADD COLUMN upload_token_hash TEXT;
+  ALTER TABLE reports ADD COLUMN upload_expires_at TEXT;
+  CREATE TABLE report_photos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    file TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  `,
 ];
 
 function migrate() {

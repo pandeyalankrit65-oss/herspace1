@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import PageHeader from "@/components/PageHeader";
+import { NearbyFilters, NearbyMarkers, useNearby, type PlaceType } from "@/components/NearbyHelp";
 
 type Point = { id: number; incidentType: string; lat: number; lng: number; date: string };
 
@@ -42,6 +43,8 @@ const Map = () => {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
+  const nearby = useNearby(me);
+  const [visible, setVisible] = useState<Record<PlaceType, boolean>>({ police: true, hospital: true, pharmacy: true });
   const { toast } = useToast();
   const { t, tn } = useI18n();
 
@@ -107,6 +110,7 @@ const Map = () => {
                   {locating ? t("map.locating") : t("map.showLocation")}
                 </Button>
               </div>
+              <NearbyFilters state={nearby} visible={visible} onToggle={(type) => setVisible((v) => ({ ...v, [type]: !v[type] }))} />
               {(error || locateError) && (
                 <p className="px-4 py-2 text-sm text-destructive">{error ? t("map.loadFailed", { error }) : locateError}</p>
               )}
@@ -162,6 +166,7 @@ const Map = () => {
                       <Popup>{t("map.youAreHere")}</Popup>
                     </CircleMarker>
                   )}
+                  <NearbyMarkers places={nearby.places} visible={visible} />
                   <FlyTo target={me} />
                 </MapContainer>
               </div>

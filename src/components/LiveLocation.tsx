@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigation, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Navigation, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +7,10 @@ import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
 
-export type LiveShare = { id: number; expiresAt: string; url?: string };
+export type ShareAck = { name: string | null; at: string };
+export type LiveShare = { id: number; expiresAt: string; url?: string; kind?: "sos" | "walk"; acks?: ShareAck[] };
+
+const ACKS_POLL_MS = 10_000;
 
 const SEND_EVERY_MS = 20_000;
 const SEND_IF_MOVED_M = 30;
@@ -22,12 +25,15 @@ function metresBetween(a: Position, b: Position) {
 
 type WakeLockSentinel = { release: () => Promise<void> };
 
-// Streams the phone's position to the live share while this component is mounted, and
-// offers "I'm safe" to stop. Browsers pause pages when the screen locks, so we ask for a
+// Streams the phone's position to the live share while this component is mounted, shows which
+// contacts have responded, and offers "I'm safe" (SOS) or "I've arrived" (walk) to stop. Browsers pause pages when the screen locks, so we ask for a
 // screen wake lock and tell the user to keep the page open.
 const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => void }) => {
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
+  const walk = share.kind === "walk";
+  const [acks, setAcks] = useState<ShareAck[]>(share.acks ?? []);
+  const [now, setNow] = useState(Date.now());
   const [lastSent, setLastSent] = useState<Date | null>(null);
   // Holds a message key, so it re-renders in the current language.
   const [error, setError] = useState<"" | "live.noGeo" | "live.updateFailed" | "live.permission">("");
@@ -54,8 +60,9 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         if (!due) return;
         lastRef.current = { at: Date.now(), coords: pos };
         try {
-          await api(`/api/location-shares/${share.id}/location`, { body: { coords: pos } });
+          const res = await api<{ acks?: ShareAck[] }>(`/api/location-shares/${share.id}/location`, { body: { coords: pos } });
           if (!cancelled) {
+            if (res.acks) setAcks(res.acks);
             setLastSent(new Date());
             setError("");
           }
@@ -77,11 +84,30 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [share.id, onEnded]);
 
+  // Responses can arrive while the phone is standing still (no location updates), so poll too.
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      setNow(Date.now());
+      try {
+        const res = await api<{ share: LiveShare | null }>("/api/location-shares/active");
+        if (res.share?.id === share.id && res.share.acks) setAcks(res.share.acks);
+      } catch {
+        // keep the last known list
+      }
+    }, ACKS_POLL_MS);
+    return () => clearInterval(poll);
+  }, [share.id]);
+
+  const ago = (iso: string) => {
+    const minutes = Math.floor((now - new Date(iso).getTime()) / 60_000);
+    return minutes < 1 ? t("live.justNow") : tn("live.agoMinutes", minutes);
+  };
+
   const stop = async () => {
     setStopping(true);
     try {
       await api(`/api/location-shares/${share.id}/stop`, { method: "POST" });
-      toast({ title: t("live.safeTitle"), description: t("live.safeDesc") });
+      toast(walk ? { title: t("live.arrivedTitle"), description: t("live.arrivedDesc") } : { title: t("live.safeTitle"), description: t("live.safeDesc") });
       onEnded();
     } catch (err) {
       toast({ title: t("live.stopFailed"), description: (err as Error).message, variant: "destructive" });
@@ -95,10 +121,12 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5 text-primary animate-pulse" />
-          {t("live.title")}
+          {t(walk ? "live.walkTitle" : "live.title")}
         </CardTitle>
         <CardDescription>
-          {t("live.desc", { time: new Date(share.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
+          {t(walk ? "live.walkDesc" : "live.desc", {
+            time: new Date(share.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -111,9 +139,31 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
                 })
               : t("live.waiting")}
         </p>
+        <div className="rounded-xl border bg-card p-3">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("live.responses")}</p>
+          {acks.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{walk ? "—" : t("live.noResponse")}</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {acks.map((a, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm font-semibold">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                  {walk
+                    ? a.name
+                      ? t("live.following", { name: a.name })
+                      : t("live.someoneFollowing")
+                    : a.name
+                      ? t("live.onTheWay", { name: a.name })
+                      : t("live.someoneOnTheWay")}
+                  <span className="font-normal text-muted-foreground">· {ago(a.at)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <Button variant="hero" size="lg" className="w-full sm:w-auto gap-2" onClick={stop} disabled={stopping}>
           <ShieldCheck className="h-5 w-5" />
-          {stopping ? t("live.stopping") : t("live.safe")}
+          {stopping ? t("live.stopping") : t(walk ? "live.arrived" : "live.safe")}
         </Button>
       </CardContent>
     </Card>

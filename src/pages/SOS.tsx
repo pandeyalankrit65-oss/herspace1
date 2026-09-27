@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer } from "lucide-react";
+import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -367,7 +367,7 @@ const SOS = () => {
             </Card>
           )}
 
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
             <Card className="bg-primary/5 border-primary/20">
               <CardHeader>
                 <Timer className="h-8 w-8 text-primary mb-2" />
@@ -378,6 +378,20 @@ const SOS = () => {
                 <Link to="/timer">
                   <Button variant="hero" className="w-full">
                     {t("timer.ctaButton")}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardHeader>
+                <Footprints className="h-8 w-8 text-primary mb-2" />
+                <CardTitle className="text-lg">{t("walk.ctaTitle")}</CardTitle>
+                <CardDescription>{t("walk.ctaDesc")}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link to="/walk">
+                  <Button variant="hero" className="w-full">
+                    {t("walk.ctaButton")}
                   </Button>
                 </Link>
               </CardContent>

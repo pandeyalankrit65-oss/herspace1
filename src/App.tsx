@@ -28,6 +28,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Account = lazy(() => import("./pages/Account"));
 const Track = lazy(() => import("./pages/Track"));
 const SafetyTimer = lazy(() => import("./pages/SafetyTimer"));
+const Walk = lazy(() => import("./pages/Walk"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -63,6 +64,7 @@ const App = () => (
                     <Route path="/account" element={<Account />} />
                     <Route path="/track/:token" element={<Track />} />
                     <Route path="/timer" element={<SafetyTimer />} />
+                  <Route path="/walk" element={<Walk />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

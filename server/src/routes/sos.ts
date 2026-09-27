@@ -6,7 +6,8 @@ import { placeCall, sendSms, SendResult, smsConfigured, statusCallbackUrl, valid
 import { perUser, rateLimit } from '../rateLimit';
 import { coordsSchema, now, parse } from '../util';
 import { listContacts } from './contacts';
-import { createShare } from './location';
+import { contactLink, createShare } from './location';
+import { reverseGeocode } from '../geo';
 
 export const sosRouter = Router();
 export const twilioRouter = Router();
@@ -57,20 +58,27 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const confirmed = contacts.filter((c) => c.status === 'confirmed');
   const who = user?.name ?? 'Someone';
 
+  // A readable place name helps contacts who can't open a link quickly. Skipped for tests, and
+  // never allowed to hold up the alert for long (reverseGeocode times out after 2.5 s).
+  const address = coords && !isTest ? await reverseGeocode(coords.lat, coords.lng) : null;
   const where = coords
-    ? `Location: https://maps.google.com/?q=${coords.lat},${coords.lng}` +
+    ? (address ? `Near ${address}. ` : '') +
+      `Location: https://maps.google.com/?q=${coords.lat},${coords.lng}` +
       (coords.accuracy ? ` (within ~${Math.round(coords.accuracy)} m)` : '')
     : 'Their location could not be determined.';
   const time = new Date(createdAt).toUTCString();
-  // Real alerts from a logged-in user get a live-location link that keeps updating.
-  const share = user && !isTest ? createShare(user.id, sosId, coords) : undefined;
-  const live = share ? ` Live location: ${share.url}` : '';
+  // Real alerts from a logged-in user get a live-location link that keeps updating; each contact
+  // gets their own copy of it, so their "I'm on my way" says who is coming.
+  const share = user && !isTest ? createShare(user.id, { sosId, coords }) : undefined;
+  const messageFor = (link?: string) => buildMessage(link ? ` Live location: ${link}` : '');
   const checkIn = options.checkIn;
-  const message = isTest
+  const buildMessage = (live: string) => isTest
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`
     : checkIn
       ? `HerSpace safety alert: ${who} started a safety timer at ${fmtTime(checkIn.startedAt)}${checkIn.note ? ` ("${checkIn.note}")` : ''} and didn't check in by ${fmtTime(checkIn.dueAt)}. Last known ${where.charAt(0).toLowerCase()}${where.slice(1)}${live} Please call them now. If you can't reach them, contact local emergency services.`
       : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live} Please call them now. If you can't reach them, contact local emergency services.`;
+  // The generic version (no personal link) is what the app offers to send by hand.
+  const message = messageFor(share?.url);
 
   const insert = db.prepare(
     'INSERT INTO sos_deliveries (sos_id, contact_name, phone, channel, status, error, provider_sid, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
@@ -81,7 +89,9 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   // Contacts who haven't agreed are listed so the app can offer to text them by hand.
   for (const c of contacts.filter((c) => c.status !== 'confirmed')) record(c, 'sms', { status: 'not_confirmed' });
 
-  const smsResults = await Promise.all(confirmed.map((c) => sendSms(c.phone, message)));
+  const smsResults = await Promise.all(
+    confirmed.map((c) => sendSms(c.phone, messageFor(share ? contactLink(share.url, share.id, c.id) : undefined)))
+  );
   confirmed.forEach((c, i) => record(c, 'sms', smsResults[i]));
 
   if (!isTest && voiceCallsEnabled()) {
