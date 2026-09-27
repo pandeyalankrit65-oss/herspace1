@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import type { Contact } from "./Contacts";
 import { useI18n } from "@/i18n";
+import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import type { MessageKey } from "@/i18n/en";
 
 type T = (key: MessageKey, vars?: Record<string, string | number>) => string;
@@ -82,34 +82,13 @@ const fallbackMessage = (t: T, name: string | undefined, coords?: Coords) => {
 // "?&body=" is understood by both Android and iOS messaging apps.
 const smsLink = (phone: string, body: string) => `sms:${phone}?&body=${encodeURIComponent(body)}`;
 
-// Minimal typing for the Web Speech API, which isn't in TypeScript's DOM lib.
-type Recognition = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((e: { error: string }) => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-const SpeechRecognitionImpl: (new () => Recognition) | undefined =
-  typeof window !== "undefined"
-    ? (window as unknown as Record<string, new () => Recognition>).SpeechRecognition ||
-      (window as unknown as Record<string, new () => Recognition>).webkitSpeechRecognition
-    : undefined;
-
 const SOS = () => {
-  const { toast } = useToast();
   const { user } = useAuth();
   const { t, tn, tr, lang } = useI18n();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SosResult | null>(null);
-  const [listening, setListening] = useState(false);
-  const recognitionRef = useRef<Recognition | null>(null);
-  const wantListeningRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
@@ -191,51 +170,14 @@ const SOS = () => {
     setCountdown((c) => (c === null ? COUNTDOWN_SECONDS : c));
   }, []);
 
-  const stopListening = useCallback(() => {
-    wantListeningRef.current = false;
-    recognitionRef.current?.stop();
-    setListening(false);
-  }, []);
-
-  const startListening = () => {
-    if (!SpeechRecognitionImpl) {
-      toast({ title: t("sos.voiceUnsupportedTitle"), description: t("sos.voiceUnsupportedDesc"), variant: "destructive" });
-      return;
-    }
-    const rec = new SpeechRecognitionImpl();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = lang === "hi" ? "hi-IN" : navigator.language || "en-US";
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (/help\s*me|bachao|बचाओ|मदद/i.test(e.results[i][0].transcript)) {
-          startCountdown();
-        }
-      }
-    };
-    rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        toast({ title: t("sos.micBlockedTitle"), description: t("sos.micBlockedDesc"), variant: "destructive" });
-        stopListening();
-      }
-    };
-    // Browsers end recognition after silence; restart while the user wants it on.
-    rec.onend = () => {
-      if (wantListeningRef.current) {
-        try {
-          rec.start();
-        } catch {
-          setListening(false);
-        }
-      }
-    };
-    recognitionRef.current = rec;
-    wantListeningRef.current = true;
-    rec.start();
-    setListening(true);
-  };
-
-  useEffect(() => () => stopListening(), [stopListening]);
+  const voice = useVoiceTrigger({ lang, onTrigger: startCountdown });
+  const VOICE_ERRORS = {
+    unsupported: "sos.voiceUnsupportedDesc",
+    blocked: "sos.micBlockedDesc",
+    noMic: "sos.voiceNoMic",
+    network: "sos.voiceNetwork",
+    other: "sos.voiceOther",
+  } as const;
 
   const confirmedCount = contacts.filter((c) => c.status === "confirmed").length;
   const smsDeliveries = result?.deliveries.filter((d) => d.channel === "sms") ?? [];
@@ -322,14 +264,29 @@ const SOS = () => {
                     {t("common.call", { number: EMERGENCY_NUMBER })}
                   </Button>
                 </a>
-                <Button variant="glass" size="lg" onClick={listening ? stopListening : startListening} className="gap-2">
-                  {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                  {listening ? t("sos.voiceListening") : t("sos.voiceStart")}
+                <Button
+                  variant="glass"
+                  size="lg"
+                  onClick={voice.status === "listening" ? voice.stop : voice.start}
+                  className="gap-2"
+                  aria-pressed={voice.status === "listening"}
+                >
+                  {voice.status === "listening" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  {voice.status === "listening" ? t("sos.voiceListening") : t("sos.voiceStart")}
                 </Button>
               </div>
-              {listening && (
-                <p className="text-xs text-muted-foreground">
-                  {t("sos.voiceNote")}
+              {voice.status === "listening" && (
+                <div className="space-y-1 text-xs text-muted-foreground" aria-live="polite">
+                  <p>{t("sos.voiceHint")}</p>
+                  <p className="font-medium text-foreground">
+                    {voice.heard ? t("sos.voiceHeard", { text: voice.heard }) : t("sos.voiceWaiting")}
+                  </p>
+                  <p>{t("sos.voiceNote")}</p>
+                </div>
+              )}
+              {voice.status === "error" && voice.error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {t(VOICE_ERRORS[voice.error], { error: voice.errorDetail })}
                 </p>
               )}
             </CardContent>
