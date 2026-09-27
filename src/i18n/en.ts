@@ -628,6 +628,23 @@ const en = {
   "map.unnamed": "Unnamed",
   "map.nearbySource": "Places come from OpenStreetMap and may be incomplete. Check before relying on them.",
 
+  // Setup checklist
+  "setup.title": "Get ready for an emergency",
+  "setup.progress": "{done} of {total} done",
+  "setup.contact": "Add an emergency contact",
+  "setup.contactDesc": "Someone you trust who should hear from you in an emergency.",
+  "setup.confirmed": "Your contact confirms",
+  "setup.confirmedDesc": "They tap the link in their invite. Only confirmed contacts get alerts.",
+  "setup.test": "Send a test alert",
+  "setup.testDesc": "Check that messages really reach them. It's clearly marked as a test.",
+  "setup.location": "Allow location access",
+  "setup.locationDesc": "So your alerts say where you are.",
+  "setup.locationDenied": "Location is blocked. Turn it on for this site in your browser or phone settings.",
+  "setup.go": "Do this",
+  "setup.allow": "Allow",
+  "setup.done": "Done",
+  "setup.allDone": "You're ready. Your contacts will hear from you if you press SOS.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

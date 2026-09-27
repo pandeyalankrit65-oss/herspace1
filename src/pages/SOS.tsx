@@ -13,6 +13,7 @@ import FakeCall from "@/components/FakeCall";
 import type { Contact } from "./Contacts";
 import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
+import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import type { MessageKey } from "@/i18n/en";
 
@@ -222,6 +223,8 @@ const SOS = () => {
               </p>
             )}
           </PageHeader>
+
+          <SetupChecklist className="mb-6" />
 
           <Card className="mb-8 border-destructive/40">
             <CardContent className="p-6 sm:p-12 text-center space-y-8">

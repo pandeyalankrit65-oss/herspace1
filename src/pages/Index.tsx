@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SetupChecklist from "@/components/SetupChecklist";
 import heroImage from "@/assets/hero-safety.jpg";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -112,6 +113,10 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <div className="container mx-auto max-w-2xl px-4 empty:hidden">
+        <SetupChecklist className="mt-4" />
+      </div>
 
       {/* Features Grid */}
       <section className="py-20 px-4">

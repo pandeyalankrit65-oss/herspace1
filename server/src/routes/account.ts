@@ -16,6 +16,16 @@ const checkPassword = (userId: number, password: string) => {
   return verifyPassword(password, row.password_hash);
 };
 
+// Progress through the "ready for an emergency" checklist shown on the home and SOS pages.
+accountRouter.get('/setup', (req, res) => {
+  const userId = req.user!.id;
+  const contacts = db
+    .prepare("SELECT COUNT(*) AS total, COALESCE(SUM(status = 'confirmed'), 0) AS confirmed FROM contacts WHERE user_id = ?")
+    .get(userId) as { total: number; confirmed: number };
+  const test = db.prepare('SELECT 1 FROM sos_events WHERE user_id = ? AND is_test = 1 LIMIT 1').get(userId);
+  res.json({ contacts: contacts.total, confirmed: contacts.confirmed, testSent: Boolean(test) });
+});
+
 accountRouter.post('/password', passwordLimiter, (req, res) => {
   const body = parse(z.object({ currentPassword: z.string().min(1).max(200), newPassword: passwordSchema }), req, res);
   if (!body) return;

@@ -14,6 +14,7 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | **Safety timer** (`/timer`) | Set a timer (15 minutes to 2 hours) with an optional note, e.g. "walking home from the metro". If you don't tap **"I'm safe"** in time, the **server** texts your confirmed contacts your last known location and a live link. It works even if your phone is off, lost or out of battery. While the page is open, you can add time and your location stays fresh, and you get a vibration and a notification 2 minutes before the end. |
 | **Fake call** | A realistic incoming-call screen with ringtone and vibration, now or after a delay, as an excuse to leave an uncomfortable situation. No real call is made. |
 | **Voice trigger** | Say "help", "help me", "bachao" or "बचाओ" while the SOS page is open to start the (cancellable) countdown. The page shows what it heard, and a clear error if speech recognition fails. It uses the browser's Web Speech API: it works in Chrome and Edge, not Firefox or Brave, needs internet, and only works while the page is open. |
+| **Setup checklist** | Signed-in users see "Get ready for an emergency" on the home and SOS pages until they have added a contact, the contact has confirmed, a test alert has been sent and location access is allowed. |
 | **Emergency contacts** (`/contacts`) | Up to 10 contacts, stored on your account. Each contact gets an invite link and must **agree** before they receive alerts. This stops SOS from being used to spam strangers, and means they know what an alert means. The invite can be sent by SMS automatically or shared by the user over SMS or WhatsApp. A **test alert** checks that messages actually arrive. |
 | **Incident reports** (`/report`) | You can submit anonymously, in which case no account is linked, even if you're logged in. You can also add your current location to the Safe Map. |
 | **Safe Map & help nearby** (`/map`) | An OpenStreetMap/Leaflet map of reported incidents. Locations are rounded to about 1 km, and only the incident type and date are shown. Descriptions and identities never appear on the map. After "Show my location", it also shows police stations, hospitals and pharmacies within 3 km (from OpenStreetMap's Overpass API, queried by the server with the position rounded to ~1 km), with directions and a call button where a number is known. |
@@ -143,6 +144,7 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 | `POST /api/auth/logout`, `GET /api/auth/me` | Session | |
 | `POST /api/auth/forgot`, `POST /api/auth/reset` | – | Password reset by email |
 | `POST /api/account/password`, `GET /api/account/export`, `DELETE /api/account` | Session | Change password, download data, delete account |
+| `GET /api/account/setup` | Session | Setup checklist progress |
 | `GET/POST/PUT/DELETE /api/contacts`, `POST /api/contacts/:id/resend` | Session | Your emergency contacts and their invites |
 | `GET/POST /api/contact-invites/:token` | – | Used by an invited contact to accept or decline |
 | `POST /api/sos` | Optional | Sends SMS to your contacts; returns per-contact delivery status |

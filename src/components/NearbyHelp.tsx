@@ -10,7 +10,7 @@ export type PlaceType = "police" | "hospital" | "pharmacy";
 type Place = { id: string; type: PlaceType; name: string | null; lat: number; lng: number; phone: string | null; openingHours: string | null };
 type NearbyResponse = { available: boolean; radius: number; places: Place[] };
 
-export const PLACE_STYLES: Record<PlaceType, { label: MessageKey; color: string; glyph: string }> = {
+const PLACE_STYLES: Record<PlaceType, { label: MessageKey; color: string; glyph: string }> = {
   police: { label: "map.police", color: "#2563eb", glyph: "P" },
   hospital: { label: "map.hospital", color: "#dc2626", glyph: "H" },
   pharmacy: { label: "map.pharmacy", color: "#059669", glyph: "+" },

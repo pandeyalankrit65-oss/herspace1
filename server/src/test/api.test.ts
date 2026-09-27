@@ -410,6 +410,15 @@ describe('contact acknowledgements', () => {
   });
 });
 
+describe('setup checklist', () => {
+  test('tracks contacts, confirmation and the test alert', async () => {
+    const { token } = await userWithConfirmedContact();
+    assert.deepEqual((await call('/account/setup', { token })).data, { contacts: 1, confirmed: 1, testSent: false });
+    assert.equal((await call('/sos/test', { token, method: 'POST' })).status, 201);
+    assert.equal((await call('/account/setup', { token })).data.testSent, true);
+  });
+});
+
 describe('walk with me', () => {
   test('shares live location without an alert, and needs a confirmed contact', async () => {
     const lonely = await newUser();
