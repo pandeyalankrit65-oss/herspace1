@@ -26,6 +26,8 @@ test("password reset by email", async ({ page }) => {
 
   await page.goto("/login");
   await page.getByRole("link", { name: "Forgot password?" }).click();
+  // Wait for the reset page: otherwise the login page's Email field can be filled just before it's replaced.
+  await expect(page.getByRole("heading", { name: "Reset your password" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send reset link" }).click();
   await expect(page.getByText(/If an account exists/)).toBeVisible();
