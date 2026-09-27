@@ -12,9 +12,11 @@ import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 const Report = () => {
   const { toast } = useToast();
+  const { t } = useI18n();
   const { user } = useAuth();
   const emptyForm = {
     incidentType: "",
@@ -40,14 +42,14 @@ const Report = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.incidentType) {
-      toast({ title: "Please choose an incident type", variant: "destructive" });
+      toast({ title: t("report.chooseType"), variant: "destructive" });
       return;
     }
     setSubmitting(true);
     try {
       const coords = formData.includeCoords ? await getCoords() : undefined;
       if (formData.includeCoords && !coords) {
-        toast({ title: "Location unavailable", description: "Submitting without map coordinates." });
+        toast({ title: t("report.locUnavailableTitle"), description: t("report.locUnavailableDesc") });
       }
       await api("/api/reports", {
         body: {
@@ -60,14 +62,14 @@ const Report = () => {
         },
       });
       toast({
-        title: "Report Submitted",
-        description: "Thank you for your courage. Your report has been saved.",
+        title: t("report.submittedTitle"),
+        description: t("report.submittedDesc"),
       });
       setFormData(emptyForm);
     } catch (err) {
       toast({
-        title: "Submission Failed",
-        description: (err as Error).message || "Please try again.",
+        title: t("report.failedTitle"),
+        description: (err as Error).message || t("report.failedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -85,12 +87,11 @@ const Report = () => {
           <div className="text-center mb-12 space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Report an Incident
+                {t("report.title")}
               </span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Your voice matters. Documenting what happened helps you and helps others stay aware. Reports with a location
-              appear on the Safe Map as approximate points, never with your description or identity.
+              {t("report.intro")}
             </p>
           </div>
 
@@ -99,31 +100,31 @@ const Report = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                Incident Report Form
+                {t("report.formTitle")}
               </CardTitle>
               <CardDescription>
-                Provide as much detail as you feel comfortable sharing.
+                {t("report.formDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Incident Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="incidentType">Incident Type *</Label>
+                  <Label htmlFor="incidentType">{t("report.type")}</Label>
                   <Select
                     value={formData.incidentType}
                     onValueChange={(value) => setFormData({ ...formData, incidentType: value })}
                   >
                     <SelectTrigger id="incidentType">
-                      <SelectValue placeholder="Select incident type" />
+                      <SelectValue placeholder={t("report.typePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="harassment">Harassment</SelectItem>
-                      <SelectItem value="assault">Assault</SelectItem>
-                      <SelectItem value="stalking">Stalking</SelectItem>
-                      <SelectItem value="threat">Threat</SelectItem>
-                      <SelectItem value="discrimination">Discrimination</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="harassment">{t("report.types.harassment")}</SelectItem>
+                      <SelectItem value="assault">{t("report.types.assault")}</SelectItem>
+                      <SelectItem value="stalking">{t("report.types.stalking")}</SelectItem>
+                      <SelectItem value="threat">{t("report.types.threat")}</SelectItem>
+                      <SelectItem value="discrimination">{t("report.types.discrimination")}</SelectItem>
+                      <SelectItem value="other">{t("report.types.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -132,11 +133,11 @@ const Report = () => {
                 <div className="space-y-2">
                   <Label htmlFor="location" className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    Location
+                    {t("report.location")}
                   </Label>
                   <Input
                     id="location"
-                    placeholder="Where did this occur? (Optional)"
+                    placeholder={t("report.locationPlaceholder")}
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   />
@@ -146,7 +147,7 @@ const Report = () => {
                 <div className="space-y-2">
                   <Label htmlFor="date" className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    Date of Incident
+                    {t("report.date")}
                   </Label>
                   <Input
                     id="date"
@@ -159,10 +160,10 @@ const Report = () => {
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">Incident Description *</Label>
+                  <Label htmlFor="description">{t("report.description")}</Label>
                   <Textarea
                     id="description"
-                    placeholder="Please describe what happened. Take your time and include any details you feel comfortable sharing..."
+                    placeholder={t("report.descriptionPlaceholder")}
                     className="min-h-40 resize-none"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -181,10 +182,10 @@ const Report = () => {
                   />
                   <Label htmlFor="includeCoords" className="cursor-pointer leading-snug">
                     <span className="flex items-center gap-2">
-                      <LocateFixed className="h-4 w-4" /> Add my current location to the Safe Map
+                      <LocateFixed className="h-4 w-4" /> {t("report.addLocation")}
                     </span>
                     <span className="block text-xs text-muted-foreground font-normal mt-1">
-                      Only if you're where it happened. The map shows it rounded to about 1 km, with the incident type and date only.
+                      {t("report.addLocationHint")}
                     </span>
                   </Label>
                 </div>
@@ -200,11 +201,11 @@ const Report = () => {
                     onChange={(e) => setFormData({ ...formData, anonymous: e.target.checked })}
                   />
                   <Label htmlFor="anonymous" className="cursor-pointer leading-snug">
-                    Submit anonymously
+                    {t("report.anonymous")}
                     <span className="block text-xs text-muted-foreground font-normal mt-1">
                       {user
-                        ? "Anonymous reports aren't linked to your account, so you won't be able to see them later."
-                        : "You're not logged in, so this report is anonymous."}
+                        ? t("report.anonymousHintUser")
+                        : t("report.anonymousHintGuest")}
                     </span>
                   </Label>
                 </div>
@@ -212,12 +213,12 @@ const Report = () => {
                 {/* Submit Button */}
                 <div className="flex gap-4">
                   <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={submitting}>
-                    {submitting ? "Submitting..." : "Submit Report"}
+                    {submitting ? t("report.submitting") : t("report.submit")}
                   </Button>
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center">
-                  Reports are stored on the HerSpace server and are only visible to you (unless anonymous). They are not sent to the police.
+                  {t("report.storageNote")}
                 </p>
               </form>
             </CardContent>
@@ -226,18 +227,18 @@ const Report = () => {
           {/* Support Resources */}
           <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
             <CardHeader>
-              <CardTitle>Need Immediate Support?</CardTitle>
+              <CardTitle>{t("report.needHelpTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                If you're in immediate danger, please contact emergency services or use the SOS feature.
+                {t("report.needHelpDesc")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/sos" className="flex-1">
-                  <Button variant="emergency" className="w-full">Emergency SOS</Button>
+                  <Button variant="emergency" className="w-full">{t("common.emergencySos")}</Button>
                 </Link>
                 <Link to="/support" className="flex-1">
-                  <Button variant="hero" className="w-full">Chat with AI Support</Button>
+                  <Button variant="hero" className="w-full">{t("report.chat")}</Button>
                 </Link>
               </div>
             </CardContent>

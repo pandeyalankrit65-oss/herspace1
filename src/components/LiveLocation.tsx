@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { api, ApiError } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 export type LiveShare = { id: number; expiresAt: string; url?: string };
 
@@ -25,14 +26,16 @@ type WakeLockSentinel = { release: () => Promise<void> };
 // screen wake lock and tell the user to keep the page open.
 const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => void }) => {
   const { toast } = useToast();
+  const { t } = useI18n();
   const [lastSent, setLastSent] = useState<Date | null>(null);
-  const [error, setError] = useState("");
+  // Holds a message key, so it re-renders in the current language.
+  const [error, setError] = useState<"" | "live.noGeo" | "live.updateFailed" | "live.permission">("");
   const [stopping, setStopping] = useState(false);
   const lastRef = useRef<{ at: number; coords: GeolocationCoordinates } | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError("This browser can't share location.");
+      setError("live.noGeo");
       return;
     }
     let cancelled = false;
@@ -62,10 +65,10 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
           }
         } catch (err) {
           if (err instanceof ApiError && (err.status === 410 || err.status === 404)) onEnded();
-          else if (!cancelled) setError("Couldn't update your location. Retrying...");
+          else if (!cancelled) setError("live.updateFailed");
         }
       },
-      () => !cancelled && setError("Location permission is off, so your contacts can't see where you are."),
+      () => !cancelled && setError("live.permission"),
       { enableHighAccuracy: true, maximumAge: 10_000 }
     );
 
@@ -80,10 +83,10 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
     setStopping(true);
     try {
       await api(`/api/location-shares/${share.id}/stop`, { method: "POST" });
-      toast({ title: "Glad you're safe", description: "Location sharing has stopped and your location was removed." });
+      toast({ title: t("live.safeTitle"), description: t("live.safeDesc") });
       onEnded();
     } catch (err) {
-      toast({ title: "Couldn't stop sharing", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("live.stopFailed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setStopping(false);
     }
@@ -94,23 +97,23 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5 text-primary animate-pulse" />
-          Sharing your live location
+          {t("live.title")}
         </CardTitle>
         <CardDescription>
-          Your contacts can follow you on a map until you tap "I'm safe". Keep this page open: sharing pauses if the screen
-          locks or you switch apps. It stops automatically at {new Date(share.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.
+          {t("live.desc", { time: new Date(share.expiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          {error ||
-            (lastSent
-              ? `Last sent at ${lastSent.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
-              : "Waiting for your location...")}
+          {error
+            ? t(error)
+            : lastSent
+              ? t("live.lastSent", { time: lastSent.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) })
+              : t("live.waiting")}
         </p>
         <Button variant="hero" size="lg" className="w-full sm:w-auto gap-2" onClick={stop} disabled={stopping}>
           <ShieldCheck className="h-5 w-5" />
-          {stopping ? "Stopping..." : "I'm safe, stop sharing"}
+          {stopping ? t("live.stopping") : t("live.safe")}
         </Button>
       </CardContent>
     </Card>

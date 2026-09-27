@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -34,28 +36,28 @@ const ForgotPassword = () => {
         <div className="container mx-auto max-w-md">
           <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
             <CardHeader className="text-center space-y-2">
-              <CardTitle className="text-2xl">Reset your password</CardTitle>
+              <CardTitle className="text-2xl">{t("forgot.title")}</CardTitle>
               <CardDescription>
                 {sent
-                  ? "If an account exists for that email, we've sent a link to reset your password. It expires in 1 hour."
-                  : "Enter your account email and we'll send you a reset link."}
+                  ? t("forgot.sent")
+                  : t("forgot.prompt")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {!sent && (
                 <form className="space-y-4" onSubmit={onSubmit}>
                   <div>
-                    <label className="text-sm mb-1 block" htmlFor="email">Email</label>
+                    <label className="text-sm mb-1 block" htmlFor="email">{t("common.email")}</label>
                     <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
                   {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
                   <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-                    {loading ? "Sending..." : "Send reset link"}
+                    {loading ? t("forgot.sending") : t("forgot.submit")}
                   </Button>
                 </form>
               )}
               <p className="text-sm text-muted-foreground mt-4 text-center">
-                <Link to="/login" className="text-primary">Back to login</Link>
+                <Link to="/login" className="text-primary">{t("forgot.back")}</Link>
               </p>
             </CardContent>
           </Card>

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { offlineContacts } from "@/lib/offline";
+import { useI18n } from "@/i18n";
 
 export type ContactStatus = "pending" | "confirmed" | "declined";
 
@@ -27,10 +28,13 @@ export interface Contact {
 type InviteResult = { inviteLink: string; inviteSms: "sent" | "failed" | "not_configured"; inviteError?: string };
 type PendingInvite = InviteResult & { contact: Pick<Contact, "name" | "phone"> };
 
-const STATUS_BADGE: Record<ContactStatus, { label: string; className: string }> = {
-  confirmed: { label: "Confirmed", className: "bg-green-500/15 text-green-600 border-green-500/40" },
-  pending: { label: "Waiting for confirmation", className: "bg-amber-500/15 text-amber-600 border-amber-500/40" },
-  declined: { label: "Declined", className: "bg-destructive/15 text-destructive border-destructive/40" },
+const STATUS_BADGE: Record<
+  ContactStatus,
+  { label: "contacts.status.confirmed" | "contacts.status.pending" | "contacts.status.declined"; className: string }
+> = {
+  confirmed: { label: "contacts.status.confirmed", className: "bg-green-500/15 text-green-600 border-green-500/40" },
+  pending: { label: "contacts.status.pending", className: "bg-amber-500/15 text-amber-600 border-amber-500/40" },
+  declined: { label: "contacts.status.declined", className: "bg-destructive/15 text-destructive border-destructive/40" },
 };
 
 // Contacts saved by the old browser-only version of the app.
@@ -46,6 +50,7 @@ const readLegacyContacts = (): Array<{ name: string; phone: string; relation?: s
 
 const Contacts = () => {
   const { toast } = useToast();
+  const { t, tn } = useI18n();
   const { user, loading: authLoading } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -66,11 +71,11 @@ const Contacts = () => {
       setContacts(res.contacts);
       offlineContacts.set(res.contacts);
     } catch (err) {
-      toast({ title: "Couldn't load contacts", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("contacts.loadFailed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setLoaded(true);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     if (user) load();
@@ -96,10 +101,10 @@ const Contacts = () => {
         setInvite({ ...(res as InviteResult), contact: res.contact });
       } else {
         setOpen(false);
-        toast({ title: "Contact updated" });
+        toast({ title: t("contacts.updated") });
       }
     } catch (err) {
-      toast({ title: "Couldn't save contact", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("contacts.saveFailed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -125,9 +130,9 @@ const Contacts = () => {
     try {
       await api(`/api/contacts/${id}`, { method: "DELETE" });
       setContacts((prev) => prev.filter((c) => c.id !== id));
-      toast({ title: "Contact removed" });
+      toast({ title: t("contacts.removed") });
     } catch (err) {
-      toast({ title: "Couldn't remove contact", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("contacts.removeFailed"), description: (err as Error).message, variant: "destructive" });
     }
   };
 
@@ -138,7 +143,7 @@ const Contacts = () => {
       setOpen(true);
       await load();
     } catch (err) {
-      toast({ title: "Couldn't resend invite", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("contacts.resendFailed"), description: (err as Error).message, variant: "destructive" });
     }
   };
 
@@ -150,17 +155,17 @@ const Contacts = () => {
       toast(
         sent > 0
           ? {
-              title: "Test alert sent",
-              description: `${sent} confirmed contact${sent === 1 ? "" : "s"} should get a test SMS now. Ask them if it arrived.`,
+              title: t("contacts.testSentTitle"),
+              description: tn("contacts.testSentDesc", sent),
             }
           : {
-              title: "Test alert not delivered",
-              description: "No SMS was sent. Either no contact has confirmed yet, or SMS isn't set up on this server.",
+              title: t("contacts.testNotSentTitle"),
+              description: t("contacts.testNotSentDesc"),
               variant: "destructive",
             },
       );
     } catch (err) {
-      toast({ title: "Couldn't send test", description: (err as Error).message, variant: "destructive" });
+      toast({ title: t("contacts.testFailed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setTesting(false);
     }
@@ -184,8 +189,8 @@ const Contacts = () => {
     await load();
     toast(
       failed.length
-        ? { title: "Some contacts need fixing", description: failed.join("\n"), variant: "destructive" }
-        : { title: "Contacts imported", description: "Each one needs to confirm before they'll receive alerts." },
+        ? { title: t("contacts.importFixTitle"), description: failed.join("\n"), variant: "destructive" }
+        : { title: t("contacts.importedTitle"), description: t("contacts.importedDesc") },
     );
   };
 
@@ -197,20 +202,18 @@ const Contacts = () => {
           <div className="container mx-auto max-w-md">
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
               <CardHeader>
-                <CardTitle>Emergency Contacts</CardTitle>
-                <CardDescription>
-                  Log in to save trusted contacts. They're stored on your account so SOS alerts can reach them from any device.
-                </CardDescription>
+                <CardTitle>{t("contacts.title")}</CardTitle>
+                <CardDescription>{t("contacts.loginDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="flex gap-2">
                 <Link to="/login?next=/contacts" className="flex-1">
                   <Button variant="hero" className="w-full">
-                    Log in
+                    {t("common.logIn")}
                   </Button>
                 </Link>
                 <Link to="/signup?next=/contacts" className="flex-1">
                   <Button variant="outline" className="w-full">
-                    Sign up
+                    {t("common.signUp")}
                   </Button>
                 </Link>
               </CardContent>
@@ -223,9 +226,7 @@ const Contacts = () => {
   }
 
   const confirmedCount = contacts.filter((c) => c.status === "confirmed").length;
-  const shareText = invite
-    ? `${user?.name ?? "I"} added you as an emergency contact on HerSpace. Please confirm here: ${invite.inviteLink}`
-    : "";
+  const shareText = invite ? t("contacts.shareText", { user: user?.name ?? "", link: invite.inviteLink }) : "";
 
   return (
     <div className="min-h-screen">
@@ -235,12 +236,9 @@ const Contacts = () => {
           {legacy.length > 0 && (
             <Card className="border-primary/40">
               <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6">
-                <p className="text-sm">
-                  {legacy.length} contact{legacy.length === 1 ? " is" : "s are"} saved only in this browser from an older version.
-                  Import them into your account?
-                </p>
+                <p className="text-sm">{tn("contacts.legacy", legacy.length)}</p>
                 <Button variant="hero" onClick={importLegacy}>
-                  Import
+                  {t("contacts.import")}
                 </Button>
               </CardContent>
             </Card>
@@ -248,21 +246,16 @@ const Contacts = () => {
           <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
             <CardHeader className="flex flex-row items-start justify-between gap-4">
               <div>
-                <CardTitle>Emergency Contacts</CardTitle>
-                <CardDescription>
-                  Confirmed contacts get an SMS with your location when you trigger SOS. Each person has to agree first, so they
-                  know what the message means when it arrives.
-                </CardDescription>
+                <CardTitle>{t("contacts.title")}</CardTitle>
+                <CardDescription>{t("contacts.desc")}</CardDescription>
               </div>
               <Button variant="hero" className="shrink-0" onClick={openAdd}>
-                Add Contact
+                {t("contacts.add")}
               </Button>
             </CardHeader>
             <CardContent>
-              {!loaded && <p className="text-sm text-muted-foreground">Loading...</p>}
-              {loaded && contacts.length === 0 && (
-                <p className="text-sm text-muted-foreground">No contacts yet. Add at least one trusted contact.</p>
-              )}
+              {!loaded && <p className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+              {loaded && contacts.length === 0 && <p className="text-sm text-muted-foreground">{t("contacts.empty")}</p>}
               {contacts.length > 0 && (
                 <div className="space-y-3">
                   {contacts.map((c) => (
@@ -274,7 +267,7 @@ const Contacts = () => {
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium truncate">{c.name}</span>
                           <Badge variant="outline" className={STATUS_BADGE[c.status].className}>
-                            {STATUS_BADGE[c.status].label}
+                            {t(STATUS_BADGE[c.status].label)}
                           </Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -285,14 +278,14 @@ const Contacts = () => {
                       <div className="flex flex-wrap gap-2 shrink-0">
                         {c.status !== "confirmed" && (
                           <Button variant="outline" size="sm" onClick={() => onResend(c)}>
-                            Resend invite
+                            {t("contacts.resend")}
                           </Button>
                         )}
                         <Button variant="outline" size="sm" onClick={() => onEdit(c)}>
-                          Edit
+                          {t("common.edit")}
                         </Button>
                         <Button variant="destructive" size="sm" onClick={() => onDelete(c.id)}>
-                          Delete
+                          {t("common.delete")}
                         </Button>
                       </div>
                     </div>
@@ -305,12 +298,10 @@ const Contacts = () => {
           {confirmedCount > 0 && (
             <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
               <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6">
-                <p className="text-sm">
-                  Make sure alerts actually reach your contacts. A test sends them a message clearly marked as a test.
-                </p>
+                <p className="text-sm">{t("contacts.testPrompt")}</p>
                 <Button variant="hero" onClick={onTestAlert} disabled={testing} className="gap-2 shrink-0">
                   <Send className="h-4 w-4" />
-                  {testing ? "Sending..." : "Send test alert"}
+                  {testing ? t("contacts.sendingTest") : t("contacts.sendTest")}
                 </Button>
               </CardContent>
             </Card>
@@ -323,11 +314,11 @@ const Contacts = () => {
           {invite ? (
             <>
               <DialogHeader>
-                <DialogTitle>Ask {invite.contact.name} to confirm</DialogTitle>
+                <DialogTitle>{t("contacts.inviteTitle", { name: invite.contact.name })}</DialogTitle>
                 <DialogDescription>
                   {invite.inviteSms === "sent"
-                    ? `We've texted ${invite.contact.name} a confirmation link. You can also send it yourself so they know it's really from you.`
-                    : `We couldn't text ${invite.contact.name} automatically. Send them this link yourself. They won't receive SOS alerts until they confirm.`}
+                    ? t("contacts.inviteSent", { name: invite.contact.name })
+                    : t("contacts.inviteNotSent", { name: invite.contact.name })}
                 </DialogDescription>
               </DialogHeader>
               {invite && (
@@ -336,7 +327,7 @@ const Contacts = () => {
                   <div className="grid sm:grid-cols-3 gap-2">
                     <a href={`sms:${invite.contact.phone}?&body=${encodeURIComponent(shareText)}`}>
                       <Button variant="hero" className="w-full gap-2">
-                        <MessageSquare className="h-4 w-4" /> Text
+                        <MessageSquare className="h-4 w-4" /> {t("common.text")}
                       </Button>
                     </a>
                     <a
@@ -345,7 +336,7 @@ const Contacts = () => {
                       rel="noreferrer"
                     >
                       <Button variant="outline" className="w-full">
-                        WhatsApp
+                        {t("common.whatsapp")}
                       </Button>
                     </a>
                     <Button
@@ -354,63 +345,59 @@ const Contacts = () => {
                       onClick={() =>
                         navigator.clipboard
                           .writeText(shareText)
-                          .then(() => toast({ title: "Copied" }))
+                          .then(() => toast({ title: t("common.copied") }))
                           .catch(() =>
                             toast({
-                              title: "Couldn't copy",
-                              description: "Select the link and copy it manually.",
+                              title: t("contacts.copyFailedTitle"),
+                              description: t("contacts.copyFailedDesc"),
                               variant: "destructive",
                             }),
                           )
                       }
                     >
-                      <Copy className="h-4 w-4" /> Copy
+                      <Copy className="h-4 w-4" /> {t("common.copy")}
                     </Button>
                   </div>
                 </div>
               )}
               <div className="flex justify-end">
                 <Button variant="ghost" onClick={() => setOpen(false)}>
-                  Done
+                  {t("common.done")}
                 </Button>
               </div>
             </>
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>{editing ? "Edit Contact" : "Add New Contact"}</DialogTitle>
-                {!editing && (
-                  <DialogDescription>
-                    We'll send them a link to confirm they're happy to be your emergency contact.
-                  </DialogDescription>
-                )}
+                <DialogTitle>{editing ? t("contacts.editTitle") : t("contacts.addTitle")}</DialogTitle>
+                {!editing && <DialogDescription>{t("contacts.addDesc")}</DialogDescription>}
               </DialogHeader>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t("common.name")}</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone (with country code)</Label>
+                  <Label htmlFor="phone">{t("contacts.phone")}</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g. +91 98765 43210"
+                    placeholder={t("contacts.phonePlaceholder")}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="relation">Relation (optional)</Label>
+                  <Label htmlFor="relation">{t("contacts.relation")}</Label>
                   <Input id="relation" value={relation} onChange={(e) => setRelation(e.target.value)} />
                 </div>
                 <div className="flex gap-2 justify-end pt-2">
                   <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                   <Button type="submit" variant="hero" disabled={saving}>
-                    {saving ? "Saving..." : editing ? "Save Changes" : "Add"}
+                    {saving ? t("common.saving") : editing ? t("contacts.saveButton") : t("contacts.addButton")}
                   </Button>
                 </div>
               </form>

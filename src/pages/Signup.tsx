@@ -7,9 +7,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { safeNext } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { t, tr } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +31,7 @@ const Signup = () => {
       await signup(name, email, password);
       navigate(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign up failed. Please try again.");
+      setError(err instanceof Error ? err.message : t("signup.failed"));
     } finally {
       setLoading(false);
     }
@@ -42,36 +44,51 @@ const Signup = () => {
         <div className="container mx-auto max-w-md">
           <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
             <CardHeader className="text-center space-y-2">
-              <CardTitle className="text-2xl">Sign Up</CardTitle>
-              <CardDescription>Create your account on HerSpace</CardDescription>
+              <CardTitle className="text-2xl">{t("signup.title")}</CardTitle>
+              <CardDescription>{t("signup.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="name">Name</label>
+                  <label className="text-sm mb-1 block" htmlFor="name">{t("common.name")}</label>
                   <Input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="email">Email</label>
+                  <label className="text-sm mb-1 block" htmlFor="email">{t("common.email")}</label>
                   <Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="password">Password</label>
+                  <label className="text-sm mb-1 block" htmlFor="password">{t("common.password")}</label>
                   <Input id="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
-                  <p className="text-xs text-muted-foreground mt-1">At least 8 characters.</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("common.minChars")}</p>
                 </div>
                 {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Create Account"}
+                  {loading ? t("signup.submitting") : t("signup.submit")}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  By creating an account you agree to our{" "}
-                  <Link to="/terms" className="underline">Terms of Use</Link> and{" "}
-                  <Link to="/privacy" className="underline">Privacy Policy</Link>.
+                  {tr("signup.agree", {
+                    terms: (
+                      <Link to="/terms" className="underline">
+                        {t("footer.terms")}
+                      </Link>
+                    ),
+                    privacy: (
+                      <Link to="/privacy" className="underline">
+                        {t("footer.privacy")}
+                      </Link>
+                    ),
+                  })}
                 </p>
               </form>
               <p className="text-sm text-muted-foreground mt-4 text-center">
-                Already have an account? <Link to={`/login${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary">Login</Link>
+                {tr("signup.haveAccount", {
+                  link: (
+                    <Link to={`/login${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="text-primary">
+                      {t("common.logIn")}
+                    </Link>
+                  ),
+                })}
               </p>
             </CardContent>
           </Card>

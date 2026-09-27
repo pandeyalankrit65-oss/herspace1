@@ -57,12 +57,13 @@ const chatSchema = z.object({
     .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(4000) }))
     .min(1)
     .max(30),
+  lang: z.enum(['en', 'hi']).optional(),
 });
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
   const body = parse(chatSchema, req, res);
   if (!body) return;
-  const reply = await supportReply(body.messages);
+  const reply = await supportReply(body.messages, body.lang);
   res.json({ message: { role: 'assistant', content: reply.content }, mode: reply.mode });
 });
 

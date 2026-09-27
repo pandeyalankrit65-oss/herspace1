@@ -1,14 +1,17 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Shield, Menu, X } from "lucide-react";
+import { Shield, Menu, X, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { LANGS, useI18n } from "@/i18n";
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { t, lang, setLang } = useI18n();
+  const otherLang = lang === "en" ? "hi" : "en";
 
   const handleLogout = async () => {
     setMobileMenuOpen(false);
@@ -17,14 +20,14 @@ const Navbar = () => {
   };
 
   const navItems = [
-    { path: "/", label: "Home" },
-    { path: "/sos", label: "Safety Alert" },
-    { path: "/report", label: "Report" },
-    { path: "/support", label: "AI Support" },
-    { path: "/map", label: "Safe Map" },
-    { path: "/corporate", label: "Corporate Connect" },
-    { path: "/circles", label: "Circles" },
-    { path: "/about", label: "About Us" },
+    { path: "/", label: t("nav.home") },
+    { path: "/sos", label: t("nav.sos") },
+    { path: "/report", label: t("nav.report") },
+    { path: "/support", label: t("nav.support") },
+    { path: "/map", label: t("nav.map") },
+    { path: "/corporate", label: t("nav.corporate") },
+    { path: "/circles", label: t("nav.circles") },
+    { path: "/about", label: t("nav.about") },
   ];
 
   return (
@@ -61,35 +64,50 @@ const Navbar = () => {
               <>
                 <Link to="/contacts">
                   <Button variant="ghost" className={location.pathname === "/contacts" ? "text-primary" : "text-muted-foreground hover:text-foreground"}>
-                    Contacts
+                    {t("nav.contacts")}
                   </Button>
                 </Link>
                 <Link to="/account">
                   <Button variant="ghost" className={location.pathname === "/account" ? "text-primary" : "text-muted-foreground hover:text-foreground"}>
-                    Account
+                    {t("nav.account")}
                   </Button>
                 </Link>
                 <Button variant="outline" onClick={handleLogout} title={`Signed in as ${user.email}`}>
-                  Log out
+                  {t("nav.logOut")}
                 </Button>
               </>
             ) : (
               <Link to="/login">
-                <Button variant="hero">Log in</Button>
+                <Button variant="hero">{t("common.logIn")}</Button>
               </Link>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="xl:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          >
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* Always visible, so someone who can't read English can find it. */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => setLang(otherLang)}
+              aria-label={t("nav.switchLanguage")}
+              lang={otherLang}
+            >
+              <Languages className="h-4 w-4" />
+              {LANGS[otherLang].label}
+            </Button>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="xl:hidden"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -113,21 +131,21 @@ const Navbar = () => {
               <>
                 <Link to="/contacts" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    Emergency Contacts
+                    {t("nav.emergencyContacts")}
                   </Button>
                 </Link>
                 <Link to="/account" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                    Account
+                    {t("nav.account")}
                   </Button>
                 </Link>
                 <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
-                  Log out ({user.name})
+                  {t("nav.logOutAs", { name: user.name })}
                 </Button>
               </>
             ) : (
               <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="hero" className="w-full">Log in</Button>
+                <Button variant="hero" className="w-full">{t("common.logIn")}</Button>
               </Link>
             )}
           </div>

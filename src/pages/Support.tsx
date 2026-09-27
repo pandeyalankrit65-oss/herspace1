@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 interface Message {
   role: "user" | "assistant";
@@ -17,13 +18,10 @@ interface Message {
 }
 
 const Support = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "Hi, I'm here with you. This is a safe, judgment‑free space for women to share what they're going through. Your feelings matter, and you deserve care and safety. How would you like to begin?",
-    },
-  ]);
+  const { t, lang } = useI18n();
+  // The greeting is rendered from the current language rather than stored, so it follows a
+  // language switch; it's never sent to the API.
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<"ai" | "fallback" | null>(null);
@@ -32,7 +30,7 @@ const Support = () => {
   useEffect(() => {
     // Keep the newest message in view by scrolling the chat panel only. scrollIntoView would
     // also scroll the page, which jumps phones past the header on first load.
-    if (messages.length === 1 && !isTyping) return;
+    if (messages.length === 0 && !isTyping) return;
     const viewport = scrollRef.current?.closest<HTMLElement>("[data-radix-scroll-area-viewport]");
     viewport?.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
@@ -48,16 +46,17 @@ const Support = () => {
       const data = await api<{ message: { role: "assistant"; content: string }; mode: "ai" | "fallback" }>("/api/chat", {
         body: {
           messages: [...messages, userMessage].slice(-20).map(({ role, content }) => ({ role, content })),
+          lang,
         },
       });
       setMode(data.mode);
       const assistant = data.message;
-      const assistantMessage: Message = { role: "assistant", content: assistant?.content || "I'm here for you.", ts: new Date().toISOString() };
+      const assistantMessage: Message = { role: "assistant", content: assistant?.content || t("support.emptyReply"), ts: new Date().toISOString() };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "I'm having trouble responding right now, but I'm here with you.", ts: new Date().toISOString() },
+        { role: "assistant", content: t("support.errorReply"), ts: new Date().toISOString() },
       ]);
     } finally {
       setIsTyping(false);
@@ -74,11 +73,11 @@ const Support = () => {
           <div className="text-center mb-8 space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                AI Support Chat
+                {t("support.title")}
               </span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              A compassionate AI companion to talk things through. It's not a therapist or an emergency service.
+              {t("support.subtitle")}
             </p>
           </div>
 
@@ -88,14 +87,22 @@ const Support = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-primary" />
-                  Support Chat
+                  {t("support.cardTitle")}
                 </CardTitle>
-                <CardDescription>Share your thoughts in a safe, judgment-free space</CardDescription>
+                <CardDescription>{t("support.cardDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Messages */}
                 <ScrollArea className="h-[500px] pr-4">
                   <div className="space-y-4">
+                    <div className="flex justify-start">
+                      <Avatar className="mr-3">
+                        <AvatarFallback>{t("support.ai")}</AvatarFallback>
+                      </Avatar>
+                      <div className="max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm bg-secondary text-secondary-foreground">
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{t("support.greeting")}</p>
+                      </div>
+                    </div>
                     {messages.map((message, index) => (
                       <div
                         key={index}
@@ -103,7 +110,7 @@ const Support = () => {
                       >
                         {message.role === "assistant" && (
                           <Avatar className="mr-3">
-                            <AvatarFallback>AI</AvatarFallback>
+                            <AvatarFallback>{t("support.ai")}</AvatarFallback>
                           </Avatar>
                         )}
                         <div className="flex flex-col max-w-[80%]">
@@ -122,7 +129,7 @@ const Support = () => {
                         </div>
                         {message.role === "user" && (
                           <Avatar className="ml-3">
-                            <AvatarFallback>YOU</AvatarFallback>
+                            <AvatarFallback className="text-[10px]">{t("support.you")}</AvatarFallback>
                           </Avatar>
                         )}
                       </div>
@@ -145,27 +152,26 @@ const Support = () => {
                 {/* Input */}
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Type your message..."
-                    aria-label="Message"
+                    placeholder={t("support.placeholder")}
+                    aria-label={t("support.messageLabel")}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !isTyping && handleSend()}
                     className="flex-1"
                     disabled={isTyping}
                   />
-                  <Button onClick={handleSend} variant="hero" size="icon" disabled={isTyping} aria-label="Send message">
+                  <Button onClick={handleSend} variant="hero" size="icon" disabled={isTyping} aria-label={t("support.send")}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
 
                 {mode === "fallback" && (
                   <p className="text-xs text-center rounded-md bg-muted px-3 py-2">
-                    The AI model isn't available right now, so you're getting simple scripted replies.
+                    {t("support.fallbackNote")}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground text-center">
-                  Messages are sent to an AI model to generate replies and aren't saved by HerSpace. This is support, not
-                  medical or legal advice.
+                  {t("support.privacyNote")}
                 </p>
               </CardContent>
             </Card>
@@ -175,11 +181,11 @@ const Support = () => {
               <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
                 <CardHeader>
                   <Heart className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Emotional Wellness</CardTitle>
+                  <CardTitle className="text-lg">{t("support.wellnessTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription>
-                    Talk through anxiety, stress, or something that happened. It can suggest grounding exercises and next steps.
+                    {t("support.wellnessDesc")}
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -187,27 +193,27 @@ const Support = () => {
               <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
                 <CardHeader>
                   <Brain className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="text-lg">Mental Health Resources</CardTitle>
+                  <CardTitle className="text-lg">{t("support.resourcesTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <CardDescription className="mb-4">
-                    Professional help is available if you need more support
+                    {t("support.resourcesDesc")}
                   </CardDescription>
                   <ul className="space-y-2 text-sm">
                     <li>
-                      <a className="text-primary underline" href="tel:181">181</a> Women Helpline (India)
+                      <a className="text-primary underline" href="tel:181">181</a> {t("support.helplineWomen")}
                     </li>
                     <li>
-                      <a className="text-primary underline" href="tel:14416">14416</a> Tele-MANAS mental health (India)
+                      <a className="text-primary underline" href="tel:14416">14416</a> {t("support.helplineTeleManas")}
                     </li>
                     <li>
-                      <a className="text-primary underline" href="tel:988">988</a> Suicide &amp; Crisis Lifeline (US)
+                      <a className="text-primary underline" href="tel:988">988</a> {t("support.helpline988")}
                     </li>
                     <li>
                       <a className="text-primary underline" href="https://findahelpline.com" target="_blank" rel="noreferrer">
                         findahelpline.com
                       </a>{" "}
-                      for other countries
+                      {t("support.otherCountries")}
                     </li>
                   </ul>
                 </CardContent>
@@ -215,14 +221,14 @@ const Support = () => {
 
               <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
                 <CardHeader>
-                  <CardTitle className="text-lg">Crisis Support</CardTitle>
+                  <CardTitle className="text-lg">{t("support.crisisTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    If you're in immediate danger, call {EMERGENCY_NUMBER} or alert your trusted contacts.
+                    {t("support.crisisDesc", { number: EMERGENCY_NUMBER })}
                   </p>
                   <Link to="/sos">
-                    <Button variant="emergency" className="w-full">Emergency SOS</Button>
+                    <Button variant="emergency" className="w-full">{t("common.emergencySos")}</Button>
                   </Link>
                 </CardContent>
               </Card>

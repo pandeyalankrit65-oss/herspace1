@@ -6,12 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import type { ContactStatus } from "./Contacts";
+import { useI18n } from "@/i18n";
 
 type Invite = { userName: string; contactName: string; status: ContactStatus };
 
 // Opened by the person who was invited to be an emergency contact. No account needed.
 const ConfirmContact = () => {
   const { token = "" } = useParams();
+  const { t } = useI18n();
   const [invite, setInvite] = useState<Invite | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -42,45 +44,43 @@ const ConfirmContact = () => {
           <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
             {error && (
               <CardHeader>
-                <CardTitle>Link not valid</CardTitle>
+                <CardTitle>{t("confirm.invalidTitle")}</CardTitle>
                 <CardDescription>{error}</CardDescription>
               </CardHeader>
             )}
             {!error && !invite && (
-              <CardContent className="pt-6 text-sm text-muted-foreground">Loading...</CardContent>
+              <CardContent className="pt-6 text-sm text-muted-foreground">{t("common.loading")}</CardContent>
             )}
             {invite && (
               <>
                 <CardHeader>
                   <CardTitle>
-                    {invite.userName} wants you as an emergency contact
+                    {t("confirm.title", { name: invite.userName })}
                   </CardTitle>
                   <CardDescription>
-                    If {invite.userName} presses the SOS button in the HerSpace app, you'll get a text message with a link to
-                    their location, and possibly an automated phone call. If that happens, call them straight away, and
-                    contact local emergency services if you can't reach them.
+                    {t("confirm.desc", { name: invite.userName })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {invite.status === "confirmed" && (
                     <p className="text-sm rounded-md bg-green-500/10 border border-green-500/40 px-3 py-2">
-                      You're confirmed as {invite.userName}'s emergency contact. Thank you. You can come back to this link to opt out at any time.
+                      {t("confirm.confirmed", { name: invite.userName })}
                     </p>
                   )}
                   {invite.status === "declined" && (
                     <p className="text-sm rounded-md bg-muted px-3 py-2">
-                      You've declined. You won't receive alerts from {invite.userName}.
+                      {t("confirm.declined", { name: invite.userName })}
                     </p>
                   )}
                   <div className="flex flex-col sm:flex-row gap-2">
                     {invite.status !== "confirmed" && (
                       <Button variant="hero" className="flex-1" disabled={saving} onClick={() => respond(true)}>
-                        Yes, I'll be a contact
+                        {t("confirm.accept")}
                       </Button>
                     )}
                     {invite.status !== "declined" && (
                       <Button variant="outline" className="flex-1" disabled={saving} onClick={() => respond(false)}>
-                        {invite.status === "confirmed" ? "Stop receiving alerts" : "No thanks"}
+                        {invite.status === "confirmed" ? t("confirm.stop") : t("confirm.decline")}
                       </Button>
                     )}
                   </div>

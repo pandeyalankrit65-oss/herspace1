@@ -227,6 +227,15 @@ describe('account', () => {
 });
 
 describe('chat', () => {
+  test('fallback replies put self-harm first and follow the language', async () => {
+    const { fallbackReply } = await import('../chat');
+    const say = (content: string) => [{ role: 'user' as const, content }];
+    assert.match(fallbackReply(say('I want to kill myself')), /crisis line/, 'self-harm is not treated as outside danger');
+    assert.match(fallbackReply(say('someone is following me')), /SOS/);
+    assert.match(fallbackReply(say('मुझे बहुत घबराहट हो रही है'), 'hi'), /ग्राउंडिंग/);
+    assert.match(fallbackReply(say('कोई मेरा पीछा कर रहा है'), 'hi'), /SOS/);
+  });
+
   test('validates input', async () => {
     assert.equal((await call('/chat', { body: { messages: [] } })).status, 400);
     assert.equal((await call('/chat', { body: { messages: [{ role: 'system', content: 'x' }] } })).status, 400);

@@ -11,6 +11,10 @@ import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import type { Contact } from "./Contacts";
+import { useI18n } from "@/i18n";
+import type { MessageKey } from "@/i18n/en";
+
+type T = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
 type Coords = { lat: number; lng: number; accuracy?: number };
 type Delivery = { name: string; phone: string; channel: "sms" | "call"; status: string; error?: string | null };
@@ -27,24 +31,27 @@ type SosResult = {
 // An SMS counts as reaching the contact once Twilio accepted it; "delivered" is confirmed by the carrier.
 const smsReached = (d: Delivery) => d.status === "sent" || d.status === "delivered";
 
-function describe(d: Delivery, tracking: boolean): string {
+function describe(d: Delivery, tracking: boolean, t: T): string {
   if (d.channel === "call") {
-    return (
-      { sent: "calling...", answered: "call answered", unanswered: "call not answered", failed: "call failed" }[d.status] ??
-      "call not placed"
-    );
+    const call: Record<string, MessageKey> = {
+      sent: "sos.delivery.calling",
+      answered: "sos.delivery.callAnswered",
+      unanswered: "sos.delivery.callUnanswered",
+      failed: "sos.delivery.callFailed",
+    };
+    return t(call[d.status] ?? "sos.delivery.callNotPlaced");
   }
   switch (d.status) {
     case "delivered":
-      return "SMS delivered";
+      return t("sos.delivery.smsDelivered");
     case "sent":
-      return tracking ? "SMS sent, waiting for delivery confirmation" : "SMS sent";
+      return t(tracking ? "sos.delivery.smsSentTracking" : "sos.delivery.smsSent");
     case "failed":
-      return `SMS failed${d.error ? `: ${d.error}` : ""}`;
+      return d.error ? t("sos.delivery.smsFailedWith", { error: d.error }) : t("sos.delivery.smsFailed");
     case "not_confirmed":
-      return "not alerted: hasn't confirmed as your contact yet";
+      return t("sos.delivery.notConfirmed");
     default:
-      return "not sent: SMS isn't set up";
+      return t("sos.delivery.notConfigured");
   }
 }
 
@@ -64,10 +71,13 @@ function getLocation(): Promise<Coords | undefined> {
   });
 }
 
-const fallbackMessage = (name: string | undefined, coords?: Coords) =>
-  `HerSpace SOS: ${name ?? "I"} need${name ? "s" : ""} help. ` +
-  (coords ? `Location: https://maps.google.com/?q=${coords.lat},${coords.lng}` : "Location unavailable.") +
-  " Please call now.";
+// Written in the user's language: the contacts receiving it most likely share it.
+const fallbackMessage = (t: T, name: string | undefined, coords?: Coords) => {
+  const location = coords
+    ? t("sos.fallbackLocation", { url: `https://maps.google.com/?q=${coords.lat},${coords.lng}` })
+    : t("sos.fallbackNoLocation");
+  return name ? t("sos.fallbackSms", { name, location }) : t("sos.fallbackSmsAnon", { location });
+};
 
 // "?&body=" is understood by both Android and iOS messaging apps.
 const smsLink = (phone: string, body: string) => `sms:${phone}?&body=${encodeURIComponent(body)}`;
@@ -92,6 +102,7 @@ const SpeechRecognitionImpl: (new () => Recognition) | undefined =
 const SOS = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t, tn, tr, lang } = useI18n();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
@@ -138,13 +149,13 @@ const SOS = () => {
       setResult({
         deliveries: [],
         smsConfigured: false,
-        message: fallbackMessage(user?.name, coords),
+        message: fallbackMessage(t, user?.name, coords),
         serverError: (err as Error).message,
       });
     } finally {
       setSending(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   // Upgrade "sent" to "delivered"/"answered" as Twilio reports back.
   const resultId = result?.id;
@@ -188,27 +199,23 @@ const SOS = () => {
 
   const startListening = () => {
     if (!SpeechRecognitionImpl) {
-      toast({
-        title: "Voice trigger not supported",
-        description: "This browser doesn't support speech recognition. Try Chrome or Edge.",
-        variant: "destructive",
-      });
+      toast({ title: t("sos.voiceUnsupportedTitle"), description: t("sos.voiceUnsupportedDesc"), variant: "destructive" });
       return;
     }
     const rec = new SpeechRecognitionImpl();
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = navigator.language || "en-US";
+    rec.lang = lang === "hi" ? "hi-IN" : navigator.language || "en-US";
     rec.onresult = (e) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (/\bhelp\s*me\b|\bbachao\b/i.test(e.results[i][0].transcript)) {
+        if (/help\s*me|bachao|बचाओ|मदद/i.test(e.results[i][0].transcript)) {
           startCountdown();
         }
       }
     };
     rec.onerror = (e) => {
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-        toast({ title: "Microphone blocked", description: "Allow microphone access to use the voice trigger.", variant: "destructive" });
+        toast({ title: t("sos.micBlockedTitle"), description: t("sos.micBlockedDesc"), variant: "destructive" });
         stopListening();
       }
     };
@@ -251,20 +258,21 @@ const SOS = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-8 space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold">
-              <span className="bg-gradient-to-r from-destructive to-red-600 bg-clip-text text-transparent">Emergency SOS</span>
+              <span className="bg-gradient-to-r from-destructive to-red-600 bg-clip-text text-transparent">{t("common.emergencySos")}</span>
             </h1>
             {!online && (
               <p role="alert" className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 text-sm text-foreground">
-                You're offline, so HerSpace can't send alerts for you. Calls and text messages from your phone still work: use
-                the buttons below.
+                {t("sos.offline")}
               </p>
             )}
             <p className="text-lg text-muted-foreground">
-              In immediate danger? Call{" "}
-              <a href={`tel:${EMERGENCY_NUMBER}`} className="font-semibold text-destructive underline">
-                {EMERGENCY_NUMBER}
-              </a>{" "}
-              first. HerSpace alerts your trusted contacts; it does not contact police or emergency services.
+              {tr("sos.danger", {
+                number: (
+                  <a href={`tel:${EMERGENCY_NUMBER}`} className="font-semibold text-destructive underline">
+                    {EMERGENCY_NUMBER}
+                  </a>
+                ),
+              })}
             </p>
           </div>
 
@@ -274,21 +282,21 @@ const SOS = () => {
                 <p className="text-muted-foreground">
                   {user
                     ? confirmedCount > 0
-                      ? `Sends an SMS with your current location to your ${confirmedCount} confirmed emergency contact${confirmedCount === 1 ? "" : "s"}.`
+                      ? tn("sos.status.confirmed", confirmedCount)
                       : contacts.length > 0
-                        ? "None of your contacts have confirmed yet, so no one will be alerted automatically. Ask them to open their invite link."
-                        : "You haven't added any emergency contacts yet, so there's no one to alert."
-                    : "You're not logged in, so there are no saved contacts to alert. You can still call for help below."}
+                        ? t("sos.status.noneConfirmed")
+                        : t("sos.status.noContacts")
+                    : t("sos.status.loggedOut")}
                 </p>
 
                 {countdown !== null ? (
                   <div className="space-y-4">
                     <div className="mx-auto w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-destructive/15 border-4 border-destructive flex flex-col items-center justify-center">
                       <span className="text-7xl font-bold text-destructive" aria-live="assertive">{countdown}</span>
-                      <span className="text-sm text-muted-foreground">Sending alert...</span>
+                      <span className="text-sm text-muted-foreground">{t("sos.sendingAlert")}</span>
                     </div>
                     <Button variant="outline" size="lg" onClick={() => setCountdown(null)}>
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   </div>
                 ) : (
@@ -301,7 +309,7 @@ const SOS = () => {
                   >
                     <div className="flex flex-col items-center gap-4">
                       <AlertCircle className="!size-16 sm:!size-20" />
-                      {sending ? "SENDING..." : "EMERGENCY SOS"}
+                      {sending ? t("sos.buttonSending") : t("sos.button")}
                     </div>
                   </Button>
                 )}
@@ -311,17 +319,17 @@ const SOS = () => {
                 <a href={`tel:${EMERGENCY_NUMBER}`}>
                   <Button variant="emergency" size="lg" className="gap-2 w-full">
                     <Phone className="h-5 w-5" />
-                    Call {EMERGENCY_NUMBER}
+                    {t("common.call", { number: EMERGENCY_NUMBER })}
                   </Button>
                 </a>
                 <Button variant="glass" size="lg" onClick={listening ? stopListening : startListening} className="gap-2">
                   {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                  {listening ? 'Listening for "help me"... (tap to stop)' : 'Voice trigger: "Help me"'}
+                  {listening ? t("sos.voiceListening") : t("sos.voiceStart")}
                 </Button>
               </div>
               {listening && (
                 <p className="text-xs text-muted-foreground">
-                  The voice trigger only works while this page stays open and the screen is on.
+                  {t("sos.voiceNote")}
                 </p>
               )}
             </CardContent>
@@ -334,23 +342,23 @@ const SOS = () => {
               <CardHeader>
                 <CardTitle>
                   {deliveredAll
-                    ? `Alert sent to ${sentCount} contact${sentCount === 1 ? "" : "s"}`
+                    ? tn("sos.result.sent", sentCount)
                     : sentCount > 0
-                      ? `Alert sent to ${sentCount} of ${smsDeliveries.length} contacts`
-                      : "Your alert was NOT sent automatically"}
+                      ? t("sos.result.partial", { sent: sentCount, total: smsDeliveries.length })
+                      : t("sos.result.notSent")}
                 </CardTitle>
                 <CardDescription>
                   {result.serverError
-                    ? `The server couldn't be reached (${result.serverError}). Use your phone to call or text for help now.`
+                    ? t("sos.result.serverError", { error: result.serverError })
                     : smsDeliveries.length === 0
-                      ? "There are no saved contacts to alert. Call for help or text someone you trust directly."
+                      ? t("sos.result.noContacts")
                       : unconfirmedCount === smsDeliveries.length
-                        ? "None of your contacts have confirmed yet, so no one was alerted automatically. Text them directly with the buttons below."
+                        ? t("sos.result.noneConfirmed")
                         : !result.smsConfigured
-                        ? "SMS sending isn't set up on this HerSpace server. Text your contacts directly with the buttons below."
-                        : deliveredAll
-                          ? "Keep your phone with you. Your contacts received a link to your location at the time of the alert."
-                          : "Some messages failed. Text those contacts directly with the buttons below."}
+                          ? t("sos.result.smsNotSetUp")
+                          : deliveredAll
+                            ? t("sos.result.allSent")
+                            : t("sos.result.someFailed")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -362,7 +370,7 @@ const SOS = () => {
                       <XCircle className="h-4 w-4 text-destructive shrink-0" />
                     )}
                     <span className="font-medium">{d.name}</span>
-                    <span className="text-muted-foreground">{describe(d, Boolean(result.trackingDelivery))}</span>
+                    <span className="text-muted-foreground">{describe(d, Boolean(result.trackingDelivery), t)}</span>
                   </div>
                 ))}
                 {fallbackContacts.length > 0 && !deliveredAll && (
@@ -371,11 +379,11 @@ const SOS = () => {
                       <div key={c.phone} className="flex gap-2">
                         <a href={smsLink(c.phone, result.message)} className="flex-1">
                           <Button variant="hero" className="w-full gap-2">
-                            <MessageSquare className="h-4 w-4" /> Text {c.name}
+                            <MessageSquare className="h-4 w-4" /> {t("sos.textContact", { name: c.name })}
                           </Button>
                         </a>
                         <a href={`tel:${c.phone}`}>
-                          <Button variant="outline" size="icon" aria-label={`Call ${c.name}`}>
+                          <Button variant="outline" size="icon" aria-label={t("sos.callContact", { name: c.name })}>
                             <Phone className="h-4 w-4" />
                           </Button>
                         </a>
@@ -391,11 +399,11 @@ const SOS = () => {
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
               <CardHeader>
                 <MessageSquare className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">SMS to your contacts</CardTitle>
+                <CardTitle className="text-lg">{t("sos.card.smsTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Each confirmed contact gets a text message. You'll see exactly who received it, and can text anyone it missed from your own phone.
+                  {t("sos.card.smsDesc")}
                 </CardDescription>
               </CardContent>
             </Card>
@@ -403,12 +411,11 @@ const SOS = () => {
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
               <CardHeader>
                 <MapPin className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Your location</CardTitle>
+                <CardTitle className="text-lg">{t("sos.card.locationTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  The message includes where you were when you pressed SOS, plus a live map link that follows you while this page
-                  is open, until you tap "I'm safe".
+                  {t("sos.card.locationDesc")}
                 </CardDescription>
               </CardContent>
             </Card>
@@ -416,11 +423,11 @@ const SOS = () => {
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
               <CardHeader>
                 <Phone className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">Emergency services</CardTitle>
+                <CardTitle className="text-lg">{t("sos.card.servicesTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  HerSpace doesn't alert the police. In immediate danger, call {EMERGENCY_NUMBER} directly.
+                  {t("sos.card.servicesDesc", { number: EMERGENCY_NUMBER })}
                 </CardDescription>
               </CardContent>
             </Card>
@@ -428,17 +435,17 @@ const SOS = () => {
 
           <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
             <CardHeader>
-              <CardTitle>Emergency Contacts</CardTitle>
-              <CardDescription>Add trusted people who should hear from you in an emergency.</CardDescription>
+              <CardTitle>{t("sos.contacts.title")}</CardTitle>
+              <CardDescription>{t("sos.contacts.desc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {user && (
                 <p className="text-sm text-muted-foreground">
-                  {confirmedCount} of {contacts.length} contact{contacts.length === 1 ? "" : "s"} confirmed
+                  {t("sos.contacts.count", { confirmed: confirmedCount, total: contacts.length })}
                 </p>
               )}
               <Link to={user ? "/contacts" : "/login?next=/contacts"}>
-                <Button variant="hero">{user ? "Manage Emergency Contacts" : "Log in to add contacts"}</Button>
+                <Button variant="hero">{user ? t("sos.contacts.manage") : t("sos.contacts.logIn")}</Button>
               </Link>
             </CardContent>
           </Card>

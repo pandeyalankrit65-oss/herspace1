@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, type User } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import { useI18n } from "@/i18n";
 
 const ResetPassword = () => {
   const { token = "" } = useParams();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signedIn } = useAuth();
@@ -22,7 +24,7 @@ const ResetPassword = () => {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
-      setError("Passwords don't match.");
+      setError(t("reset.mismatch"));
       return;
     }
     setLoading(true);
@@ -30,7 +32,7 @@ const ResetPassword = () => {
     try {
       const res = await api<{ user: User }>("/api/auth/reset", { body: { token, password } });
       signedIn(res.user);
-      toast({ title: "Password updated", description: "You've been signed out on other devices." });
+      toast({ title: t("reset.doneTitle"), description: t("reset.doneDesc") });
       navigate("/");
     } catch (err) {
       setError((err as Error).message);
@@ -46,27 +48,27 @@ const ResetPassword = () => {
         <div className="container mx-auto max-w-md">
           <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-border/50">
             <CardHeader className="text-center space-y-2">
-              <CardTitle className="text-2xl">Choose a new password</CardTitle>
-              <CardDescription>At least 8 characters.</CardDescription>
+              <CardTitle className="text-2xl">{t("reset.title")}</CardTitle>
+              <CardDescription>{t("common.minChars")}</CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="password">New password</label>
+                  <label className="text-sm mb-1 block" htmlFor="password">{t("reset.new")}</label>
                   <Input id="password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm mb-1 block" htmlFor="confirm">Confirm new password</label>
+                  <label className="text-sm mb-1 block" htmlFor="confirm">{t("reset.confirm")}</label>
                   <Input id="confirm" type="password" autoComplete="new-password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
                 </div>
                 {error && (
                   <p className="text-sm text-destructive" role="alert">
                     {error}{" "}
-                    {/expired|invalid/i.test(error) && <Link to="/forgot-password" className="underline">Request a new link</Link>}
+                    {/expired|invalid/i.test(error) && <Link to="/forgot-password" className="underline">{t("reset.requestNew")}</Link>}
                   </p>
                 )}
                 <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-                  {loading ? "Saving..." : "Set new password"}
+                  {loading ? t("common.saving") : t("reset.submit")}
                 </Button>
               </form>
             </CardContent>
