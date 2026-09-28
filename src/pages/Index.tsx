@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Dashboard from "@/components/home/Dashboard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReveal } from "@/hooks/use-reveal";
+import { offlineUser } from "@/lib/offline";
 import heroImage from "@/assets/hero-safety.jpg";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -36,7 +37,16 @@ const PROMISES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey
 const highlight = "bg-gradient-to-r from-primary to-brand bg-clip-text text-transparent";
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  // While the session is being checked, someone who was signed in last time sees an empty
+  // frame rather than a flash of the public landing page.
+  if (loading && offlineUser.get()) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+      </div>
+    );
+  }
   if (user) {
     return (
       <div className="min-h-screen">

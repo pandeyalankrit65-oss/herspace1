@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { api } from "@/lib/api";
+import { offlineContacts, useOnline } from "@/lib/offline";
 import { cn } from "@/lib/utils";
 import type { Contact } from "@/pages/Contacts";
 
@@ -35,11 +36,13 @@ const Dashboard = () => {
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [share, setShare] = useState<Share>(null);
   const [checkIn, setCheckIn] = useState<CheckIn>(null);
+  const online = useOnline();
 
   useEffect(() => {
     api<{ contacts: Contact[] }>("/api/contacts")
       .then((r) => setContacts(r.contacts))
-      .catch(() => setContacts([]));
+      // Offline: the copy kept on the device, so the page doesn't wrongly say nobody will be alerted.
+      .catch(() => setContacts(offlineContacts.get<Contact>()));
     api<{ share: Share }>("/api/location-shares/active")
       .then((r) => setShare(r.share))
       .catch(() => {});
@@ -57,6 +60,12 @@ const Dashboard = () => {
           <p className="text-sm font-semibold text-muted-foreground">{t(greetingKey())}</p>
           <h1 className="text-3xl font-extrabold sm:text-4xl">{user?.name}</h1>
         </header>
+
+        {!online && (
+          <p role="status" className="rounded-2xl border border-warning/50 bg-warning/10 p-4 text-sm">
+            {t("sos.offline")}
+          </p>
+        )}
 
         {/* Anything running right now comes first. */}
         {(share || checkIn) && (
