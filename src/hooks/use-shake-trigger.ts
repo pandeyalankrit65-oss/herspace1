@@ -1,3 +1,4 @@
+import { vibrate } from "@/lib/disguise";
 import { useEffect, useRef, useState } from "react";
 
 const STORAGE_KEY = "herspace_shake";
@@ -51,7 +52,7 @@ export function useShakeTrigger(onShake: () => void) {
       if (jolts.length >= JOLTS_NEEDED) {
         jolts = [];
         cooldownUntil = now + COOLDOWN_MS;
-        navigator.vibrate?.(200);
+        vibrate(200);
         onShakeRef.current();
       }
     };

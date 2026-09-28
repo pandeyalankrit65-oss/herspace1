@@ -42,6 +42,8 @@ export type AlertOptions = {
   test?: boolean;
   // Set when a safety timer ran out without the user checking in.
   checkIn?: { note: string | null; startedAt: string; dueAt: string };
+  // Sent without any sign on her phone; contacts are asked not to call, in case someone is listening.
+  silent?: boolean;
 };
 
 const fmtTime = (iso: string) => new Date(iso).toUTCString();
@@ -72,11 +74,14 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const share = user && !isTest ? createShare(user.id, { sosId, coords }) : undefined;
   const messageFor = (link?: string) => buildMessage(link ? ` Live location: ${link}` : '');
   const checkIn = options.checkIn;
+  const reply = options.silent
+    ? " They may not be able to talk safely: DON'T call them first. Text them, and if you can't reach them, contact local emergency services."
+    : " Please call them now. If you can't reach them, contact local emergency services.";
   const buildMessage = (live: string) => isTest
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`
     : checkIn
-      ? `HerSpace safety alert: ${who} started a safety timer at ${fmtTime(checkIn.startedAt)}${checkIn.note ? ` ("${checkIn.note}")` : ''} and didn't check in by ${fmtTime(checkIn.dueAt)}. Last known ${where.charAt(0).toLowerCase()}${where.slice(1)}${live} Please call them now. If you can't reach them, contact local emergency services.`
-      : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live} Please call them now. If you can't reach them, contact local emergency services.`;
+      ? `HerSpace safety alert: ${who} started a safety timer at ${fmtTime(checkIn.startedAt)}${checkIn.note ? ` ("${checkIn.note}")` : ''} and didn't check in by ${fmtTime(checkIn.dueAt)}. Last known ${where.charAt(0).toLowerCase()}${where.slice(1)}${live}${reply}`
+      : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live}${reply}`;
   // The generic version (no personal link) is what the app offers to send by hand.
   const message = messageFor(share?.url);
 
@@ -94,7 +99,8 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   );
   confirmed.forEach((c, i) => record(c, 'sms', smsResults[i]));
 
-  if (!isTest && voiceCallsEnabled()) {
+  // A ringing phone could give a silent alert away, so no automated calls then.
+  if (!isTest && !options.silent && voiceCallsEnabled()) {
     const spoken = checkIn
       ? `This is a safety alert from HerSpace. ${who} did not check in when their safety timer ended. Please check your text messages for their last known location, and call them now.`
       : `This is an emergency alert from HerSpace. ${who} has pressed their S O S button. Please check your text messages for their location, and call them now.`;
@@ -102,7 +108,7 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
     confirmed.forEach((c, i) => record(c, 'call', callResults[i]));
   }
 
-  console.log(`[SOS] ${isTest ? 'Test ' : checkIn ? 'Missed check-in ' : ''}event ${sosId} user=${user?.id ?? 'anonymous'} confirmed=${confirmed.length}/${contacts.length}`);
+  console.log(`[SOS] ${isTest ? 'Test ' : checkIn ? 'Missed check-in ' : ''}${options.silent ? 'silent ' : ''}event ${sosId} user=${user?.id ?? 'anonymous'} confirmed=${confirmed.length}/${contacts.length}`);
   return {
     id: sosId,
     share: share ? { id: share.id, url: share.url, expiresAt: share.expiresAt } : null,
@@ -115,14 +121,14 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   };
 }
 
-const sosSchema = z.object({ coords: coordsSchema.optional() });
+const sosSchema = z.object({ coords: coordsSchema.optional(), silent: z.boolean().optional() });
 
 // Works without login (an emergency shouldn't be blocked on a login screen), but only
 // logged-in users have saved contacts to alert.
 sosRouter.post('/', sosIpLimiter, sosUserLimiter, async (req, res) => {
   const body = parse(sosSchema, req, res);
   if (!body) return;
-  res.status(201).json(await triggerAlert(req.user, body.coords));
+  res.status(201).json(await triggerAlert(req.user, body.coords, { silent: body.silent }));
 });
 
 sosRouter.post('/test', requireAuth, testLimiter, async (req, res) => {

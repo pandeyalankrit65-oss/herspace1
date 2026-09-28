@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users } from "lucide-react";
+import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -18,6 +18,7 @@ import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
 import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
+import { useSilentSos } from "@/lib/disguise";
 import { Switch } from "@/components/ui/switch";
 import type { MessageKey } from "@/i18n/en";
 
@@ -124,12 +125,13 @@ const SOS = () => {
   }, [user]);
   const endLiveShare = useCallback(() => setLiveShare(null), []);
 
+  const { silent, setSilent } = useSilentSos();
   const sendSOS = useCallback(async () => {
     setSending(true);
     setResult(null);
     const coords = await getLocation();
     try {
-      const res = await api<SosResult>("/api/sos", { body: { coords } });
+      const res = await api<SosResult>("/api/sos", { body: { coords, silent } });
       setResult(res);
       if (res.share) setLiveShare(res.share);
     } catch (err) {
@@ -142,7 +144,7 @@ const SOS = () => {
     } finally {
       setSending(false);
     }
-  }, [user, t]);
+  }, [user, t, silent]);
 
   // Upgrade "sent" to "delivered"/"answered" as Twilio reports back.
   const resultId = result?.id;
@@ -374,6 +376,16 @@ const SOS = () => {
                   ))}
                 </div>
               </fieldset>
+              <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
+                <BellOff className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1">
+                  <label htmlFor="silent-toggle" className="text-sm font-semibold">
+                    {t("sos.silentLabel")}
+                  </label>
+                  <p className="text-xs text-muted-foreground">{t("sos.silentHint")}</p>
+                </div>
+                <Switch id="silent-toggle" checked={silent} onCheckedChange={setSilent} />
+              </div>
               {shake.supported && (
                 <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
                   <Vibrate className="mt-0.5 h-5 w-5 shrink-0 text-primary" />

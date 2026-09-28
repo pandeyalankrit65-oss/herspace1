@@ -14,6 +14,7 @@ import LoadingRows from "@/components/LoadingRows";
 import { ShieldCheck, Users } from "lucide-react";
 import ReportPhotos from "@/components/ReportPhotos";
 import PhoneVerification from "@/components/PhoneVerification";
+import SafetyAtHome from "@/components/SafetyAtHome";
 
 const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimination", "other"];
 
@@ -146,6 +147,8 @@ const Account = () => {
           </section>
 
           <PhoneVerification />
+
+          <SafetyAtHome />
 
           <Card>
             <CardHeader>

@@ -5,6 +5,7 @@ import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession,
 import { rateLimit } from '../rateLimit';
 import { keyedHash, now, parse, passwordSchema, phoneSchema } from '../util';
 import { sendSms } from '../messaging';
+import { codePhraseMessage, listContacts } from './contacts';
 import { perUser } from '../rateLimit';
 import crypto from 'crypto';
 import { deleteReports, reportPhotos } from './reports';
@@ -61,6 +62,28 @@ accountRouter.post('/phone/verify', (req, res) => {
   res.json({ success: true, phone: row.phone });
 });
 
+accountRouter.get('/code-phrase', (req, res) => {
+  const row = db.prepare('SELECT code_phrase AS phrase FROM users WHERE id = ?').get(req.user!.id) as { phrase: string | null };
+  res.json({ phrase: row.phrase });
+});
+
+const codePhraseLimiter = rateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 5, key: perUser, message: 'You can change your code phrase up to 5 times a day.' });
+
+// Saving a phrase texts every confirmed contact what it means; new contacts get it when they confirm.
+accountRouter.put('/code-phrase', codePhraseLimiter, async (req, res) => {
+  const body = parse(z.object({ phrase: z.string().trim().min(3).max(60).nullable() }), req, res);
+  if (!body) return;
+  const user = req.user!;
+  db.prepare('UPDATE users SET code_phrase = ? WHERE id = ?').run(body.phrase, user.id);
+  let told = 0;
+  if (body.phrase) {
+    const confirmed = listContacts(user.id).filter((c) => c.status === 'confirmed');
+    const results = await Promise.all(confirmed.map((c) => sendSms(c.phone, codePhraseMessage(user.name, body.phrase!))));
+    told = results.filter((r) => r.status === 'sent').length;
+  }
+  res.json({ phrase: body.phrase, told });
+});
+
 accountRouter.delete('/phone', (req, res) => {
   db.prepare('UPDATE users SET phone = NULL, phone_verified_at = NULL WHERE id = ?').run(req.user!.id);
   db.prepare('DELETE FROM phone_codes WHERE user_id = ?').run(req.user!.id);
@@ -96,7 +119,7 @@ accountRouter.post('/password', passwordLimiter, (req, res) => {
 
 accountRouter.get('/export', (req, res) => {
   const userId = req.user!.id;
-  const user = db.prepare('SELECT id, name, email, phone, phone_verified_at AS phoneVerifiedAt, created_at AS createdAt FROM users WHERE id = ?').get(userId);
+  const user = db.prepare('SELECT id, name, email, phone, phone_verified_at AS phoneVerifiedAt, code_phrase AS codePhrase, created_at AS createdAt FROM users WHERE id = ?').get(userId);
   const contacts = db.prepare('SELECT name, phone, relation, status FROM contacts WHERE user_id = ?').all(userId);
   const reports = db
     .prepare(

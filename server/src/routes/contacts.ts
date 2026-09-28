@@ -117,10 +117,12 @@ const inviteLookupLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30 });
 function findInvite(token: string) {
   return db
     .prepare(
-      `SELECT c.id, c.name AS contactName, c.status, u.name AS userName FROM contacts c
+      `SELECT c.id, c.name AS contactName, c.phone, c.status, u.name AS userName, u.code_phrase AS codePhrase FROM contacts c
        JOIN users u ON u.id = c.user_id WHERE c.confirm_token_hash = ?`
     )
-    .get(sha256(token)) as { id: number; contactName: string; status: ContactStatus; userName: string } | undefined;
+    .get(sha256(token)) as
+    | { id: number; contactName: string; phone: string; status: ContactStatus; userName: string; codePhrase: string | null }
+    | undefined;
 }
 
 contactInvitesRouter.get('/:token', inviteLookupLimiter, (req, res) => {
@@ -129,12 +131,19 @@ contactInvitesRouter.get('/:token', inviteLookupLimiter, (req, res) => {
   res.json({ userName: invite.userName, contactName: invite.contactName, status: invite.status });
 });
 
-contactInvitesRouter.post('/:token', inviteLookupLimiter, (req, res) => {
+contactInvitesRouter.post('/:token', inviteLookupLimiter, async (req, res) => {
   const body = parse(z.object({ accept: z.boolean() }), req, res);
   if (!body) return;
   const invite = findInvite(req.params.token);
   if (!invite) return res.status(404).json({ error: 'This invite link is invalid or was replaced by a newer one.' });
   const status: ContactStatus = body.accept ? 'confirmed' : 'declined';
   db.prepare('UPDATE contacts SET status = ? WHERE id = ?').run(status, invite.id);
+  if (body.accept && invite.status !== 'confirmed' && invite.codePhrase) {
+    await sendSms(invite.phone, codePhraseMessage(invite.userName, invite.codePhrase));
+  }
   res.json({ status });
 });
+
+export const codePhraseMessage = (name: string, phrase: string) =>
+  `HerSpace: ${name} has set a code phrase. If she ever texts you "${phrase}", it means she needs help but can't talk freely. ` +
+  "Don't reply about this or call her. Contact local emergency services, or go to her if it's safe to. Keep this message private.";

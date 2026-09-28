@@ -618,3 +618,24 @@ describe('phone verification', () => {
     assert.equal((await call('/auth/me', { token })).data.user.phone, null);
   });
 });
+
+describe('protection at home', () => {
+  test('a silent SOS asks contacts not to call', async () => {
+    const { token } = await userWithConfirmedContact('Rani');
+    const loud = await call('/sos', { token, body: {} });
+    assert.match(loud.data.message, /Please call them now/);
+    const silent = await call('/sos', { token, body: { silent: true } });
+    assert.match(silent.data.message, /DON'T call them first/);
+    assert.doesNotMatch(silent.data.message, /Please call them now/);
+  });
+
+  test('a code phrase is saved, validated and can be cleared', async () => {
+    const { token } = await userWithConfirmedContact('Devi');
+    assert.equal((await call('/account/code-phrase', { token })).data.phrase, null);
+    assert.equal((await call('/account/code-phrase', { token, method: 'PUT', body: { phrase: 'ok' } })).status, 400, 'too short');
+    const set = await call('/account/code-phrase', { token, method: 'PUT', body: { phrase: 'Did you buy the red umbrella?' } });
+    assert.equal(set.status, 200);
+    assert.equal((await call('/account/code-phrase', { token })).data.phrase, 'Did you buy the red umbrella?');
+    assert.equal((await call('/account/code-phrase', { token, method: 'PUT', body: { phrase: null } })).data.phrase, null);
+  });
+});

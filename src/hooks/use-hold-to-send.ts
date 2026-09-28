@@ -1,3 +1,4 @@
+import { vibrate } from "@/lib/disguise";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type SosMode = "tap" | "hold";
@@ -44,10 +45,10 @@ export function useHoldToSend(onComplete: () => void, ms: number) {
   const start = useCallback(() => {
     window.clearTimeout(timer.current);
     setHolding(true);
-    navigator.vibrate?.(30);
+    vibrate(30);
     timer.current = window.setTimeout(() => {
       setHolding(false);
-      navigator.vibrate?.(200);
+      vibrate(200);
       onCompleteRef.current();
     }, ms);
   }, [ms]);

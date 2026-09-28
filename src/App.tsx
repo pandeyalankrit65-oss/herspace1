@@ -9,6 +9,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NativeBridge from "./components/NativeBridge";
 import ScrollManager from "./components/ScrollManager";
+import DisguiseGate from "./components/DisguiseGate";
 import BottomNav from "./components/BottomNav";
 // Home and SOS ship in the main bundle so the emergency page never waits on a download.
 import Index from "./pages/Index";
@@ -48,6 +49,7 @@ const App = () => (
               <BrowserRouter>
                 <NativeBridge />
                 <ScrollManager />
+                <DisguiseGate>
                 <Suspense fallback={<div className="min-h-screen" />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
@@ -76,6 +78,7 @@ const App = () => (
                   </Routes>
                 </Suspense>
                 <BottomNav />
+                </DisguiseGate>
               </BrowserRouter>
             </TooltipProvider>
           </AuthProvider>

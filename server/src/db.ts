@@ -181,6 +181,10 @@ const migrations: string[] = [
     attempts INTEGER NOT NULL DEFAULT 0
   );
   `,
+  `
+  -- A phrase the user can text a contact when she can't speak freely ("did you buy the red umbrella?").
+  ALTER TABLE users ADD COLUMN code_phrase TEXT;
+  `,
 ];
 
 function migrate() {
