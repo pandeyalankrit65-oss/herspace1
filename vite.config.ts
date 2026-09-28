@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -31,6 +32,8 @@ export default defineConfig({
     },
   },
   plugins: [react(), precacheManifest()],
+  // Unit tests (Vitest). Browser tests live in e2e/ and server tests in server/.
+  test: { include: ["src/**/*.test.ts"] },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
