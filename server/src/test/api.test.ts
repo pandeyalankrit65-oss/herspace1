@@ -715,3 +715,57 @@ describe('journeys', () => {
     assert.equal((db.prepare('SELECT stale_alerted_at FROM location_shares WHERE id = ?').get(ride.data.share.id) as { stale_alerted_at: string | null }).stale_alerted_at, null);
   });
 });
+
+describe('security fixes', () => {
+  test('SOS recordings must really be audio', async () => {
+    const { token } = await userWithConfirmedContact('Gita');
+    const sos = await call('/sos', { token, body: {} });
+    const res = await fetch(`${base}/sos/${sos.data.id}/recordings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'audio/webm', Cookie: `herspace_session=${token}`, 'X-Requested-With': 'HerSpace' },
+      body: new TextEncoder().encode('<script>not audio</script>'),
+    });
+    assert.equal(res.status, 415);
+  });
+
+  test('verification codes are limited per phone number, across accounts', async () => {
+    const phone = `+9197${String(Date.now()).slice(-8)}`;
+    const statuses: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const { token } = await newUser(`Caller${i}`);
+      statuses.push((await call('/account/phone', { token, body: { phone } })).status);
+    }
+    assert.deepEqual(statuses, [503, 503, 503, 429]);
+  });
+
+  test('only one unnamed "on my way" per alert', async () => {
+    const { token } = await userWithConfirmedContact('Hema');
+    const sos = await call('/sos', { token, body: {} });
+    const shareToken = sos.data.share.url.split('/track/')[1];
+    for (let i = 0; i < 3; i++) await call(`/track/${shareToken}/ack`, { body: { c: 'not-a-real-code!' } });
+    const acks = (await call('/location-shares/active', { token })).data.share.acks;
+    assert.equal(acks.length, 1);
+  });
+
+  test('ADMIN_EMAILS grants nothing in production', async () => {
+    const signup = await call('/auth/signup', { body: { name: 'Admin', email: 'moderator@example.com', password: 'password123' } });
+    const token = signup.token ?? (await call('/auth/login', { body: { email: 'moderator@example.com', password: 'password123' } })).token;
+    assert.equal((await call('/auth/me', { token })).data.user.moderator, true, 'dev/test: granted');
+    const before = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      assert.equal((await call('/auth/me', { token })).data.user.moderator, false);
+      assert.equal((await call('/moderation/reports', { token })).status, 403);
+    } finally {
+      process.env.NODE_ENV = before;
+    }
+    // The database role still works in production.
+    db.prepare("UPDATE users SET role = 'moderator' WHERE email = 'moderator@example.com'").run();
+    process.env.NODE_ENV = 'production';
+    try {
+      assert.equal((await call('/auth/me', { token })).data.user.moderator, true);
+    } finally {
+      process.env.NODE_ENV = before;
+    }
+  });
+});

@@ -286,6 +286,9 @@ trackRouter.post('/:token/ack', ackLimiter, (req, res) => {
   if (!share) return res.status(404).json({ error: 'This tracking link is invalid or has expired.' });
   if (!isActive(share)) return res.status(410).json({ error: 'Location sharing has ended.' });
   const contact = contactForCode(share, req.body?.c);
+  if (!contact && db.prepare('SELECT 1 FROM share_acks WHERE share_id = ? AND contact_id IS NULL').get(share.id)) {
+    return res.json({ success: true });
+  }
   db.prepare('INSERT OR IGNORE INTO share_acks (share_id, contact_id, contact_name, created_at) VALUES (?, ?, ?, ?)').run(
     share.id,
     contact?.id ?? null,

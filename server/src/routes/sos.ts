@@ -146,12 +146,21 @@ sosRouter.get('/', requireAuth, (req, res) => {
   res.json({ sosEvents: events });
 });
 
-// Polled by the SOS page to show delivery confirmations as they arrive.
 // Audio evidence: the phone uploads a short piece every few seconds while an SOS is active.
 const RECORDING_TYPES: Record<string, StoredExt> = { 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a' };
 const MAX_RECORDING_PIECES = 90; // 15 minutes at 10-second pieces
 const RECORDING_WINDOW_MS = 60 * 60 * 1000;
 const recordingLimiter = rateLimit({ windowMs: 60 * 1000, max: 30, key: perUser });
+// Enough for many long alerts in a day, but stops one account from filling the disk.
+const MAX_RECORDING_BYTES_PER_DAY = Number(process.env.MAX_RECORDING_MB_PER_DAY || 200) * 1024 * 1024;
+
+// The first bytes of each supported format, so arbitrary files can't be stored as "audio".
+const looksLikeAudio = (ext: StoredExt, data: Buffer) =>
+  ext === 'webm'
+    ? data.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))
+    : ext === 'ogg'
+      ? data.subarray(0, 4).toString('latin1') === 'OggS'
+      : data.subarray(4, 8).toString('latin1') === 'ftyp';
 
 const ownEvent = (id: number, userId: number) =>
   db.prepare('SELECT id, created_at AS createdAt, is_test AS isTest FROM sos_events WHERE id = ? AND user_id = ?').get(id, userId) as
@@ -171,7 +180,17 @@ sosRouter.post(
     }
     const mime = (req.get('content-type') || '').split(';')[0].trim();
     const ext = RECORDING_TYPES[mime];
-    if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) return res.status(415).json({ error: 'Unsupported audio format.' });
+    if (!ext || !Buffer.isBuffer(req.body) || !looksLikeAudio(ext, req.body)) return res.status(415).json({ error: 'Unsupported audio format.' });
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const used = (
+      db
+        .prepare(
+          `SELECT COALESCE(SUM(r.size), 0) AS bytes FROM sos_recordings r JOIN sos_events e ON e.id = r.sos_id
+           WHERE e.user_id = ? AND r.created_at > ?`
+        )
+        .get(req.user!.id, since) as { bytes: number }
+    ).bytes;
+    if (used + req.body.length > MAX_RECORDING_BYTES_PER_DAY) return res.status(413).json({ error: 'Recording storage limit reached for today.' });
     const count = (db.prepare('SELECT COUNT(*) AS n FROM sos_recordings WHERE sos_id = ?').get(event.id) as { n: number }).n;
     if (count >= MAX_RECORDING_PIECES) return res.status(409).json({ error: 'Recording limit reached for this alert.' });
     const file = saveFile(req.body, ext);
@@ -217,6 +236,7 @@ sosRouter.get('/:id/recordings/:rid', requireAuth, (req, res) => {
   });
 });
 
+// Polled by the SOS page to show delivery confirmations as they arrive.
 sosRouter.get('/:id', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   const event = db.prepare('SELECT id FROM sos_events WHERE id = ? AND user_id = ?').get(id, req.user!.id);

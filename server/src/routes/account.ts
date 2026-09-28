@@ -16,13 +16,23 @@ export const accountRouter = Router();
 accountRouter.use(requireAuth);
 const passwordLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
 const phoneCodeLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, key: perUser, message: 'Too many codes requested. Try again in an hour.' });
+const phoneCodeIpLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Too many codes requested. Try again in an hour.' });
+const phoneCodeNumberLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 3,
+  key: (req) => {
+    const phone = typeof req.body?.phone === 'string' ? req.body.phone.replace(/[^\d+]/g, '') : '';
+    return phone ? `phone:${phone}` : undefined;
+  },
+  message: 'Too many codes sent to this number today. Try again tomorrow.',
+});
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
 const codeHash = (userId: number, code: string) => keyedHash(`phone:${userId}:${code}`);
 
 // Step 1 of verifying the user's own number: text them a 6-digit code.
-accountRouter.post('/phone', phoneCodeLimiter, async (req, res) => {
+accountRouter.post('/phone', phoneCodeLimiter, phoneCodeIpLimiter, phoneCodeNumberLimiter, async (req, res) => {
   const body = parse(z.object({ phone: phoneSchema }), req, res);
   if (!body) return;
   const userId = req.user!.id;

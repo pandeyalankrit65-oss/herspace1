@@ -4,6 +4,7 @@ import { WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import { useOnline } from "@/lib/offline";
+import { useAuth } from "@/contexts/AuthContext";
 import { sendQueuedReports } from "@/lib/outbox";
 
 // Shows a small "offline" pill on every page (the SOS page has its own, fuller notice), and
@@ -13,10 +14,12 @@ const OfflineStatus = () => {
   const { toast } = useToast();
   const online = useOnline();
   const { pathname } = useLocation();
+  const { user, loading } = useAuth();
+  const userId = user?.id ?? null;
 
   useEffect(() => {
-    if (online) sendQueuedReports();
-  }, [online]);
+    if (online && !loading) sendQueuedReports(userId);
+  }, [online, loading, userId]);
 
   useEffect(() => {
     const onSent = (e: Event) => toast({ title: tn("offline.reportsSent", (e as CustomEvent<number>).detail) });

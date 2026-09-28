@@ -83,6 +83,7 @@ test("a report written offline is kept on the phone and sent when back online", 
   await expect(page.getByText("Report saved on this phone", { exact: true })).toBeVisible();
 
   await context.setOffline(false);
+
   await expect(page.getByText("1 report saved offline has been sent.", { exact: true })).toBeVisible({ timeout: 15_000 });
   await page.goto("/account");
   await expect(page.getByText("Written with no signal on the train")).toBeVisible();
@@ -100,4 +101,37 @@ test("offline, contacts show the saved copy instead of an empty list", async ({ 
   await expect(page.getByText(/adding or changing contacts needs internet/)).toBeVisible();
   await expect(page.getByText("Sister", { exact: true })).toBeVisible();
   await context.setOffline(false);
+});
+
+test("on a shared phone, a report saved offline is only ever sent from its author's account", async ({ page, context }) => {
+  const asha = await signUp(page, "Asha");
+  await page.goto("/report");
+  await waitForPrecache(page);
+
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByRole("combobox").click();
+  await page.getByRole("option", { name: "Harassment" }).click();
+  await page.getByLabel("Incident Description *").fill("Asha's private report");
+  await page.getByRole("button", { name: "Submit Report" }).click();
+  await expect(page.getByText("Report saved on this phone", { exact: true })).toBeVisible();
+
+  // Someone else uses the phone before Asha's report was sent.
+  await context.clearCookies();
+  await context.setOffline(false);
+  await signUp(page, "Bina");
+  await page.goto("/account");
+  await expect(page.getByRole("heading", { name: "Your account" })).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(page.getByText("Asha's private report")).toHaveCount(0);
+
+  // Back in Asha's account, it's sent.
+  await context.clearCookies();
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(asha.email);
+  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("main").getByRole("button", { name: "Log in" }).click();
+  await expect(page.getByText("1 report saved offline has been sent.", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await page.goto("/account");
+  await expect(page.getByText("Asha's private report")).toBeVisible();
 });

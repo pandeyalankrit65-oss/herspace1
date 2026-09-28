@@ -95,7 +95,7 @@ const Report = () => {
       } catch (err) {
         if (!(err instanceof ApiError) || err.status !== 0) throw err;
         // No connection: keep it on this phone and send it when back online.
-        await queueReport({ body, photos: photos.map((p) => p.blob), createdAt: new Date().toISOString() });
+        await queueReport({ userId: body.anonymous ? null : (user?.id ?? null), body, photos: photos.map((p) => p.blob), createdAt: new Date().toISOString() });
         toast({ title: t("offline.reportQueuedTitle"), description: t("offline.reportQueuedDesc") });
         setFormData(emptyForm);
         photos.forEach((p) => URL.revokeObjectURL(p.url));

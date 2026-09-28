@@ -8,10 +8,14 @@ const SESSION_DAYS = 30;
 // phone: the user's own number, only once verified.
 export type User = { id: number; name: string; email: string; moderator: boolean; phone?: string | null };
 
-// Moderators review flagged Safe Map reports. Grant the role with ADMIN_EMAILS (comma-separated)
-// or by setting users.role = 'moderator'.
+// Moderators review flagged Safe Map reports. In production the role is granted only in the
+// database (`npm run moderator -- add <email>` in server/): sign-up doesn't verify email
+// addresses, so anyone could register an address listed in ADMIN_EMAILS before its owner.
+// ADMIN_EMAILS is a convenience for development and tests only.
 const adminEmails = () =>
-  new Set((process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean));
+  process.env.NODE_ENV === 'production'
+    ? new Set<string>()
+    : new Set((process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean));
 const isModerator = (email: string, role: string) => role === 'moderator' || adminEmails().has(email.toLowerCase());
 
 // The user object sent to the browser.
