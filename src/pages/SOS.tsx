@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,6 +194,17 @@ const SOS = () => {
   }, []);
 
   const voice = useVoiceTrigger({ lang, onTrigger: startCountdown });
+  // Voice commands open this page with ?start=sos|alarm|fakecall.
+  // Each command gets a fresh signal, so it also works when this page is already open.
+  const [params, setParams] = useSearchParams();
+  const startParam = params.get("start");
+  const [signal, setSignal] = useState<{ action: string; at: number } | null>(null);
+  useEffect(() => {
+    if (!startParam) return;
+    setSignal({ action: startParam, at: Date.now() });
+    setParams({}, { replace: true });
+    if (startParam === "sos") startCountdown();
+  }, [startParam, setParams, startCountdown]);
   const shake = useShakeTrigger(startCountdown);
   const sosMode = useSosMode();
   // Holding is already deliberate, so a completed hold sends straight away.
@@ -410,7 +421,7 @@ const SOS = () => {
                 </p>
               )}
               <div className="flex justify-center">
-                <LoudAlarm />
+                <LoudAlarm startSignal={signal?.action === "alarm" ? signal.at : undefined} />
               </div>
               {user && (
                 <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
@@ -564,7 +575,7 @@ const SOS = () => {
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
-            <FakeCall />
+            <FakeCall ringSignal={signal?.action === "fakecall" ? signal.at : undefined} />
           </div>
 
           <Card>

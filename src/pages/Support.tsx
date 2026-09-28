@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, Heart, Brain } from "lucide-react";
+import { MessageCircle, Send, Heart, Brain, Mic, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
-import { useI18n } from "@/i18n";
+import { speechLocale, useI18n } from "@/i18n";
+import { canListen, listenOnce, ListenFailed, type Listening } from "@/lib/listen";
 import PageHeader from "@/components/PageHeader";
 import { useOnline } from "@/lib/offline";
 import Logo from "@/components/Logo";
@@ -25,6 +26,42 @@ interface Message {
 
 const Support = () => {
   const { t, lang } = useI18n();
+  // Voice: speak a message instead of typing, and have replies read aloud.
+  const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const session = useRef<Listening | null>(null);
+  const [speakReplies, setSpeakReplies] = useState(() => {
+    try {
+      return localStorage.getItem("herspace_chat_speak") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
+  const speak = (text: string) => {
+    if (!canSpeak) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = speechLocale(lang);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  };
+  const toggleSpeak = () => {
+    const next = !speakReplies;
+    setSpeakReplies(next);
+    if (!next && canSpeak) window.speechSynthesis.cancel();
+    try {
+      localStorage.setItem("herspace_chat_speak", next ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  };
+  useEffect(
+    () => () => {
+      session.current?.stop();
+      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    },
+    []
+  );
   // The greeting is rendered from the current language rather than stored, so it follows a
   // language switch; it's never sent to the API.
   const [messages, setMessages] = useState<Message[]>([]);
@@ -64,6 +101,7 @@ const Support = () => {
         ts: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      if (speakReplies) speak(assistantMessage.content);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: t("support.errorReply"), ts: new Date().toISOString() }]);
     } finally {
@@ -168,11 +206,63 @@ const Support = () => {
                     className="h-10 flex-1 rounded-full border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     disabled={isTyping}
                   />
+                  {canListen() && (
+                    <Button
+                      type="button"
+                      variant={listening ? "hero" : "ghost"}
+                      size="icon"
+                      className={`h-10 w-10 shrink-0 rounded-full ${listening ? "motion-safe:animate-pulse" : ""}`}
+                      disabled={isTyping}
+                      aria-pressed={listening}
+                      aria-label={listening ? t("chatVoice.stop") : t("chatVoice.speak")}
+                      onClick={() => {
+                        if (listening) {
+                          session.current?.stop();
+                          setListening(false);
+                          return;
+                        }
+                        setVoiceError(null);
+                        setListening(true);
+                        const s = listenOnce(speechLocale(lang), setInput);
+                        session.current = s;
+                        s.result
+                          .then((heard) => {
+                            if (session.current === s && heard[0]) handleSend(heard[0]);
+                          })
+                          .catch((err) => {
+                            if (session.current !== s) return;
+                            const kind = err instanceof ListenFailed ? err.kind : "other";
+                            setVoiceError(kind === "blocked" ? t("sos.micBlockedDesc") : kind === "noMic" ? t("sos.voiceNoMic") : t("chatVoice.notHeard"));
+                          })
+                          .finally(() => session.current === s && setListening(false));
+                      }}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button onClick={() => handleSend()} variant="hero" size="icon" className="h-10 w-10 shrink-0 rounded-full" disabled={isTyping || !input.trim()} aria-label={t("support.send")}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
 
+                {voiceError && (
+                  <p role="alert" className="text-center text-sm text-destructive">
+                    {voiceError}
+                  </p>
+                )}
+                {canSpeak && (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={toggleSpeak}
+                      aria-pressed={speakReplies}
+                      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {speakReplies ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                      {t("chatVoice.readReplies")}
+                    </button>
+                  </div>
+                )}
                 {mode === "fallback" && (
                   <p className="text-xs text-center rounded-md bg-muted px-3 py-2">{t("support.fallbackNote")}</p>
                 )}

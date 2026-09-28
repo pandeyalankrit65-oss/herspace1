@@ -41,12 +41,16 @@ function startRingtone(): () => void {
 type Phase = "idle" | "waiting" | "ringing" | "onCall";
 
 // Shows a realistic incoming call as an excuse to leave an uncomfortable situation.
-const FakeCall = () => {
+// ringSignal: a new value rings straight away (the "fake call" voice command).
+const FakeCall = ({ ringSignal }: { ringSignal?: number }) => {
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const [caller, setCaller] = useState("");
   const [delay, setDelay] = useState(10);
   const [phase, setPhase] = useState<Phase>("idle");
+  useEffect(() => {
+    if (ringSignal) setPhase("ringing");
+  }, [ringSignal]);
   const [waitLeft, setWaitLeft] = useState(0);
   const [callSeconds, setCallSeconds] = useState(0);
   const stopRing = useRef<() => void>(() => {});

@@ -5,9 +5,13 @@ import { useI18n } from "@/i18n";
 
 // A siren and a flashing screen, for when drawing attention is the safest thing to do.
 // The screen alternates at under 3 flashes a second (the safe limit for photosensitive seizures).
-const LoudAlarm = () => {
+// startSignal: a new value starts the alarm (the "sound the alarm" voice command).
+const LoudAlarm = ({ startSignal }: { startSignal?: number }) => {
   const { t } = useI18n();
   const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (startSignal) setOn(true);
+  }, [startSignal]);
   const audio = useRef<AudioContext | null>(null);
 
   useEffect(() => {

@@ -50,7 +50,7 @@ const Walk = () => {
   const [confirmed, setConfirmed] = useState<number | null>(null);
   const [minutes, setMinutes] = useState(60);
   const [note, setNote] = useState("");
-  const [kind, setKind] = useState<Kind>("walk");
+  const [kind, setKind] = useState<Kind>(() => (new URLSearchParams(window.location.search).get("type") === "ride" ? "ride" : "walk"));
   const [details, setDetails] = useState({ vehicle: "", vehicleType: "Cab", app: "", driver: "", destination: "", person: "", place: "", profile: "" });
   const [checkIn, setCheckIn] = useState(60);
   const [checkInDue, setCheckInDue] = useState<string | null>(null);

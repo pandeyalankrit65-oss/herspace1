@@ -1,5 +1,6 @@
 import Logo from "@/components/Logo";
 import QuickExit from "@/components/QuickExit";
+import VoiceCommand from "@/components/VoiceCommand";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AlertCircle, Check, ChevronDown, Languages, LogOut, Monitor, Moon, ShieldCheck, Sun, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -150,6 +151,7 @@ const Navbar = () => {
 
         <div className="ml-auto flex items-center gap-1">
           <QuickExit />
+          <VoiceCommand />
           <LanguageToggle />
           <ThemeMenu />
           {user ? (

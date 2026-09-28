@@ -69,7 +69,11 @@ const SafetyTimer = () => {
   const [checkIn, setCheckIn] = useState<CheckIn | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [confirmedContacts, setConfirmedContacts] = useState<number | null>(null);
-  const [minutes, setMinutes] = useState(30);
+  const [minutes, setMinutes] = useState(() => {
+    // A voice command ("start a 40 minute timer") preselects the nearest option.
+    const asked = Number(new URLSearchParams(window.location.search).get("minutes"));
+    return asked > 0 ? PRESETS.reduce((best, m) => (Math.abs(m - asked) < Math.abs(best - asked) ? m : best)) : 30;
+  });
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
