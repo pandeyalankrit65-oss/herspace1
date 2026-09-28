@@ -22,6 +22,22 @@ test("when alerts can't be sent automatically, one button texts every contact", 
 });
 
 test("the SOS page can be read aloud, and points to help for people who can't speak", async ({ page }) => {
+  // A fake speech engine, so the test doesn't depend on the machine having voices installed.
+  await page.addInitScript(() => {
+    let current: SpeechSynthesisUtterance | null = null;
+    Object.defineProperty(window, "speechSynthesis", {
+      value: {
+        speak: (u: SpeechSynthesisUtterance) => {
+          current = u;
+        },
+        cancel: () => {
+          current?.onend?.(new Event("end") as SpeechSynthesisEvent);
+          current = null;
+        },
+        getVoices: () => [],
+      },
+    });
+  });
   await page.goto("/sos");
   const read = page.getByRole("button", { name: "Read aloud" });
   await read.click();
