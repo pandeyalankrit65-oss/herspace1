@@ -1,5 +1,6 @@
+import Logo from "@/components/Logo";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, ChevronDown, Languages, LogOut, Monitor, Moon, Shield, ShieldCheck, Sun, User, Users } from "lucide-react";
+import { AlertCircle, ChevronDown, Languages, LogOut, Monitor, Moon, ShieldCheck, Sun, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -101,9 +102,7 @@ const Navbar = () => {
     <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
       <div className="container mx-auto flex h-16 items-center gap-2 px-4">
         <Link to="/" className="mr-2 flex items-center gap-2 rounded-lg" aria-label="HerSpace">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-raised">
-            <Shield className="h-5 w-5 text-white" />
-          </span>
+          <Logo />
           <span className="text-lg font-extrabold tracking-tight">HerSpace</span>
         </Link>
 

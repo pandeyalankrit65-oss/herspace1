@@ -682,6 +682,65 @@ const en = {
   // Voice trigger in the app
   "sos.voiceUnsupportedApp": "This phone has no speech recognition service. Turn on Google's speech services in your phone's settings, or use the SOS button.",
 
+  // Contacts list
+  "contacts.editName": "Edit {name}",
+  "contacts.removeName": "Remove {name}",
+  "contacts.removeTitle": "Remove {name}?",
+  "contacts.removeDesc": "They won't get your alerts any more. To add them back, they'll have to confirm again.",
+  "contacts.remove": "Remove",
+
+  // Support chat starters
+  "support.starter1": "I feel unsafe right now",
+  "support.starter2": "Something happened and I want to talk",
+  "support.starter3": "Help me calm down",
+  "support.starter4": "How do I report harassment at work?",
+  "support.typing": "Writing a reply",
+
+  // Map legend
+  "map.legend": "Incident types",
+
+  // SOS page
+  "sos.howTitle": "How an SOS alert works",
+
+  // Home: landing and dashboard
+  "home.howKicker": "How it works",
+  "home.howTitle": "Ready in two minutes",
+  "home.how1Title": "Add people you trust",
+  "home.how1Text": "Invite family or friends. They confirm first, so they know what an alert from you means.",
+  "home.how2Title": "Send a test",
+  "home.how2Text": "Check that your messages really reach them, long before you ever need it.",
+  "home.how3Title": "Get help in one tap",
+  "home.how3Text": "Press SOS, say \"help\" or shake your phone. Your contacts get your location and a live map.",
+  "home.privacyTitle": "Private by design",
+  "home.privacyText": "A safety app has to be safe itself. HerSpace collects only what it needs to help you, and you stay in control of it.",
+  "home.privacy1Title": "Only people you choose",
+  "home.privacy1Text": "Alerts go only to contacts who agreed to receive them. HerSpace never contacts anyone else.",
+  "home.privacy2Title": "Nothing to sell",
+  "home.privacy2Text": "No ads and no data selling. Map reports never show who wrote them.",
+  "home.privacy3Title": "You're in control",
+  "home.privacy3Text": "Download or delete everything, any time. Your live location is deleted as soon as you're safe.",
+  "home.comingSoon": "Coming soon",
+  "dash.morning": "Good morning",
+  "dash.afternoon": "Good afternoon",
+  "dash.evening": "Good evening",
+  "dash.ready_one": "{count} confirmed contact will get your location when you press SOS.",
+  "dash.ready_other": "{count} confirmed contacts will get your location when you press SOS.",
+  "dash.notReady": "No one will be alerted yet. Add a contact and ask them to confirm.",
+  "dash.openSos": "Open SOS",
+  "dash.until": "Until {time}",
+  "dash.timerRunning": "Safety timer running",
+  "dash.checkInBy": "Check in by {time}",
+  "dash.contactsTitle": "Your emergency contacts",
+  "dash.manage": "Manage",
+  "dash.noContacts": "No contacts yet. Add someone you trust.",
+  "dash.toolsTitle": "Your safety tools",
+  "dash.walkText": "Share your journey home",
+  "dash.timerText": "Alerts contacts if you don't check in",
+  "dash.fakeCallText": "An excuse to leave",
+  "dash.mapText": "Incidents and help nearby",
+  "dash.reportText": "Document what happened",
+  "dash.supportText": "Talk it through, any time",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

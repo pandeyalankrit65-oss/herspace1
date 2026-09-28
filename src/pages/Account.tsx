@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import LoadingRows from "@/components/LoadingRows";
+import { ShieldCheck, Users } from "lucide-react";
 import ReportPhotos from "@/components/ReportPhotos";
 
 const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimination", "other"];
@@ -113,12 +114,35 @@ const Account = () => {
       <Navbar />
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-3xl space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">{t("account.title")}</h1>
-            <p className="text-muted-foreground">
-              {user.name} · {user.email}
-            </p>
-          </div>
+          <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-brand/10 p-6 shadow-card">
+            <div className="flex items-center gap-4">
+              <span
+                aria-hidden
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-brand text-2xl font-extrabold text-white shadow-raised"
+              >
+                {user.name.trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <h1 className="text-sm font-semibold text-muted-foreground">{t("account.title")}</h1>
+                <p className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl">{user.name}</p>
+                <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/contacts">
+                <Button variant="outline" size="sm" className="gap-2 bg-card">
+                  <Users className="h-4 w-4" /> {t("nav.emergencyContacts")}
+                </Button>
+              </Link>
+              {user.moderator && (
+                <Link to="/moderation">
+                  <Button variant="outline" size="sm" className="gap-2 bg-card">
+                    <ShieldCheck className="h-4 w-4" /> {t("nav.moderation")}
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </section>
 
           <Card>
             <CardHeader>

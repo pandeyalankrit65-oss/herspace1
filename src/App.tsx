@@ -8,6 +8,7 @@ import { I18nProvider } from "./i18n";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NativeBridge from "./components/NativeBridge";
+import ScrollManager from "./components/ScrollManager";
 import BottomNav from "./components/BottomNav";
 // Home and SOS ship in the main bundle so the emergency page never waits on a download.
 import Index from "./pages/Index";
@@ -46,6 +47,7 @@ const App = () => (
               <Toaster />
               <BrowserRouter>
                 <NativeBridge />
+                <ScrollManager />
                 <Suspense fallback={<div className="min-h-screen" />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
@@ -66,7 +68,7 @@ const App = () => (
                     <Route path="/moderation" element={<Moderation />} />
                     <Route path="/track/:token" element={<Track />} />
                     <Route path="/timer" element={<SafetyTimer />} />
-                  <Route path="/walk" element={<Walk />} />
+                    <Route path="/walk" element={<Walk />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

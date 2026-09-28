@@ -683,6 +683,65 @@ const hi: Record<MessageKey, string> = {
   // Voice trigger in the app
   "sos.voiceUnsupportedApp": "इस फ़ोन में आवाज़ पहचानने की सेवा नहीं है। फ़ोन की सेटिंग में Google की स्पीच सेवाएं चालू करें, या SOS बटन इस्तेमाल करें।",
 
+  // Contacts list
+  "contacts.editName": "{name} को बदलें",
+  "contacts.removeName": "{name} को हटाएं",
+  "contacts.removeTitle": "{name} को हटाएं?",
+  "contacts.removeDesc": "उन्हें अब आपके अलर्ट नहीं मिलेंगे। वापस जोड़ने पर उन्हें फिर से पुष्टि करनी होगी।",
+  "contacts.remove": "हटाएं",
+
+  // Support chat starters
+  "support.starter1": "मुझे अभी असुरक्षित महसूस हो रहा है",
+  "support.starter2": "कुछ हुआ है और मैं बात करना चाहती हूं",
+  "support.starter3": "मुझे शांत होने में मदद करें",
+  "support.starter4": "काम पर उत्पीड़न की शिकायत कैसे करूं?",
+  "support.typing": "जवाब लिखा जा रहा है",
+
+  // Map legend
+  "map.legend": "घटना के प्रकार",
+
+  // SOS page
+  "sos.howTitle": "SOS अलर्ट कैसे काम करता है",
+
+  // Home: landing and dashboard
+  "home.howKicker": "यह कैसे काम करता है",
+  "home.howTitle": "दो मिनट में तैयार",
+  "home.how1Title": "भरोसेमंद लोगों को जोड़ें",
+  "home.how1Text": "परिवार या दोस्तों को आमंत्रित करें। वे पहले पुष्टि करते हैं, ताकि उन्हें पता हो कि आपके अलर्ट का क्या मतलब है।",
+  "home.how2Title": "टेस्ट भेजें",
+  "home.how2Text": "ज़रूरत पड़ने से बहुत पहले जांच लें कि आपके मैसेज सच में उन तक पहुंचते हैं।",
+  "home.how3Title": "एक टैप में मदद",
+  "home.how3Text": "SOS दबाएं, \"बचाओ\" बोलें या फ़ोन हिलाएं। आपके संपर्कों को आपकी लोकेशन और लाइव नक्शा मिलता है।",
+  "home.privacyTitle": "प्राइवेसी सबसे पहले",
+  "home.privacyText": "सुरक्षा ऐप को खुद भी सुरक्षित होना चाहिए। HerSpace केवल वही जानकारी लेता है जो आपकी मदद के लिए ज़रूरी है, और उस पर आपका नियंत्रण रहता है।",
+  "home.privacy1Title": "केवल आपके चुने हुए लोग",
+  "home.privacy1Text": "अलर्ट केवल उन संपर्कों को जाते हैं जिन्होंने उन्हें पाने की सहमति दी है। HerSpace किसी और से संपर्क नहीं करता।",
+  "home.privacy2Title": "बेचने के लिए कुछ नहीं",
+  "home.privacy2Text": "न विज्ञापन, न डेटा की बिक्री। नक्शे की रिपोर्ट में कभी नहीं दिखता कि उन्हें किसने लिखा।",
+  "home.privacy3Title": "नियंत्रण आपके हाथ में",
+  "home.privacy3Text": "सब कुछ कभी भी डाउनलोड या डिलीट करें। सुरक्षित होते ही आपकी लाइव लोकेशन हटा दी जाती है।",
+  "home.comingSoon": "जल्द आ रहा है",
+  "dash.morning": "सुप्रभात",
+  "dash.afternoon": "नमस्ते",
+  "dash.evening": "शुभ संध्या",
+  "dash.ready_one": "SOS दबाने पर {count} पुष्टि किए गए संपर्क को आपकी लोकेशन मिलेगी।",
+  "dash.ready_other": "SOS दबाने पर {count} पुष्टि किए गए संपर्कों को आपकी लोकेशन मिलेगी।",
+  "dash.notReady": "अभी किसी को अलर्ट नहीं जाएगा। एक संपर्क जोड़ें और उनसे पुष्टि करने को कहें।",
+  "dash.openSos": "SOS खोलें",
+  "dash.until": "{time} तक",
+  "dash.timerRunning": "सुरक्षा टाइमर चल रहा है",
+  "dash.checkInBy": "{time} तक चेक-इन करें",
+  "dash.contactsTitle": "आपके आपातकालीन संपर्क",
+  "dash.manage": "बदलें",
+  "dash.noContacts": "अभी कोई संपर्क नहीं। किसी भरोसेमंद व्यक्ति को जोड़ें।",
+  "dash.toolsTitle": "आपके सुरक्षा टूल",
+  "dash.walkText": "घर तक का सफ़र शेयर करें",
+  "dash.timerText": "चेक-इन न करने पर संपर्कों को अलर्ट",
+  "dash.fakeCallText": "वहां से निकलने का बहाना",
+  "dash.mapText": "घटनाएं और आसपास मदद",
+  "dash.reportText": "जो हुआ उसे दर्ज करें",
+  "dash.supportText": "कभी भी बात करें",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

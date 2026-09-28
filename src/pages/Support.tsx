@@ -6,11 +6,15 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
+import Logo from "@/components/Logo";
+import type { MessageKey } from "@/i18n/en";
+
+// Conversation starters shown before the first message.
+const STARTERS: MessageKey[] = ["support.starter1", "support.starter2", "support.starter3", "support.starter4"];
 
 interface Message {
   role: "user" | "assistant";
@@ -36,10 +40,10 @@ const Support = () => {
     viewport?.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleSend = async (text = input) => {
+    if (!text.trim()) return;
 
-    const userMessage: Message = { role: "user", content: input, ts: new Date().toISOString() };
+    const userMessage: Message = { role: "user", content: text, ts: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsTyping(true);
@@ -76,30 +80,24 @@ const Support = () => {
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Chat Interface */}
             <Card className="lg:col-span-2">
-              <CardContent className="space-y-4 pt-6">
+              <CardContent className="space-y-3 p-3 sm:space-y-4 sm:p-6">
                 {/* Messages */}
-                <ScrollArea className="h-[52vh] min-h-[320px] pr-4 lg:h-[500px]">
+                <ScrollArea className="h-[calc(100dvh-29rem)] min-h-[300px] pr-3 lg:h-[500px]">
                   <div className="space-y-4">
                     <div className="flex justify-start">
-                      <Avatar className="mr-3">
-                        <AvatarFallback>{t("support.ai")}</AvatarFallback>
-                      </Avatar>
+                      <Logo className="mr-3 h-9 w-9" />
                       <div className="max-w-[80%] rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm bg-secondary text-secondary-foreground">
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{t("support.greeting")}</p>
                       </div>
                     </div>
                     {messages.map((message, index) => (
                       <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                        {message.role === "assistant" && (
-                          <Avatar className="mr-3">
-                            <AvatarFallback>{t("support.ai")}</AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div className="flex flex-col max-w-[80%]">
+                        {message.role === "assistant" && <Logo className="mr-3 h-9 w-9" />}
+                        <div className="flex max-w-[85%] flex-col">
                           <div
                             className={`rounded-2xl px-4 py-3 shadow-sm ${
                               message.role === "user"
-                                ? "bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-br-sm"
+                                ? "bg-gradient-to-br from-primary to-brand text-primary-foreground rounded-br-sm"
                                 : "bg-secondary text-secondary-foreground rounded-bl-sm"
                             }`}
                           >
@@ -113,21 +111,33 @@ const Support = () => {
                               : ""}
                           </span>
                         </div>
-                        {message.role === "user" && (
-                          <Avatar className="ml-3">
-                            <AvatarFallback className="text-[10px]">{t("support.you")}</AvatarFallback>
-                          </Avatar>
-                        )}
                       </div>
                     ))}
+                    {messages.length === 0 && (
+                      <div className="flex flex-wrap gap-2 pl-12">
+                        {STARTERS.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => handleSend(t(key))}
+                            className="rounded-full border bg-card px-3 py-1.5 text-left text-sm font-medium transition-colors hover:border-primary/50 hover:bg-accent"
+                          >
+                            {t(key)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {isTyping && (
-                      <div className="flex justify-start">
-                        <div className="bg-secondary text-secondary-foreground rounded-lg p-4">
-                          <div className="flex gap-1">
-                            <span className="animate-pulse">●</span>
-                            <span className="animate-pulse delay-100">●</span>
-                            <span className="animate-pulse delay-200">●</span>
-                          </div>
+                      <div className="flex items-center justify-start" role="status" aria-label={t("support.typing")}>
+                        <Logo className="mr-3 h-9 w-9" />
+                        <div className="flex gap-1 rounded-2xl rounded-bl-sm bg-secondary px-4 py-4">
+                          {[0, 150, 300].map((delay) => (
+                            <span
+                              key={delay}
+                              className="h-2 w-2 rounded-full bg-muted-foreground/70 motion-safe:animate-bounce"
+                              style={{ animationDelay: `${delay}ms` }}
+                            />
+                          ))}
                         </div>
                       </div>
                     )}
@@ -136,17 +146,17 @@ const Support = () => {
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 rounded-full border bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring">
                   <Input
                     placeholder={t("support.placeholder")}
                     aria-label={t("support.messageLabel")}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !isTyping && handleSend()}
-                    className="flex-1"
+                    className="h-10 flex-1 rounded-full border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     disabled={isTyping}
                   />
-                  <Button onClick={handleSend} variant="hero" size="icon" disabled={isTyping} aria-label={t("support.send")}>
+                  <Button onClick={() => handleSend()} variant="hero" size="icon" className="h-10 w-10 shrink-0 rounded-full" disabled={isTyping || !input.trim()} aria-label={t("support.send")}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>

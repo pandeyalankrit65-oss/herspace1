@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Copy, MessageSquare, Send } from "lucide-react";
+import { Copy, MessageSquare, Pencil, Plus, Send, Trash2, Users } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,18 @@ import { api } from "@/lib/api";
 import { offlineContacts } from "@/lib/offline";
 import { useI18n } from "@/i18n";
 import LoadingRows from "@/components/LoadingRows";
+import PageHeader from "@/components/PageHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 export type ContactStatus = "pending" | "confirmed" | "declined";
 
@@ -33,9 +45,15 @@ const STATUS_BADGE: Record<
   ContactStatus,
   { label: "contacts.status.confirmed" | "contacts.status.pending" | "contacts.status.declined"; className: string }
 > = {
-  confirmed: { label: "contacts.status.confirmed", className: "bg-green-500/15 text-green-600 border-green-500/40" },
-  pending: { label: "contacts.status.pending", className: "bg-amber-500/15 text-amber-600 border-amber-500/40" },
-  declined: { label: "contacts.status.declined", className: "bg-destructive/15 text-destructive border-destructive/40" },
+  confirmed: { label: "contacts.status.confirmed", className: "border-success/40 bg-success/10 text-success" },
+  pending: { label: "contacts.status.pending", className: "border-warning/50 bg-warning/10 text-foreground" },
+  declined: { label: "contacts.status.declined", className: "border-destructive/40 bg-destructive/10 text-destructive" },
+};
+
+const AVATAR: Record<ContactStatus, string> = {
+  confirmed: "bg-success/15 text-success",
+  pending: "bg-warning/15 text-foreground",
+  declined: "bg-muted text-muted-foreground",
 };
 
 // Contacts saved by the old browser-only version of the app.
@@ -58,6 +76,7 @@ const Contacts = () => {
   const [legacy, setLegacy] = useState(readLegacyContacts);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState<Contact | null>(null);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [invite, setInvite] = useState<PendingInvite | null>(null);
   const [testing, setTesting] = useState(false);
@@ -244,56 +263,71 @@ const Contacts = () => {
               </CardContent>
             </Card>
           )}
-          <Card>
-            <CardHeader className="flex flex-row items-start justify-between gap-4">
-              <div>
-                <CardTitle>{t("contacts.title")}</CardTitle>
-                <CardDescription>{t("contacts.desc")}</CardDescription>
-              </div>
-              <Button variant="hero" className="shrink-0" onClick={openAdd}>
-                {t("contacts.add")}
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {!loaded && <LoadingRows />}
-              {loaded && contacts.length === 0 && <p className="text-sm text-muted-foreground">{t("contacts.empty")}</p>}
-              {contacts.length > 0 && (
-                <div className="space-y-3">
-                  {contacts.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-md border border-border/50 p-3"
+          <PageHeader icon={Users} title={t("contacts.title")} subtitle={t("contacts.desc")}>
+            <Button variant="hero" className="w-full gap-2 sm:w-auto" onClick={openAdd}>
+              <Plus className="h-4 w-4" /> {t("contacts.add")}
+            </Button>
+          </PageHeader>
+
+          <Card className="overflow-hidden">
+            {!loaded && (
+              <CardContent className="pt-6">
+                <LoadingRows />
+              </CardContent>
+            )}
+            {loaded && contacts.length === 0 && (
+              <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Users className="h-6 w-6" />
+                </span>
+                <p className="max-w-sm text-sm text-muted-foreground">{t("contacts.empty")}</p>
+              </CardContent>
+            )}
+            {contacts.length > 0 && (
+              <ul className="divide-y">
+                {contacts.map((c) => (
+                  <li key={c.id} className="flex items-start gap-3 p-4">
+                    <span
+                      aria-hidden
+                      className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold", AVATAR[c.status])}
                     >
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium truncate">{c.name}</span>
-                          <Badge variant="outline" className={STATUS_BADGE[c.status].className}>
-                            {t(STATUS_BADGE[c.status].label)}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {c.phone}
-                          {c.relation ? ` • ${c.relation}` : ""}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 shrink-0">
+                      {c.name.trim().charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <p className="truncate font-semibold">{c.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {c.phone}
+                        {c.relation ? ` · ${c.relation}` : ""}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                        <Badge variant="outline" className={cn("font-medium", STATUS_BADGE[c.status].className)}>
+                          {t(STATUS_BADGE[c.status].label)}
+                        </Badge>
                         {c.status !== "confirmed" && (
-                          <Button variant="outline" size="sm" onClick={() => onResend(c)}>
-                            {t("contacts.resend")}
-                          </Button>
+                          <button type="button" onClick={() => onResend(c)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary underline-offset-2 hover:underline">
+                            <Send className="h-3.5 w-3.5" /> {t("contacts.resend")}
+                          </button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => onEdit(c)}>
-                          {t("common.edit")}
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => onDelete(c.id)}>
-                          {t("common.delete")}
-                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
+                    <div className="-mr-2 flex shrink-0">
+                      <Button variant="ghost" size="icon" aria-label={t("contacts.editName", { name: c.name })} onClick={() => onEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("contacts.removeName", { name: c.name })}
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => setRemoving(c)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           {confirmedCount > 0 && (
@@ -309,6 +343,24 @@ const Contacts = () => {
           )}
         </div>
       </main>
+
+      <AlertDialog open={removing !== null} onOpenChange={(o) => !o && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("contacts.removeTitle", { name: removing?.name ?? "" })}</AlertDialogTitle>
+            <AlertDialogDescription>{t("contacts.removeDesc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => removing && onDelete(removing.id)}
+            >
+              {t("contacts.remove")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

@@ -46,7 +46,7 @@ const About = () => {
 
           <div className="mb-12 text-center space-y-4">
             <div className="flex justify-center mb-6">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-brand/20">
                 <Eye className="h-12 w-12 text-primary" />
               </div>
             </div>
@@ -60,7 +60,7 @@ const About = () => {
               {VALUES.map(({ icon: Icon, title, text }) => (
                 <Card key={title} className="hover:border-primary/50 transition-all">
                   <CardHeader>
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit mb-4">
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-brand/20 w-fit mb-4">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl">{t(title)}</CardTitle>
@@ -86,7 +86,7 @@ const About = () => {
             {STATS.map(([value, label]) => (
               <Card key={value} className="text-center">
                 <CardContent className="pt-6">
-                  <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2 break-words">
+                  <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-brand bg-clip-text text-transparent mb-2 break-words">
                     {t(value)}
                   </div>
                   <div className="text-sm text-muted-foreground">{t(label)}</div>

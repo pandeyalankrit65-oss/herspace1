@@ -87,7 +87,7 @@ const FakeCall = () => {
 
   return (
     <>
-      <Card>
+      <Card id="fake-call" className="scroll-mt-24">
         <CardHeader>
           <Phone className="h-8 w-8 text-primary mb-2" />
           <CardTitle className="text-lg">{t("fakeCall.title")}</CardTitle>

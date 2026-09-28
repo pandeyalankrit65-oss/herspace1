@@ -5,6 +5,9 @@ import { signUp } from "./helpers";
 // Automated accessibility checks (WCAG 2.1 A and AA rules that axe can test) on every page,
 // in light and dark mode. Automated checks catch only part of the problems; they don't
 // replace testing with a screen reader.
+// Reduced motion shows scroll-reveal sections straight away, so axe checks all of them.
+test.use({ reducedMotion: "reduce" });
+
 const PUBLIC_PAGES = ["/", "/sos", "/report", "/support", "/map", "/circles", "/corporate", "/about", "/login", "/signup", "/forgot-password", "/timer", "/walk", "/privacy", "/terms", "/track/not-a-real-token", "/no-such-page"];
 const SIGNED_IN_PAGES = ["/", "/sos", "/contacts", "/account", "/timer", "/walk", "/moderation"];
 

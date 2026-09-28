@@ -96,26 +96,23 @@ const Map = () => {
 
           <Card className="mb-6 overflow-hidden">
             <CardContent className="p-0">
-              <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border/50">
-                <div className="flex flex-wrap gap-3 text-xs">
-                  {Object.entries(TYPE_STYLES).map(([key, { label, color }]) => (
-                    <span key={key} className="flex items-center gap-1.5">
-                      <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
-                      {t(label)}
-                    </span>
-                  ))}
-                </div>
-                <Button variant="hero" size="sm" onClick={locate} disabled={locating} className="gap-2">
-                  <LocateFixed className="h-4 w-4" />
-                  {locating ? t("map.locating") : t("map.showLocation")}
-                </Button>
-              </div>
               <NearbyFilters state={nearby} visible={visible} onToggle={(type) => setVisible((v) => ({ ...v, [type]: !v[type] }))} />
               {(error || locateError) && (
                 <p className="px-4 py-2 text-sm text-destructive">{error ? t("map.loadFailed", { error }) : locateError}</p>
               )}
               {/* z-0 keeps Leaflet's panes below the fixed navbar */}
-              <div className="relative z-0 h-[60vh] min-h-[360px]">
+              <div className="relative z-0 h-[58vh] min-h-[340px]">
+                {/* Above Leaflet's panes (z 400) and below its controls (z 800). */}
+                <Button
+                  variant="hero"
+                  size="sm"
+                  onClick={locate}
+                  disabled={locating}
+                  className="absolute right-3 top-3 z-[500] gap-2 shadow-raised"
+                >
+                  <LocateFixed className="h-4 w-4" />
+                  {locating ? t("map.locating") : t("map.showLocation")}
+                </Button>
                 <MapContainer
                   center={center}
                   zoom={points.length ? 11 : 5}
@@ -170,7 +167,17 @@ const Map = () => {
                   <FlyTo target={me} />
                 </MapContainer>
               </div>
-              <p className="px-4 py-3 text-xs text-muted-foreground">{tn("map.count", points.length)}</p>
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t px-4 py-3">
+                <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t("map.legend")}>
+                  {Object.entries(TYPE_STYLES).map(([key, { label, color }]) => (
+                    <li key={key} className="flex items-center gap-1.5">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                      {t(label)}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">{tn("map.count", points.length)}</p>
+              </div>
             </CardContent>
           </Card>
 

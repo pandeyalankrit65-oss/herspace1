@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate } from "lucide-react";
+import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -228,8 +228,6 @@ const SOS = () => {
             )}
           </PageHeader>
 
-          <SetupChecklist className="mb-6" />
-
           <Card className="mb-8 border-destructive/40">
             <CardContent className="p-6 sm:p-12 text-center space-y-8">
               <div className="space-y-4">
@@ -247,7 +245,22 @@ const SOS = () => {
                 <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-full bg-destructive/5 sm:h-72 sm:w-72">
                   <div className="flex h-56 w-56 items-center justify-center rounded-full bg-destructive/10 sm:h-64 sm:w-64">
                     {countdown !== null ? (
-                      <div className="flex h-48 w-48 flex-col items-center justify-center rounded-full border-4 border-destructive bg-card sm:h-56 sm:w-56">
+                      <div className="relative flex h-48 w-48 flex-col items-center justify-center rounded-full bg-card sm:h-56 sm:w-56">
+                        {/* A ring that empties over the countdown (a full ring for reduced motion). */}
+                        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
+                          <circle cx="50" cy="50" r="47" fill="none" strokeWidth="3" className="stroke-destructive/15" />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="47"
+                            fill="none"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeDasharray="295.3"
+                            className="stroke-destructive motion-safe:[animation:countdown-ring_var(--countdown)_linear_forwards]"
+                            style={{ "--ring-length": "295.3", "--countdown": `${COUNTDOWN_SECONDS}s` } as React.CSSProperties}
+                          />
+                        </svg>
                         <span className="text-7xl font-extrabold tabular-nums text-destructive" aria-live="assertive">
                           {countdown}
                         </span>
@@ -328,6 +341,9 @@ const SOS = () => {
 
           {liveShare && <LiveLocation share={liveShare} onEnded={endLiveShare} />}
 
+          {/* Setup help comes after the button: in an emergency the button must be on screen first. */}
+          {!liveShare && !result && <SetupChecklist className="mb-8" />}
+
           {result && (
             <Card className={`mb-8 ${deliveredAll ? "border-green-500/50" : "border-destructive"}`} aria-live="polite">
               <CardHeader>
@@ -386,84 +402,67 @@ const SOS = () => {
             </Card>
           )}
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-primary/5 border-primary/20">
-              <CardHeader>
-                <Timer className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">{t("timer.ctaTitle")}</CardTitle>
-                <CardDescription>{t("timer.ctaDesc")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link to="/timer">
-                  <Button variant="hero" className="w-full">
-                    {t("timer.ctaButton")}
-                  </Button>
+          <div className="mb-8 grid gap-4 md:grid-cols-2 md:gap-6">
+            <div className="space-y-4">
+              {[
+                { to: "/timer", icon: Timer, title: t("timer.ctaTitle"), desc: t("timer.ctaDesc"), cta: t("timer.ctaButton") },
+                { to: "/walk", icon: Footprints, title: t("walk.ctaTitle"), desc: t("walk.ctaDesc"), cta: t("walk.ctaButton") },
+              ].map(({ to, icon: Icon, title, desc, cta }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  aria-label={cta}
+                  className="group flex items-center gap-4 rounded-2xl border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/40"
+                >
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-bold">{title}</span>
+                    <span className="block text-sm text-muted-foreground">{desc}</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </Link>
-              </CardContent>
-            </Card>
-            <Card className="bg-primary/5 border-primary/20">
-              <CardHeader>
-                <Footprints className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">{t("walk.ctaTitle")}</CardTitle>
-                <CardDescription>{t("walk.ctaDesc")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Link to="/walk">
-                  <Button variant="hero" className="w-full">
-                    {t("walk.ctaButton")}
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+              ))}
+              <Link
+                to={user ? "/contacts" : "/login?next=/contacts"}
+                className="group flex items-center gap-4 rounded-2xl border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-primary/40"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Users className="h-6 w-6" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold">{user ? t("sos.contacts.manage") : t("sos.contacts.logIn")}</span>
+                  <span className="block text-sm text-muted-foreground">
+                    {user ? t("sos.contacts.count", { confirmed: confirmedCount, total: contacts.length }) : t("sos.contacts.desc")}
+                  </span>
+                </span>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
             <FakeCall />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <MessageSquare className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">{t("sos.card.smsTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{t("sos.card.smsDesc")}</CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <MapPin className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">{t("sos.card.locationTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{t("sos.card.locationDesc")}</CardDescription>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Phone className="h-8 w-8 text-primary mb-2" />
-                <CardTitle className="text-lg">{t("sos.card.servicesTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>{t("sos.card.servicesDesc", { number: EMERGENCY_NUMBER })}</CardDescription>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="bg-primary/5 border-primary/20">
+          <Card>
             <CardHeader>
-              <CardTitle>{t("sos.contacts.title")}</CardTitle>
-              <CardDescription>{t("sos.contacts.desc")}</CardDescription>
+              <CardTitle className="text-lg">{t("sos.howTitle")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {user && (
-                <p className="text-sm text-muted-foreground">
-                  {t("sos.contacts.count", { confirmed: confirmedCount, total: contacts.length })}
-                </p>
-              )}
-              <Link to={user ? "/contacts" : "/login?next=/contacts"}>
-                <Button variant="hero">{user ? t("sos.contacts.manage") : t("sos.contacts.logIn")}</Button>
-              </Link>
+            <CardContent>
+              <ul className="grid gap-5 md:grid-cols-3">
+                {[
+                  { icon: MessageSquare, title: t("sos.card.smsTitle"), desc: t("sos.card.smsDesc") },
+                  { icon: MapPin, title: t("sos.card.locationTitle"), desc: t("sos.card.locationDesc") },
+                  { icon: Phone, title: t("sos.card.servicesTitle"), desc: t("sos.card.servicesDesc", { number: EMERGENCY_NUMBER }) },
+                ].map(({ icon: Icon, title, desc }) => (
+                  <li key={title} className="flex gap-3">
+                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <div>
+                      <p className="font-semibold">{title}</p>
+                      <p className="text-sm text-muted-foreground">{desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         </div>

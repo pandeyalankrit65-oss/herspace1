@@ -109,7 +109,7 @@ const SetupChecklist = ({ className, showWhenDone = false }: { className?: strin
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className={cn("text-sm font-semibold", step.done && "text-muted-foreground line-through")}>{t(step.title)}</p>
+                <p className={cn("text-sm font-semibold", step.done && "font-medium text-muted-foreground")}>{t(step.title)}</p>
                 {!step.done && <p className="text-xs text-muted-foreground">{t(step.desc)}</p>}
               </div>
               {step === next && (

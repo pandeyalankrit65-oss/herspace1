@@ -51,7 +51,7 @@ const Circles = () => {
               {CIRCLES.map(({ name, category, icon: Icon, text }) => (
                 <Card key={name} className="group hover:border-primary/50 transition-all">
                   <CardHeader>
-                    <div className="p-3 w-fit rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 group- transition-all">
+                    <div className="p-3 w-fit rounded-lg bg-gradient-to-br from-primary/20 to-brand/20 group- transition-all">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="mt-4">{t(name)}</CardTitle>

@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { Shield, Heart, Users, AlertCircle, MessageCircle, Map, MapPin, Building2, Quote, Timer, Phone, CheckCircle2, Footprints, Languages } from "lucide-react";
+import { Shield, Users, AlertCircle, MessageCircle, Map, MapPin, Building2, Timer, Phone, CheckCircle2, Footprints, Languages, Send, UserCheck, EyeOff, Trash2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import SetupChecklist from "@/components/SetupChecklist";
+import Dashboard from "@/components/home/Dashboard";
+import { useAuth } from "@/contexts/AuthContext";
+import { useReveal } from "@/hooks/use-reveal";
 import heroImage from "@/assets/hero-safety.jpg";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -20,43 +21,44 @@ const FEATURES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey
   { icon: Languages, title: "home.feature.langTitle", text: "home.feature.langText", link: "/about" },
 ];
 
-const MISSION: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
-  { icon: Shield, title: "home.mission1Title", text: "home.mission1Text" },
-  { icon: Heart, title: "home.mission2Title", text: "home.mission2Text" },
-  { icon: Users, title: "home.mission3Title", text: "home.mission3Text" },
-  { icon: Building2, title: "home.mission4Title", text: "home.mission4Text" },
+const STEPS: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
+  { icon: Users, title: "home.how1Title", text: "home.how1Text" },
+  { icon: Send, title: "home.how2Title", text: "home.how2Text" },
+  { icon: AlertCircle, title: "home.how3Title", text: "home.how3Text" },
 ];
 
-const WHY: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
-  { icon: Shield, title: "home.why1Title", text: "home.why1Text" },
-  { icon: Heart, title: "home.why2Title", text: "home.why2Text" },
-  { icon: Users, title: "home.why3Title", text: "home.why3Text" },
+const PROMISES: Array<{ icon: typeof Shield; title: MessageKey; text: MessageKey }> = [
+  { icon: UserCheck, title: "home.privacy1Title", text: "home.privacy1Text" },
+  { icon: EyeOff, title: "home.privacy2Title", text: "home.privacy2Text" },
+  { icon: Trash2, title: "home.privacy3Title", text: "home.privacy3Text" },
 ];
 
-const QUOTES: Array<{ quote: MessageKey; author: MessageKey }> = [
-  { quote: "home.quote1", author: "home.quote1Author" },
-  { quote: "home.quote2", author: "home.quote2Author" },
-  { quote: "home.quote3", author: "home.quote3Author" },
-];
-
-const CORPORATE_POINTS: MessageKey[] = [
-  "home.corporatePoint1",
-  "home.corporatePoint2",
-  "home.corporatePoint3",
-  "home.corporatePoint4",
-];
-
-const cardClass = " hover:border-primary/50 transition-all duration-300";
-const gradientText = "text-foreground";
-const highlight = "bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent";
+const highlight = "bg-gradient-to-r from-primary to-brand bg-clip-text text-transparent";
 
 const Index = () => {
+  const { user } = useAuth();
+  if (user) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <Dashboard />
+        <Footer />
+      </div>
+    );
+  }
+  return <Landing />;
+};
+
+// For visitors: what HerSpace is, how it works, and the privacy promise.
+const Landing = () => {
   const { t, tr } = useI18n();
+  const revealRef = useReveal<HTMLDivElement>();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" ref={revealRef}>
       <Navbar />
 
+      <main>
       {/* Hero Section */}
       <section className="relative overflow-hidden px-4 pb-16 pt-28 md:pb-24 md:pt-36">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[36rem] bg-[radial-gradient(60%_50%_at_30%_20%,hsl(var(--primary)/0.14),transparent)]" />
@@ -66,7 +68,7 @@ const Index = () => {
               <span className="h-2 w-2 rounded-full bg-success" /> {t("home.badge")}
             </span>
             <h1 className="text-4xl font-extrabold leading-[1.08] sm:text-5xl xl:text-6xl">
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{t("home.heroTitle1")}</span>
+              <span className="bg-gradient-to-r from-primary to-brand bg-clip-text text-transparent">{t("home.heroTitle1")}</span>
               <br />
               {t("home.heroTitle2")}
             </h1>
@@ -114,151 +116,131 @@ const Index = () => {
         </div>
       </section>
 
-      <div className="container mx-auto max-w-2xl px-4 empty:hidden">
-        <SetupChecklist className="mt-4" />
-      </div>
-
-      {/* Features Grid */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4">
-            <span className={gradientText}>{t("home.featuresTitle")}</span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.featuresText")}</p>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {FEATURES.map(({ icon: Icon, title, text, link }) => (
-              <Link key={title} to={link}>
-                <Card className={`group h-full cursor-pointer ${cardClass}`}>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit group- transition-all">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {t(title)}
-                    </h3>
-                    <p className="text-muted-foreground">{t(text)}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Mission Statement */}
-      <section className="py-20 px-4 bg-gradient-to-b from-card/40 to-background">
+      {/* How it works */}
+      <section className="px-4 py-16 md:py-24">
         <div className="container mx-auto max-w-5xl">
-          <div className="text-center space-y-8">
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-8">
-              <span className={gradientText}>{t("home.missionTitle")}</span>
-            </h2>
-            <div className="grid md:grid-cols-2 gap-8 text-left">
-              {MISSION.map(({ icon: Icon, title, text }) => (
-                <Card key={title} className={cardClass}>
-                  <CardContent className="p-8 space-y-4">
-                    <Icon className="h-12 w-12 text-primary mb-4" />
-                    <h3 className="text-2xl font-bold">{t(title)}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{t(text)}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+          <div className="reveal mx-auto mb-12 max-w-2xl text-center">
+            <p className="mb-2 text-sm font-bold uppercase tracking-wider text-primary">{t("home.howKicker")}</p>
+            <h2 className="text-3xl font-extrabold md:text-4xl">{t("home.howTitle")}</h2>
           </div>
+          <ol className="grid gap-6 md:grid-cols-3">
+            {STEPS.map(({ icon: Icon, title, text }, i) => (
+              <li key={title} className="reveal relative rounded-3xl border bg-card p-6 shadow-card" style={{ "--reveal-delay": `${i * 90}ms` } as React.CSSProperties}>
+                <span className="absolute right-5 top-4 text-5xl font-extrabold text-primary/10" aria-hidden>
+                  {i + 1}
+                </span>
+                <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-brand text-white shadow-raised">
+                  <Icon className="h-6 w-6" />
+                </span>
+                <h3 className="mb-1 text-lg font-bold">{t(title)}</h3>
+                <p className="text-muted-foreground">{t(text)}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      {/* Corporate Connect Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
-                <Building2 className="h-12 w-12 text-primary" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold">
-                <span className={gradientText}>{t("nav.corporate")}</span>
-              </h2>
-              <p className="text-xl text-muted-foreground leading-relaxed">{t("home.corporateText")}</p>
-              <ul className="space-y-4">
-                {CORPORATE_POINTS.map((key) => (
-                  <li key={key} className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                    <span className="text-muted-foreground">{t(key)}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link to="/corporate">
-                <Button variant="hero" size="lg" className="gap-2 mt-4">
-                  <Building2 className="h-5 w-5" />
-                  {t("home.corporateButton")}
-                </Button>
+      {/* Features */}
+      <section className="bg-muted/40 px-4 py-16 md:py-24">
+        <div className="container mx-auto">
+          <div className="reveal mx-auto mb-12 max-w-2xl text-center">
+            <h2 className="mb-3 text-3xl font-extrabold md:text-4xl">{t("home.featuresTitle")}</h2>
+            <p className="text-lg text-muted-foreground">{t("home.featuresText")}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {FEATURES.map(({ icon: Icon, title, text, link }, i) => (
+              <Link
+                key={title}
+                to={link}
+                className="reveal group flex flex-col rounded-3xl border bg-card p-6 shadow-card transition-all hover:-translate-y-1 hover:border-primary/40"
+                style={{ "--reveal-delay": `${(i % 4) * 70}ms` } as React.CSSProperties}
+              >
+                <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-brand/15 text-primary">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mb-1 text-lg font-bold transition-colors group-hover:text-primary">{t(title)}</h3>
+                <p className="flex-1 text-sm text-muted-foreground">{t(text)}</p>
+                <ChevronRight className="mt-4 h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
               </Link>
-            </div>
-            <Card className="border-primary/30 transition-all">
-              <CardContent className="p-8 space-y-6">
-                <h3 className="text-2xl font-bold">{t("home.whyTitle")}</h3>
-                <div className="space-y-4">
-                  {WHY.map(({ icon: Icon, title, text }) => (
-                    <div key={title} className="flex gap-4">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">{t(title)}</h4>
-                        <p className="text-sm text-muted-foreground">{t(text)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Quotes */}
-      <section className="py-20 px-4 bg-gradient-to-b from-background to-card/40">
-        <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-4">
-            <span className={gradientText}>{t("home.quotesTitle")}</span>
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 text-lg">{t("home.quotesText")}</p>
-          <div className="grid md:grid-cols-3 gap-8">
-            {QUOTES.map(({ quote, author }) => (
-              <Card key={quote} className={` ${cardClass}`}>
-                <CardContent className="p-8 space-y-4">
-                  <Quote className="h-10 w-10 text-primary/50" />
-                  <p className="text-lg italic text-muted-foreground leading-relaxed">"{t(quote)}"</p>
-                  <p className="text-sm font-semibold text-primary">— {t(author)}</p>
-                </CardContent>
-              </Card>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Privacy promise */}
+      <section className="px-4 py-16 md:py-24">
+        <div className="reveal container relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-[hsl(262_40%_12%)] px-6 py-12 text-white md:px-12 md:py-16">
+          <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[hsl(338_80%_57%/0.25)] blur-3xl" />
+          <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-[hsl(264_66%_50%/0.35)] blur-3xl" />
+          <div className="relative grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-center">
+            <div>
+              <Shield className="mb-4 h-10 w-10 text-[hsl(266_85%_78%)]" />
+              <h2 className="mb-3 text-3xl font-extrabold md:text-4xl">{t("home.privacyTitle")}</h2>
+              <p className="text-white/85">{t("home.privacyText")}</p>
+              <Link to="/privacy" className="mt-4 inline-block font-semibold text-[hsl(266_85%_82%)] underline underline-offset-4">
+                {t("footer.privacy")}
+              </Link>
+            </div>
+            <ul className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+              {PROMISES.map(({ icon: Icon, title, text }) => (
+                <li key={title} className="flex gap-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                  <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(266_85%_78%)]" />
+                  <div>
+                    <h3 className="font-bold">{t(title)}</h3>
+                    <p className="text-sm text-white/80">{t(text)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Corporate Connect teaser */}
+      <section className="px-4 pb-16 md:pb-24">
+        <Link
+          to="/corporate"
+          className="reveal container group mx-auto flex max-w-6xl flex-col gap-4 rounded-3xl border bg-card p-6 shadow-card transition-colors hover:border-primary/40 sm:flex-row sm:items-center md:p-8"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Building2 className="h-6 w-6" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="text-lg font-bold">{t("nav.corporate")}</span>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{t("home.comingSoon")}</span>
+            </span>
+            <span className="block text-muted-foreground">{t("home.corporateText")}</span>
+          </span>
+          <span className="inline-flex items-center gap-1 font-semibold text-primary">
+            {t("home.corporateButton")} <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </span>
+        </Link>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-accent/10">
-        <div className="container mx-auto max-w-4xl text-center space-y-8">
-          <h2 className="text-3xl md:text-4xl font-extrabold">
+      <section className="bg-gradient-to-br from-primary/10 to-brand/10 px-4 py-16 md:py-24">
+        <div className="reveal container mx-auto max-w-3xl space-y-6 text-center">
+          <h2 className="text-3xl font-extrabold md:text-4xl">
             {tr("home.ctaTitle", { highlight: <span className={highlight}>{t("home.ctaHighlight")}</span> })}
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">{t("home.ctaText")}</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <p className="text-lg text-muted-foreground">{t("home.ctaText")}</p>
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link to="/signup">
-              <Button variant="hero" size="lg" className="gap-2">
+              <Button variant="hero" size="lg" className="w-full gap-2 sm:w-auto">
                 <Users className="h-5 w-5" />
                 {t("home.ctaSignup")}
               </Button>
             </Link>
             <Link to="/about">
-              <Button variant="glass" size="lg">
+              <Button variant="glass" size="lg" className="w-full sm:w-auto">
                 {t("home.ctaAbout")}
               </Button>
             </Link>
           </div>
         </div>
       </section>
+      </main>
 
       <Footer />
     </div>

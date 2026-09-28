@@ -11,26 +11,30 @@
 
 @layer base {
   :root {
-    --background: 250 33% 98%;
-    --foreground: 250 30% 11%;
+    --background: 30 25% 98%;
+    --foreground: 262 28% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 250 30% 11%;
+    --card-foreground: 262 28% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 250 30% 11%;
+    --popover-foreground: 262 28% 12%;
 
-    --primary: 268 68% 52%;
+    --primary: 264 66% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 252 30% 95%;
-    --secondary-foreground: 250 30% 16%;
+    --secondary: 262 32% 96%;
+    --secondary-foreground: 262 30% 18%;
 
-    --muted: 252 26% 95%;
-    --muted-foreground: 250 10% 38%;
+    --muted: 262 18% 95.5%;
+    --muted-foreground: 262 8% 38%;
 
-    --accent: 284 72% 56%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent is the soft tint UI components use for hover and selection. */
+    --accent: 264 60% 96%;
+    --accent-foreground: 264 50% 28%;
+
+    /* Second brand colour: the violet-to-rose gradient runs primary -> brand. */
+    --brand: 338 80% 57%;
 
     --destructive: 0 76% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -40,15 +44,15 @@
     --success: 152 60% 36%;
     --warning: 35 92% 42%;
 
-    --border: 250 22% 89%;
-    --input: 250 22% 85%;
-    --ring: 268 68% 52%;
+    --border: 262 16% 90%;
+    --input: 262 16% 84%;
+    --ring: 264 66% 50%;
 
     --radius: 0.875rem;
 
-    --hero-overlay: linear-gradient(180deg, hsl(250 33% 98% / 0.55) 0%, hsl(250 33% 98% / 0.35) 45%, hsl(250 33% 98% / 0.95) 100%);
-    --shadow-card: 0 1px 2px hsl(250 30% 11% / 0.04), 0 4px 16px -4px hsl(250 30% 11% / 0.08);
-    --shadow-raised: 0 8px 30px -8px hsl(268 68% 40% / 0.35);
+    --hero-overlay: linear-gradient(180deg, hsl(30 25% 98% / 0.55) 0%, hsl(30 25% 98% / 0.35) 45%, hsl(30 25% 98% / 0.95) 100%);
+    --shadow-card: 0 1px 2px hsl(262 28% 12% / 0.04), 0 4px 16px -4px hsl(262 28% 12% / 0.08);
+    --shadow-raised: 0 8px 30px -8px hsl(264 66% 40% / 0.35);
     --shadow-sos: 0 10px 40px -8px hsl(0 76% 45% / 0.55);
 
     /* Kept for components that still reference them. */
@@ -61,26 +65,28 @@
   }
 
   .dark {
-    --background: 250 22% 7%;
-    --foreground: 250 20% 96%;
+    --background: 262 24% 7%;
+    --foreground: 262 20% 96%;
 
-    --card: 250 20% 10%;
-    --card-foreground: 250 20% 96%;
+    --card: 262 20% 10%;
+    --card-foreground: 262 20% 96%;
 
-    --popover: 250 20% 11%;
-    --popover-foreground: 250 20% 96%;
+    --popover: 262 20% 11%;
+    --popover-foreground: 262 20% 96%;
 
-    --primary: 268 80% 68%;
-    --primary-foreground: 250 30% 8%;
+    --primary: 266 85% 72%;
+    --primary-foreground: 262 30% 8%;
 
-    --secondary: 250 18% 15%;
-    --secondary-foreground: 250 20% 96%;
+    --secondary: 262 18% 15%;
+    --secondary-foreground: 262 20% 96%;
 
-    --muted: 250 18% 13%;
-    --muted-foreground: 250 12% 68%;
+    --muted: 262 18% 13%;
+    --muted-foreground: 262 12% 68%;
 
-    --accent: 284 80% 72%;
-    --accent-foreground: 250 30% 8%;
+    --accent: 264 26% 18%;
+    --accent-foreground: 264 40% 94%;
+
+    --brand: 338 85% 68%;
 
     /* The fill stays dark enough for white text; red text uses a lighter shade. */
     --destructive: 0 76% 50%;
@@ -90,13 +96,13 @@
     --success: 152 55% 50%;
     --warning: 38 92% 58%;
 
-    --border: 250 16% 18%;
-    --input: 250 16% 22%;
-    --ring: 268 80% 68%;
+    --border: 262 16% 18%;
+    --input: 262 16% 22%;
+    --ring: 266 85% 72%;
 
-    --hero-overlay: linear-gradient(180deg, hsl(250 22% 7% / 0.55) 0%, hsl(250 22% 7% / 0.35) 45%, hsl(250 22% 7% / 0.95) 100%);
+    --hero-overlay: linear-gradient(180deg, hsl(262 24% 7% / 0.55) 0%, hsl(262 24% 7% / 0.35) 45%, hsl(262 24% 7% / 0.95) 100%);
     --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 16px -4px hsl(0 0% 0% / 0.4);
-    --shadow-raised: 0 8px 30px -8px hsl(268 80% 50% / 0.45);
+    --shadow-raised: 0 8px 30px -8px hsl(266 85% 50% / 0.45);
     --shadow-sos: 0 10px 40px -8px hsl(0 84% 50% / 0.6);
     --cyan-accent: 190 85% 60%;
   }
@@ -141,6 +147,46 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+/* Motion. Everything here is skipped for people who ask for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Pages rise in gently. "backwards" drops the transform once done, so fixed-position
+     content inside the page (dialogs, the fake-call screen) isn't affected afterwards. */
+  main {
+    animation: page-rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
+
+  /* Sections that fade up as they scroll into view (see useReveal). */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.6s ease-out,
+      transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .reveal[data-visible] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes page-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* The SOS countdown ring empties over the countdown. */
+@keyframes countdown-ring {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: var(--ring-length);
   }
 }
 

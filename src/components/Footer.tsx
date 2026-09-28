@@ -1,6 +1,7 @@
-import { Shield, Phone, MapPin } from "lucide-react";
+import { Phone, MapPin } from "lucide-react";
 import { EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import Logo from "@/components/Logo";
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -12,9 +13,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-3">
             <Link to="/" className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-                <Shield className="h-5 w-5 text-white" />
-              </span>
+              <Logo />
               <span className="text-lg font-extrabold tracking-tight">HerSpace</span>
             </Link>
             <p className="text-sm text-muted-foreground">{t("footer.tagline")}</p>

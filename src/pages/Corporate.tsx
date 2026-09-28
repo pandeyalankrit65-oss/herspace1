@@ -32,11 +32,11 @@ const Corporate = () => {
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16 space-y-6 animate-fade-in">
-            <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 mb-4">
+            <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-brand/20 mb-4">
               <Building2 className="h-16 w-16 text-primary" />
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold">
-              <span className="bg-gradient-to-r from-primary via-accent to-cyan bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-brand to-cyan bg-clip-text text-transparent">
                 {t("nav.corporate")}
               </span>
             </h1>
@@ -82,7 +82,7 @@ const Corporate = () => {
               {FEATURES.map(({ icon: Icon, title, text }) => (
                 <Card key={title} className="group hover:border-primary/50 transition-all duration-300">
                   <CardHeader>
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 w-fit mb-4 group- transition-all">
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-brand/20 w-fit mb-4 group- transition-all">
                       <Icon className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl">{t(title)}</CardTitle>
