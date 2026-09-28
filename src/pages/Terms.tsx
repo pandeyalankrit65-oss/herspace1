@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import LegalPage, { ContactLine, Section } from "@/components/LegalPage";
+import LegalPage, { ContactLine, Section, useLegalLang } from "@/components/LegalPage";
+import TermsHi from "./legal/TermsHi";
 import { EMERGENCY_NUMBER } from "@/lib/api";
 
-const Terms = () => (
+const TermsEn = () => (
   <LegalPage title="Terms of Use" updated="27 September 2026">
     <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-foreground">
       <strong>HerSpace is not an emergency service.</strong> It does not contact the police, ambulance or any emergency responder.
@@ -78,5 +79,8 @@ const Terms = () => (
     </Section>
   </LegalPage>
 );
+
+// Hindi readers get the translation; the English text is the binding version.
+const Terms = () => (useLegalLang() === "hi" ? <TermsHi /> : <TermsEn />);
 
 export default Terms;

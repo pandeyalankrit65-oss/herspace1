@@ -8,6 +8,7 @@ import { db } from '../db';
 import { processOverdueCheckIns } from '../routes/checkins';
 import { contactCode } from '../routes/location';
 import { formatAddress, parsePlaces } from '../geo';
+import { keyedHash } from '../util';
 
 let server: Server;
 let base: string;
@@ -574,5 +575,46 @@ describe('moderation', () => {
     await call(`/moderation/reports/${id}`, { token: mod, body: { action: 'reopen' } });
     assert.equal(await onMap(), true);
     assert.equal((await call(`/moderation/reports/${id}`, { token: mod, body: { action: 'delete' } })).status, 400);
+  });
+});
+
+describe('phone verification', () => {
+  test('a code proves the number; wrong codes are limited; alerts then show it', async () => {
+    const { token } = await newUser('Kiran');
+    const me = (await call('/auth/me', { token })).data.user;
+    assert.equal(me.phone, null);
+
+    // No SMS provider in tests: the server says so instead of pretending.
+    const send = await call('/account/phone', { token, body: { phone: '+91 98765 43210' } });
+    assert.equal(send.status, 503);
+    assert.equal((await call('/account/phone', { token, body: { phone: '12345' } })).status, 400);
+
+    // Plant a code as if it had been texted.
+    const plant = () =>
+      db.prepare('INSERT OR REPLACE INTO phone_codes (user_id, phone, code_hash, expires_at, attempts) VALUES (?, ?, ?, ?, 0)').run(
+        me.id,
+        '+919876543210',
+        keyedHash(`phone:${me.id}:123456`),
+        new Date(Date.now() + 60_000).toISOString()
+      );
+    plant();
+    assert.equal((await call('/account/phone/verify', { token, body: { code: '12345' } })).status, 400, 'not 6 digits');
+    for (let i = 0; i < 5; i++) assert.equal((await call('/account/phone/verify', { token, body: { code: '000000' } })).status, 400);
+    assert.equal((await call('/account/phone/verify', { token, body: { code: '123456' } })).status, 410, 'locked after 5 wrong tries');
+
+    plant();
+    const ok = await call('/account/phone/verify', { token, body: { code: '123456' } });
+    assert.equal(ok.status, 200);
+    assert.equal((await call('/auth/me', { token })).data.user.phone, '+919876543210');
+    assert.equal((await call('/account/phone/verify', { token, body: { code: '123456' } })).status, 410, 'codes are single-use');
+
+    // The test alert names the verified number.
+    const contact = await call('/contacts', { token, body: { name: 'Mom', phone: `+9194${String(Date.now()).slice(-8)}` } });
+    await call(`/contact-invites/${contact.data.inviteLink.split('/confirm-contact/')[1]}`, { body: { accept: true } });
+    const test = await call('/sos/test', { token, method: 'POST' });
+    assert.match(test.data.message, /Kiran \(\+919876543210\)/);
+
+    assert.equal((await call('/account/phone', { token, method: 'DELETE' })).status, 200);
+    assert.equal((await call('/auth/me', { token })).data.user.phone, null);
   });
 });

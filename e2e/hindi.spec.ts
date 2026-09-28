@@ -16,13 +16,18 @@ test("switching to Hindi translates the SOS page and is remembered", async ({ pa
   await page.goto("/login");
   await expect(page.getByLabel("ईमेल")).toBeVisible();
 
-  // Marketing pages are translated; legal pages explain they're English-only.
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /महिलाओं को सशक्त बनाना/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /सुरक्षा टाइमर/ }).first()).toBeVisible();
   await page.goto("/privacy");
-  await expect(page.getByText("यह पेज अभी सिर्फ़ अंग्रेज़ी में उपलब्ध है।", { exact: false })).toBeVisible();
-  await expect(page.locator("article")).toHaveAttribute("lang", "en");
+  // Legal pages are translated, marked as such, and link to the binding English text.
+  await expect(page.getByRole("heading", { name: "प्राइवेसी पॉलिसी" })).toBeVisible();
+  await expect(page.getByText("अंग्रेज़ी संस्करण मान्य होगा", { exact: false })).toBeVisible();
+  await page.getByRole("link", { name: "अंग्रेज़ी संस्करण पढ़ें" }).click();
+  await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
+  await page.goto("/terms");
+  await expect(page.getByRole("heading", { name: "उपयोग की शर्तें" })).toBeVisible();
+  await expect(page.locator("article")).toHaveAttribute("lang", "hi");
   await page.goto("/login");
 
   // And back to English.

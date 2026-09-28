@@ -17,6 +17,7 @@ import PageHeader from "@/components/PageHeader";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
+import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
 import { Switch } from "@/components/ui/switch";
 import type { MessageKey } from "@/i18n/en";
 
@@ -65,6 +66,7 @@ const POLL_INTERVAL_MS = 5000;
 const POLL_DURATION_MS = 3 * 60 * 1000;
 
 const COUNTDOWN_SECONDS = 3;
+const HOLD_SECONDS = 3;
 
 function getLocation(): Promise<Coords | undefined> {
   if (!navigator.geolocation) return Promise.resolve(undefined);
@@ -178,6 +180,10 @@ const SOS = () => {
 
   const voice = useVoiceTrigger({ lang, onTrigger: startCountdown });
   const shake = useShakeTrigger(startCountdown);
+  const sosMode = useSosMode();
+  // Holding is already deliberate, so a completed hold sends straight away.
+  const hold = useHoldToSend(sendSOS, HOLD_SECONDS * 1000);
+  const holdMode = sosMode.mode === "hold";
   const VOICE_ERRORS = {
     unsupported: isNative ? "sos.voiceUnsupportedApp" : "sos.voiceUnsupportedDesc",
     blocked: "sos.micBlockedDesc",
@@ -267,21 +273,46 @@ const SOS = () => {
                         <span className="text-sm font-medium text-muted-foreground">{t("sos.sendingAlert")}</span>
                       </div>
                     ) : (
-                      <Button
-                        variant="emergency"
-                        aria-label={sending ? t("sos.buttonSending") : t("sos.button")}
-                        className={`h-48 w-48 rounded-full p-0 sm:h-56 sm:w-56 ${sending ? "animate-pulse" : ""}`}
-                        onClick={startCountdown}
-                        disabled={sending}
-                      >
-                        <span className="flex flex-col items-center gap-1.5">
-                          <AlertCircle className="!size-12 sm:!size-14" />
-                          <span className="text-5xl font-black tracking-wide sm:text-6xl">SOS</span>
-                          <span className="max-w-[10rem] whitespace-normal text-center text-xs font-semibold leading-tight sm:text-sm">
-                            {sending ? t("sos.buttonSending") : t("sos.buttonCaption")}
+                      <div className="relative">
+                        {hold.holding && (
+                          // Fills over the hold time; letting go early cancels.
+                          <svg viewBox="0 0 100 100" className="pointer-events-none absolute -inset-3 z-10 -rotate-90" aria-hidden>
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="48"
+                              fill="none"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeDasharray="301.6"
+                              className="sos-hold-ring stroke-destructive"
+                              style={{ "--ring-length": "301.6", "--hold": `${HOLD_SECONDS}s` } as React.CSSProperties}
+                            />
+                          </svg>
+                        )}
+                        <Button
+                          variant="emergency"
+                          aria-label={sending ? t("sos.buttonSending") : holdMode ? t("sos.buttonHoldLabel") : t("sos.button")}
+                          className={`h-48 w-48 touch-none select-none rounded-full p-0 sm:h-56 sm:w-56 ${sending ? "animate-pulse" : ""} ${hold.holding ? "scale-95" : ""}`}
+                          onClick={holdMode ? undefined : startCountdown}
+                          {...(holdMode ? hold.handlers : {})}
+                          disabled={sending}
+                        >
+                          <span className="flex flex-col items-center gap-1.5">
+                            <AlertCircle className="!size-12 sm:!size-14" />
+                            <span className="text-5xl font-black tracking-wide sm:text-6xl">SOS</span>
+                            <span className="max-w-[10rem] whitespace-normal text-center text-xs font-semibold leading-tight sm:text-sm">
+                              {sending
+                                ? t("sos.buttonSending")
+                                : holdMode
+                                  ? hold.holding
+                                    ? t("sos.keepHolding")
+                                    : t("sos.holdCaption", { seconds: HOLD_SECONDS })
+                                  : t("sos.buttonCaption")}
+                            </span>
                           </span>
-                        </span>
-                      </Button>
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -324,6 +355,25 @@ const SOS = () => {
                   {t(VOICE_ERRORS[voice.error], { error: voice.errorDetail })}
                 </p>
               )}
+              <fieldset className="mx-auto max-w-md rounded-xl border bg-muted/40 p-3 text-left">
+                <legend className="px-1 text-sm font-semibold">{t("sos.modeLabel")}</legend>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup">
+                  {(["tap", "hold"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      role="radio"
+                      aria-checked={sosMode.mode === m}
+                      onClick={() => sosMode.setMode(m)}
+                      className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                        sosMode.mode === m ? "border-primary bg-card font-semibold shadow-sm" : "border-transparent text-muted-foreground hover:bg-card"
+                      }`}
+                    >
+                      {m === "tap" ? t("sos.modeTap") : t("sos.modeHold", { seconds: HOLD_SECONDS })}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               {shake.supported && (
                 <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
                   <Vibrate className="mt-0.5 h-5 w-5 shrink-0 text-primary" />

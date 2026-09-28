@@ -56,7 +56,7 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
 
   const contacts = user ? listContacts(user.id) : [];
   const confirmed = contacts.filter((c) => c.status === 'confirmed');
-  const who = user?.name ?? 'Someone';
+  const who = user ? (user.phone ? `${user.name} (${user.phone})` : user.name) : 'Someone';
 
   // A readable place name helps contacts who can't open a link quickly. Skipped for tests, and
   // never allowed to hold up the alert for long (reverseGeocode times out after 2.5 s).

@@ -530,7 +530,6 @@ const en = {
   "circles.createButton": "Learn more about HerSpace",
   "notFound.text": "This page doesn't exist.",
   "notFound.home": "Go to home",
-  "legal.englishOnly": "",
 
   // Android app: persistent notification while location is shared in the background
   "native.liveTitle": "HerSpace is sharing your location",
@@ -705,6 +704,33 @@ const en = {
   "dash.mapText": "Incidents and help nearby",
   "dash.reportText": "Document what happened",
   "dash.supportText": "Talk it through, any time",
+
+  // Hold-to-send SOS
+  "sos.buttonHoldLabel": "EMERGENCY SOS: press and hold for 3 seconds to alert your contacts",
+  "sos.holdCaption": "Hold for {seconds} seconds",
+  "sos.keepHolding": "Keep holding...",
+  "sos.modeLabel": "How the SOS button works",
+  "sos.modeTap": "Tap, then a 3-second countdown",
+  "sos.modeHold": "Press and hold for {seconds} seconds",
+
+  // Own phone verification
+  "phone.title": "Your phone number",
+  "phone.desc": "Alerts and invites then show your number, so your contacts know it's really you and can call you back. We send a code to check it's yours.",
+  "phone.label": "Mobile number (with country code)",
+  "phone.sendCode": "Send code",
+  "phone.sending": "Sending...",
+  "phone.codeLabel": "Enter the 6-digit code sent to {phone}",
+  "phone.verify": "Verify",
+  "phone.differentNumber": "Use a different number",
+  "phone.verified": "Phone number verified",
+  "phone.verifiedTag": "Verified",
+  "phone.change": "Change",
+  "phone.remove": "Remove",
+
+  // Legal page translations
+  "legal.translationNote": "This is a translation for your convenience. If it differs from the English version, the English version applies.",
+  "legal.readEnglish": "Read the English version",
+  "legal.readHindi": "हिन्दी में पढ़ें",
 
   // Error screen
   "error.title": "Something went wrong",

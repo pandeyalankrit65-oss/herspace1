@@ -531,7 +531,6 @@ const hi: Record<MessageKey, string> = {
   "circles.createButton": "HerSpace के बारे में और जानें",
   "notFound.text": "यह पेज मौजूद नहीं है।",
   "notFound.home": "होम पर जाएं",
-  "legal.englishOnly": "यह पेज अभी सिर्फ़ अंग्रेज़ी में उपलब्ध है। अंग्रेज़ी संस्करण ही मान्य है।",
 
   // Android app: persistent notification while location is shared in the background
   "native.liveTitle": "HerSpace आपकी लोकेशन शेयर कर रहा है",
@@ -706,6 +705,33 @@ const hi: Record<MessageKey, string> = {
   "dash.mapText": "घटनाएं और आसपास मदद",
   "dash.reportText": "जो हुआ उसे दर्ज करें",
   "dash.supportText": "कभी भी बात करें",
+
+  // Hold-to-send SOS
+  "sos.buttonHoldLabel": "आपातकालीन SOS: संपर्कों को अलर्ट करने के लिए 3 सेकंड दबाकर रखें",
+  "sos.holdCaption": "{seconds} सेकंड दबाकर रखें",
+  "sos.keepHolding": "दबाए रखें...",
+  "sos.modeLabel": "SOS बटन कैसे काम करे",
+  "sos.modeTap": "दबाएं, फिर 3 सेकंड का काउंटडाउन",
+  "sos.modeHold": "{seconds} सेकंड दबाकर रखें",
+
+  // Own phone verification
+  "phone.title": "आपका फ़ोन नंबर",
+  "phone.desc": "इसके बाद अलर्ट और निमंत्रण में आपका नंबर दिखेगा, ताकि आपके संपर्क जानें कि यह सच में आप हैं और आपको वापस कॉल कर सकें। यह आपका ही है, यह जांचने के लिए हम एक कोड भेजते हैं।",
+  "phone.label": "मोबाइल नंबर (कंट्री कोड के साथ)",
+  "phone.sendCode": "कोड भेजें",
+  "phone.sending": "भेजा जा रहा है...",
+  "phone.codeLabel": "{phone} पर भेजा गया 6 अंकों का कोड डालें",
+  "phone.verify": "पुष्टि करें",
+  "phone.differentNumber": "दूसरा नंबर इस्तेमाल करें",
+  "phone.verified": "फ़ोन नंबर की पुष्टि हो गई",
+  "phone.verifiedTag": "पुष्टि हुई",
+  "phone.change": "बदलें",
+  "phone.remove": "हटाएं",
+
+  // Legal page translations
+  "legal.translationNote": "यह अनुवाद आपकी सुविधा के लिए है। अगर इसमें और अंग्रेज़ी संस्करण में कोई अंतर हो, तो अंग्रेज़ी संस्करण मान्य होगा।",
+  "legal.readEnglish": "अंग्रेज़ी संस्करण पढ़ें",
+  "legal.readHindi": "हिन्दी में पढ़ें",
 
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",

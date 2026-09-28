@@ -180,6 +180,26 @@
   }
 }
 
+/* The hold-to-send ring fills while the SOS button is held. It is progress feedback, so it
+   runs even with reduced motion (the global rule would otherwise make it instant). */
+@keyframes hold-ring {
+  from {
+    stroke-dashoffset: var(--ring-length);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.sos-hold-ring {
+  animation: hold-ring var(--hold) linear forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sos-hold-ring {
+    animation-duration: var(--hold) !important;
+  }
+}
+
 /* The SOS countdown ring empties over the countdown. */
 @keyframes countdown-ring {
   from {

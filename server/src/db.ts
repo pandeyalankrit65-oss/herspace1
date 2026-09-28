@@ -169,6 +169,18 @@ const migrations: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  `
+  -- The user's own phone number, stored only once they've proved it's theirs with a code.
+  ALTER TABLE users ADD COLUMN phone TEXT;
+  ALTER TABLE users ADD COLUMN phone_verified_at TEXT;
+  CREATE TABLE phone_codes (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    phone TEXT NOT NULL,
+    code_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0
+  );
+  `,
 ];
 
 function migrate() {
@@ -201,6 +213,7 @@ export function purgeExpiredData() {
   const sosCutoff = new Date(Date.now() - SOS_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM password_resets WHERE expires_at < ?').run(now);
+  db.prepare('DELETE FROM phone_codes WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM sos_events WHERE created_at < ?').run(sosCutoff);
   // Finished shares are kept a day so a contact opening the link late sees "ended", not "not found".
   const shareCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

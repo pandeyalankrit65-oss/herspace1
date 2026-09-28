@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { db } from '../db';
 import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
 import { rateLimit } from '../rateLimit';
-import { parse, passwordSchema } from '../util';
+import { keyedHash, now, parse, passwordSchema, phoneSchema } from '../util';
+import { sendSms } from '../messaging';
+import { perUser } from '../rateLimit';
+import crypto from 'crypto';
 import { deleteReports, reportPhotos } from './reports';
 
 // Account self-service: password change, data export and deletion (DPDP Act rights).
@@ -11,6 +14,58 @@ export const accountRouter = Router();
 
 accountRouter.use(requireAuth);
 const passwordLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+const phoneCodeLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, key: perUser, message: 'Too many codes requested. Try again in an hour.' });
+
+const CODE_TTL_MS = 10 * 60 * 1000;
+const MAX_CODE_ATTEMPTS = 5;
+const codeHash = (userId: number, code: string) => keyedHash(`phone:${userId}:${code}`);
+
+// Step 1 of verifying the user's own number: text them a 6-digit code.
+accountRouter.post('/phone', phoneCodeLimiter, async (req, res) => {
+  const body = parse(z.object({ phone: phoneSchema }), req, res);
+  if (!body) return;
+  const userId = req.user!.id;
+  const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+  db.prepare(
+    `INSERT INTO phone_codes (user_id, phone, code_hash, expires_at, attempts) VALUES (?, ?, ?, ?, 0)
+     ON CONFLICT(user_id) DO UPDATE SET phone = excluded.phone, code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0`
+  ).run(userId, body.phone, codeHash(userId, code), new Date(Date.now() + CODE_TTL_MS).toISOString());
+  const sms = await sendSms(body.phone, `HerSpace: your verification code is ${code}. It expires in 10 minutes. Don't share it with anyone.`);
+  if (sms.status !== 'sent') {
+    db.prepare('DELETE FROM phone_codes WHERE user_id = ?').run(userId);
+    return res.status(sms.status === 'not_configured' ? 503 : 502).json({
+      error: sms.status === 'not_configured' ? "Text messages aren't set up on this server, so the number can't be verified." : "The code couldn't be sent. Check the number and try again.",
+    });
+  }
+  res.json({ success: true, phone: body.phone });
+});
+
+// Step 2: check the code. Five wrong tries and the code is dead.
+accountRouter.post('/phone/verify', (req, res) => {
+  const body = parse(z.object({ code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit code') }), req, res);
+  if (!body) return;
+  const userId = req.user!.id;
+  const row = db.prepare('SELECT phone, code_hash AS hash, expires_at AS expiresAt, attempts FROM phone_codes WHERE user_id = ?').get(userId) as
+    | { phone: string; hash: string; expiresAt: string; attempts: number }
+    | undefined;
+  if (!row || new Date(row.expiresAt) < new Date() || row.attempts >= MAX_CODE_ATTEMPTS) {
+    return res.status(410).json({ error: 'This code has expired. Request a new one.' });
+  }
+  const given = Buffer.from(codeHash(userId, body.code));
+  if (!crypto.timingSafeEqual(given, Buffer.from(row.hash))) {
+    db.prepare('UPDATE phone_codes SET attempts = attempts + 1 WHERE user_id = ?').run(userId);
+    return res.status(400).json({ error: "That code isn't right." });
+  }
+  db.prepare('UPDATE users SET phone = ?, phone_verified_at = ? WHERE id = ?').run(row.phone, now(), userId);
+  db.prepare('DELETE FROM phone_codes WHERE user_id = ?').run(userId);
+  res.json({ success: true, phone: row.phone });
+});
+
+accountRouter.delete('/phone', (req, res) => {
+  db.prepare('UPDATE users SET phone = NULL, phone_verified_at = NULL WHERE id = ?').run(req.user!.id);
+  db.prepare('DELETE FROM phone_codes WHERE user_id = ?').run(req.user!.id);
+  res.json({ success: true });
+});
 
 const checkPassword = (userId: number, password: string) => {
   const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(userId) as { password_hash: string };
@@ -41,7 +96,7 @@ accountRouter.post('/password', passwordLimiter, (req, res) => {
 
 accountRouter.get('/export', (req, res) => {
   const userId = req.user!.id;
-  const user = db.prepare('SELECT id, name, email, created_at AS createdAt FROM users WHERE id = ?').get(userId);
+  const user = db.prepare('SELECT id, name, email, phone, phone_verified_at AS phoneVerifiedAt, created_at AS createdAt FROM users WHERE id = ?').get(userId);
   const contacts = db.prepare('SELECT name, phone, relation, status FROM contacts WHERE user_id = ?').all(userId);
   const reports = db
     .prepare(

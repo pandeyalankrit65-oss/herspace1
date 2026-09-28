@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import LegalPage, { ContactLine, Section } from "@/components/LegalPage";
+import LegalPage, { ContactLine, Section, useLegalLang } from "@/components/LegalPage";
+import PrivacyHi from "./legal/PrivacyHi";
 
-const Privacy = () => (
+const PrivacyEn = () => (
   <LegalPage title="Privacy Policy" updated="28 September 2026">
     <p className="text-lg text-muted-foreground leading-relaxed">
       HerSpace exists to help keep you safe, so we collect only what the app needs to work, and we tell you plainly where it goes.
@@ -11,7 +12,8 @@ const Privacy = () => (
       <ul>
         <li>
           <strong>Your account:</strong> name, email address and a scrambled (hashed) version of your password. We never store
-          your password itself.
+          your password itself. If you add your own phone number, we text you a code to check it's yours and store the number
+          once you've entered it.
         </li>
         <li>
           <strong>Emergency contacts:</strong> each contact's name, phone number, relationship (if you add one) and whether they
@@ -50,8 +52,8 @@ const Privacy = () => (
     <Section title="Who sees your information">
       <ul>
         <li>
-          <strong>Your emergency contacts</strong> receive your name and a map link to your location when you trigger SOS, and
-          only if they have agreed to be your contact.
+          <strong>Your emergency contacts</strong> receive your name (and your phone number, if you've verified it) and a map
+          link to your location when you trigger SOS, and only if they have agreed to be your contact.
         </li>
         <li>
           <strong>Everyone using the Safe Map</strong> can see reports that include a location, but only the incident type, the
@@ -119,5 +121,8 @@ const Privacy = () => (
     </Section>
   </LegalPage>
 );
+
+// Hindi readers get the translation; the English text is the binding version.
+const Privacy = () => (useLegalLang() === "hi" ? <PrivacyHi /> : <PrivacyEn />);
 
 export default Privacy;

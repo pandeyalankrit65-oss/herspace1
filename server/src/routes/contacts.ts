@@ -50,7 +50,7 @@ async function invite(contactId: number, contact: { name: string; phone: string 
   const link = `${appUrl()}/confirm-contact/${token}`;
   const sms = await sendSms(
     contact.phone,
-    `${user.name} has asked you to be an emergency contact on HerSpace. If you agree, you'll get a text with their location if they ever press SOS. Respond here: ${link}`
+    `${user.phone ? `${user.name} (${user.phone})` : user.name} has asked you to be an emergency contact on HerSpace. If you agree, you'll get a text with their location if they ever press SOS. Respond here: ${link}`
   );
   return { inviteLink: link, inviteSms: sms.status, inviteError: sms.error };
 }

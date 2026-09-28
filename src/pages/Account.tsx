@@ -13,6 +13,7 @@ import type { MessageKey } from "@/i18n/en";
 import LoadingRows from "@/components/LoadingRows";
 import { ShieldCheck, Users } from "lucide-react";
 import ReportPhotos from "@/components/ReportPhotos";
+import PhoneVerification from "@/components/PhoneVerification";
 
 const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimination", "other"];
 
@@ -143,6 +144,8 @@ const Account = () => {
               )}
             </div>
           </section>
+
+          <PhoneVerification />
 
           <Card>
             <CardHeader>
