@@ -798,6 +798,36 @@ describe('arriving at a saved place', () => {
   });
 });
 
+describe('evidence pack', () => {
+  test("collects the report and the alerts around it, for its author only", async () => {
+    const { token } = await userWithConfirmedContact('Oviya');
+    const today = new Date().toISOString().slice(0, 10);
+    const report = await call('/reports', { token, body: { incidentType: 'harassment', description: 'Followed home', date: today } });
+    const old = await call('/reports', { token, body: { incidentType: 'harassment', description: 'Years ago', date: '2020-01-01' } });
+    await call('/sos/test', { token, body: {} });
+    const sos = await call('/sos', { token, body: { coords: { lat: 28.6, lng: 77.2, accuracy: 15 } } });
+    await call(`/track/${sos.data.share.url.split('/track/')[1]}/ack`, { body: {} });
+
+    const pack = await call(`/reports/${report.data.id}/evidence`, { token });
+    assert.equal(pack.status, 200);
+    assert.equal(pack.data.user.name, 'Oviya');
+    assert.equal(pack.data.report.description, 'Followed home');
+    assert.deepEqual(pack.data.report.photos, []);
+    assert.equal(pack.data.sosEvents.length, 1, 'the real alert, not the test one');
+    const [event] = pack.data.sosEvents;
+    assert.equal(event.lat, 28.6);
+    assert.equal(event.alerted.length, 1);
+    assert.equal(event.alerted[0].name, 'Mom');
+    assert.equal(event.responses.length, 1);
+    assert.deepEqual({ ...event.recordings, first: null, last: null }, { pieces: 0, bytes: 0, first: null, last: null });
+
+    assert.equal((await call(`/reports/${old.data.id}/evidence`, { token })).data.sosEvents.length, 0, 'nothing from other days');
+    const stranger = await newUser('Stranger');
+    assert.equal((await call(`/reports/${report.data.id}/evidence`, { token: stranger.token })).status, 404);
+    assert.equal((await call(`/reports/${report.data.id}/evidence`)).status, 401);
+  });
+});
+
 describe('security fixes', () => {
   test('SOS recordings must really be audio', async () => {
     const { token } = await userWithConfirmedContact('Gita');

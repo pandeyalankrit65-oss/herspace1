@@ -233,3 +233,26 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Evidence pack: print only the document, on white, whatever else is on screen. */
+@media print {
+  body:has(.evidence-doc) {
+    background: #fff !important;
+  }
+  body:has(.evidence-doc) * {
+    visibility: hidden;
+  }
+  body:has(.evidence-doc) .evidence-doc,
+  body:has(.evidence-doc) .evidence-doc * {
+    visibility: visible;
+  }
+  body:has(.evidence-doc) .evidence-doc {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  @page {
+    margin: 16mm;
+  }
+}

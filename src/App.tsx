@@ -32,6 +32,7 @@ const Account = lazy(() => import("./pages/Account"));
 const Moderation = lazy(() => import("./pages/Moderation"));
 const Help = lazy(() => import("./pages/Help"));
 const Complaint = lazy(() => import("./pages/Complaint"));
+const Evidence = lazy(() => import("./pages/Evidence"));
 const Track = lazy(() => import("./pages/Track"));
 const SafetyTimer = lazy(() => import("./pages/SafetyTimer"));
 const Walk = lazy(() => import("./pages/Walk"));
@@ -73,6 +74,7 @@ const App = () => (
                     <Route path="/moderation" element={<Moderation />} />
                     <Route path="/help" element={<Help />} />
                     <Route path="/complaint" element={<Complaint />} />
+                    <Route path="/evidence/:id" element={<Evidence />} />
                     <Route path="/track/:token" element={<Track />} />
                     <Route path="/timer" element={<SafetyTimer />} />
                     <Route path="/walk" element={<Walk />} />

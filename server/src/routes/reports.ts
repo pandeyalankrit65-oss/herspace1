@@ -101,6 +101,51 @@ reportsRouter.get('/', requireAuth, (req, res) => {
   res.json({ reports: reports.map((r) => ({ ...r, photos: reportPhotos(r.id).map((p) => p.id) })) });
 });
 
+// Everything for one report's evidence pack: the report, and the user's real (not test) SOS
+// alerts from the day before to the day after the incident, with who was alerted, who
+// responded and how much audio was recorded. Owner only.
+const DAY_MS = 24 * 60 * 60 * 1000;
+reportsRouter.get('/:id/evidence', requireAuth, (req, res) => {
+  const user = req.user!;
+  const report = db
+    .prepare(
+      `SELECT id, incident_type AS incidentType, description, location_text AS location, lat, lng, incident_date AS date,
+              created_at AS createdAt FROM reports WHERE id = ? AND user_id = ?`
+    )
+    .get(Number(req.params.id), user.id) as { id: number; date: string | null; createdAt: string } | undefined;
+  if (!report) return res.status(404).json({ error: 'Report not found.' });
+
+  // The incident's day (or the day it was reported), widened by a day each side.
+  const day = new Date(`${(report.date ?? report.createdAt).slice(0, 10)}T00:00:00Z`).getTime();
+  const from = new Date(day - DAY_MS).toISOString();
+  const to = new Date(day + 2 * DAY_MS).toISOString();
+  const events = db
+    .prepare(
+      `SELECT id, lat, lng, accuracy, created_at AS createdAt FROM sos_events
+       WHERE user_id = ? AND is_test = 0 AND created_at >= ? AND created_at < ? ORDER BY created_at`
+    )
+    .all(user.id, from, to) as Array<{ id: number }>;
+  const sosEvents = events.map((e) => ({
+    ...e,
+    alerted: db.prepare('SELECT contact_name AS name, channel, status FROM sos_deliveries WHERE sos_id = ? ORDER BY id').all(e.id),
+    responses: db
+      .prepare('SELECT a.contact_name AS name, a.created_at AS at FROM share_acks a JOIN location_shares s ON s.id = a.share_id WHERE s.sos_id = ? ORDER BY a.id')
+      .all(e.id),
+    recordings: db
+      .prepare('SELECT COUNT(*) AS pieces, COALESCE(SUM(size), 0) AS bytes, MIN(created_at) AS first, MAX(created_at) AS last FROM sos_recordings WHERE sos_id = ?')
+      .get(e.id),
+  }));
+  const phone = db.prepare('SELECT phone, phone_verified_at AS verified FROM users WHERE id = ?').get(user.id) as { phone: string | null; verified: string | null };
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    generatedAt: now(),
+    user: { name: user.name, phone: phone.verified ? phone.phone : null },
+    report: { ...report, photos: reportPhotos(report.id).map((p) => p.id) },
+    sosEvents,
+    window: { from, to },
+  });
+});
+
 // A photo is visible to the person who reported it (if not anonymous) and to moderators.
 reportsRouter.get('/:id/photos/:photoId', requireAuth, (req, res) => {
   const photo = db
