@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import PageHeader from "@/components/PageHeader";
-import { NearbyFilters, NearbyMarkers, useNearby, type PlaceType } from "@/components/NearbyHelp";
+import { NearbyFilters, NearbyMarkers, NearestHelp, useNearby, type PlaceType } from "@/components/NearbyHelp";
 
 type Point = { id: number; incidentType: string; lat: number; lng: number; date: string };
 
@@ -97,6 +97,7 @@ const Map = () => {
           <Card className="mb-6 overflow-hidden">
             <CardContent className="p-0">
               <NearbyFilters state={nearby} visible={visible} onToggle={(type) => setVisible((v) => ({ ...v, [type]: !v[type] }))} />
+              <NearestHelp places={nearby.places} me={me} />
               {(error || locateError) && (
                 <p className="px-4 py-2 text-sm text-destructive">{error ? t("map.loadFailed", { error }) : locateError}</p>
               )}

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DatabaseSync } from 'node:sqlite';
+import { deletePhotoFiles } from './photos';
 
 const dbPath = process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'data', 'herspace.db');
 if (dbPath !== ':memory:') fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -185,6 +186,19 @@ const migrations: string[] = [
   -- A phrase the user can text a contact when she can't speak freely ("did you buy the red umbrella?").
   ALTER TABLE users ADD COLUMN code_phrase TEXT;
   `,
+  `
+  -- Audio recorded during an SOS, uploaded in short pieces so it survives the phone being taken.
+  CREATE TABLE sos_recordings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sos_id INTEGER NOT NULL REFERENCES sos_events(id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    file TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX sos_recordings_sos ON sos_recordings(sos_id);
+  `,
 ];
 
 function migrate() {
@@ -218,9 +232,18 @@ export function purgeExpiredData() {
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM password_resets WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM phone_codes WHERE expires_at < ?').run(now);
-  db.prepare('DELETE FROM sos_events WHERE created_at < ?').run(sosCutoff);
+  deleteSosEvents('created_at < ?', sosCutoff);
   // Finished shares are kept a day so a contact opening the link late sees "ended", not "not found".
   const shareCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   db.prepare('DELETE FROM location_shares WHERE COALESCE(ended_at, expires_at) < ?').run(shareCutoff);
   db.prepare("DELETE FROM check_ins WHERE status != 'active' AND created_at < ?").run(sosCutoff);
+}
+
+// Deletes SOS events matching a condition, with their recording files.
+export function deleteSosEvents(where: string, ...params: Array<string | number>) {
+  const files = db
+    .prepare(`SELECT r.file FROM sos_recordings r JOIN sos_events e ON e.id = r.sos_id WHERE e.${where}`)
+    .all(...params) as Array<{ file: string }>;
+  db.prepare(`DELETE FROM sos_events WHERE ${where}`).run(...params);
+  deletePhotoFiles(files.map((f) => f.file));
 }

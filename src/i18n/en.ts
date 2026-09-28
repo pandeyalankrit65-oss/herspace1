@@ -798,6 +798,29 @@ const en = {
   "complaint.note": "Keep a copy, and ask for a signed receipt or a copy of the FIR.",
   "complaint.rights": "Your rights with the police",
 
+  // Evidence recording and alarm
+  "alarm.button": "Loud alarm",
+  "alarm.playing": "Alarm sounding",
+  "alarm.help": "HELP!",
+  "alarm.stop": "Stop alarm",
+  "rec.settingLabel": "Record audio during SOS",
+  "rec.settingHint": "After an alert, the phone records sound around you in 10-second pieces that upload as they go, so they're kept even if the phone is taken. Only you can play them. Deleted with the alert after 90 days.",
+  "rec.recording": "Recording audio as evidence · {count} saved",
+  "rec.stop": "Stop",
+  "rec.denied": "Audio wasn't recorded: microphone access is off for HerSpace.",
+  "rec.unsupported": "Audio can't be recorded on this browser.",
+  "rec.title": "SOS recordings",
+  "rec.desc": "Audio recorded during your alerts. Only you can play or download it. It's deleted with the alert after 90 days.",
+  "rec.alertAt": "Alert on {time}",
+  "rec.piece": "Recording {n}",
+  "rec.download": "Download",
+
+  // Nearest help
+  "map.nearestLabel": "Nearest help:",
+  "map.metres": "{n} m",
+  "map.km": "{n} km",
+  "map.walkThere": "Walk there",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

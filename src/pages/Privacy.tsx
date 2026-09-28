@@ -26,6 +26,10 @@ const PrivacyEn = () => (
           hours. If a contact taps "I'm on my way" on that page, we record their reply so you can see it.
         </li>
         <li>
+          <strong>SOS audio recordings (only if you turn them on):</strong> after an alert, sound around you is recorded in short
+          pieces and uploaded as evidence. Only you can play or download them, and they're deleted with the alert after 90 days.
+        </li>
+        <li>
           <strong>Walk with me and safety timers:</strong> the same live-location sharing, started by you, with an optional note
           about where you're going. We keep only your latest position and delete it when you stop sharing or the time runs out.
         </li>
@@ -83,7 +87,7 @@ const PrivacyEn = () => (
 
     <Section title="How long we keep it">
       <ul>
-        <li>SOS alerts and their locations are deleted automatically after 90 days.</li>
+        <li>SOS alerts, their locations and any audio recordings are deleted automatically after 90 days.</li>
         <li>Login sessions expire after 30 days; password-reset links after 1 hour.</li>
         <li>Your account, contacts and reports stay until you delete them.</li>
       </ul>

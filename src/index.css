@@ -200,6 +200,18 @@
   }
 }
 
+/* Loud alarm: red and black alternate 1.25 times a second, under the 3-flashes-a-second limit
+   for photosensitive seizures. With reduced motion it stays red. */
+.alarm-flash {
+  background: #dc2626;
+  animation: alarm-flash 0.8s steps(1, end) infinite;
+}
+@keyframes alarm-flash {
+  50% {
+    background: #111;
+  }
+}
+
 /* The SOS countdown ring empties over the countdown. */
 @keyframes countdown-ring {
   from {

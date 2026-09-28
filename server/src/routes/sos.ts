@@ -1,4 +1,5 @@
 import express, { Router } from 'express';
+import { photoPath, saveFile, type StoredExt } from '../photos';
 import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth, User } from '../auth';
@@ -146,6 +147,76 @@ sosRouter.get('/', requireAuth, (req, res) => {
 });
 
 // Polled by the SOS page to show delivery confirmations as they arrive.
+// Audio evidence: the phone uploads a short piece every few seconds while an SOS is active.
+const RECORDING_TYPES: Record<string, StoredExt> = { 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a' };
+const MAX_RECORDING_PIECES = 90; // 15 minutes at 10-second pieces
+const RECORDING_WINDOW_MS = 60 * 60 * 1000;
+const recordingLimiter = rateLimit({ windowMs: 60 * 1000, max: 30, key: perUser });
+
+const ownEvent = (id: number, userId: number) =>
+  db.prepare('SELECT id, created_at AS createdAt, is_test AS isTest FROM sos_events WHERE id = ? AND user_id = ?').get(id, userId) as
+    | { id: number; createdAt: string; isTest: number }
+    | undefined;
+
+sosRouter.post(
+  '/:id/recordings',
+  requireAuth,
+  recordingLimiter,
+  express.raw({ type: Object.keys(RECORDING_TYPES), limit: '2mb' }),
+  (req, res) => {
+    const event = ownEvent(Number(req.params.id), req.user!.id);
+    if (!event || event.isTest) return res.status(404).json({ error: 'Alert not found.' });
+    if (Date.now() - new Date(event.createdAt).getTime() > RECORDING_WINDOW_MS) {
+      return res.status(410).json({ error: 'Recording for this alert has ended.' });
+    }
+    const mime = (req.get('content-type') || '').split(';')[0].trim();
+    const ext = RECORDING_TYPES[mime];
+    if (!ext || !Buffer.isBuffer(req.body) || req.body.length === 0) return res.status(415).json({ error: 'Unsupported audio format.' });
+    const count = (db.prepare('SELECT COUNT(*) AS n FROM sos_recordings WHERE sos_id = ?').get(event.id) as { n: number }).n;
+    if (count >= MAX_RECORDING_PIECES) return res.status(409).json({ error: 'Recording limit reached for this alert.' });
+    const file = saveFile(req.body, ext);
+    db.prepare('INSERT INTO sos_recordings (sos_id, seq, file, mime, size, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
+      event.id,
+      count,
+      file,
+      mime,
+      req.body.length,
+      now()
+    );
+    res.status(201).json({ seq: count });
+  }
+);
+
+// The user's own alerts that have recordings, newest first.
+sosRouter.get('/recordings', requireAuth, (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT e.id, e.created_at AS createdAt, r.id AS rid, r.size, r.created_at AS recordedAt
+       FROM sos_events e JOIN sos_recordings r ON r.sos_id = e.id
+       WHERE e.user_id = ? ORDER BY e.id DESC, r.seq`
+    )
+    .all(req.user!.id) as Array<{ id: number; createdAt: string; rid: number; size: number; recordedAt: string }>;
+  const events: Array<{ id: number; createdAt: string; pieces: Array<{ id: number; size: number; recordedAt: string }> }> = [];
+  for (const r of rows) {
+    let e = events.find((x) => x.id === r.id);
+    if (!e) events.push((e = { id: r.id, createdAt: r.createdAt, pieces: [] }));
+    e.pieces.push({ id: r.rid, size: r.size, recordedAt: r.recordedAt });
+  }
+  res.json({ events });
+});
+
+sosRouter.get('/:id/recordings/:rid', requireAuth, (req, res) => {
+  if (!ownEvent(Number(req.params.id), req.user!.id)) return res.status(404).json({ error: 'Recording not found.' });
+  const row = db.prepare('SELECT file, mime FROM sos_recordings WHERE id = ? AND sos_id = ?').get(Number(req.params.rid), Number(req.params.id)) as
+    | { file: string; mime: string }
+    | undefined;
+  const file = row ? photoPath(row.file) : null;
+  if (!row || !file) return res.status(404).json({ error: 'Recording not found.' });
+  res.type(row.mime).sendFile(file, (err) => {
+    if (err && !res.headersSent) res.status(404).json({ error: 'Recording not found.' });
+  });
+});
+
 sosRouter.get('/:id', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   const event = db.prepare('SELECT id FROM sos_events WHERE id = ? AND user_id = ?').get(id, req.user!.id);

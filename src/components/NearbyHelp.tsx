@@ -97,6 +97,44 @@ export const NearbyMarkers = ({ places, visible }: { places: Place[]; visible: R
   );
 };
 
+// Straight-line distance in metres.
+const distance = (a: [number, number], b: [number, number]) => {
+  const rad = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * rad;
+  const dLng = (b[1] - a[1]) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6_371_000 * Math.asin(Math.sqrt(h));
+};
+
+// The closest police station, hospital or pharmacy, with walking directions: somewhere to
+// head for when you're being followed or need help now.
+export const NearestHelp = ({ places, me }: { places: Place[]; me: [number, number] | null }) => {
+  const { t } = useI18n();
+  if (!me || places.length === 0) return null;
+  const nearest = places.reduce((best, p) => (distance(me, [p.lat, p.lng]) < distance(me, [best.lat, best.lng]) ? p : best));
+  const metres = distance(me, [nearest.lat, nearest.lng]);
+  const style = PLACE_STYLES[nearest.type];
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b bg-success/10 px-4 py-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold text-white" style={{ background: style.color }} aria-hidden>
+        {style.glyph}
+      </span>
+      <p className="min-w-0 flex-1 text-sm">
+        <span className="font-semibold">{t("map.nearestLabel")}</span> {nearest.name || t("map.unnamed")} · {t(style.label)} ·{" "}
+        {metres < 1000 ? t("map.metres", { n: Math.round(metres / 10) * 10 }) : t("map.km", { n: (metres / 1000).toFixed(1) })}
+      </p>
+      <a
+        href={`https://www.google.com/maps/dir/?api=1&destination=${nearest.lat},${nearest.lng}&travelmode=walking`}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex h-9 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
+      >
+        {t("map.walkThere")}
+      </a>
+    </div>
+  );
+};
+
 export const NearbyFilters = ({
   state,
   visible,

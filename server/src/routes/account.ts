@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { db } from '../db';
+import { db, deleteSosEvents } from '../db';
 import { deleteAllSessions, endSession, hashPassword, requireAuth, startSession, verifyPassword } from '../auth';
 import { rateLimit } from '../rateLimit';
 import { keyedHash, now, parse, passwordSchema, phoneSchema } from '../util';
@@ -136,6 +136,7 @@ accountRouter.get('/export', (req, res) => {
   ).map((e) => ({
     ...e,
     deliveries: db.prepare('SELECT contact_name AS name, phone, channel, status FROM sos_deliveries WHERE sos_id = ?').all(e.id),
+    recordings: (db.prepare('SELECT COUNT(*) AS n FROM sos_recordings WHERE sos_id = ?').get(e.id) as { n: number }).n,
   }));
   res.setHeader('Content-Disposition', 'attachment; filename="herspace-data.json"');
   const locationShares = db
@@ -156,7 +157,7 @@ accountRouter.delete('/', passwordLimiter, (req, res) => {
   try {
     // Personal data goes with the account. Anonymous reports were never linked to it.
     deleteReports('r.user_id = ?', userId);
-    db.prepare('DELETE FROM sos_events WHERE user_id = ?').run(userId);
+    deleteSosEvents('user_id = ?', userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId); // cascades to sessions, contacts, resets
     db.exec('COMMIT');
   } catch (err) {

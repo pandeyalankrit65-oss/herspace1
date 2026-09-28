@@ -639,3 +639,36 @@ describe('protection at home', () => {
     assert.equal((await call('/account/code-phrase', { token, method: 'PUT', body: { phrase: null } })).data.phrase, null);
   });
 });
+
+describe('SOS audio recordings', () => {
+  const put = (token: string, sosId: number, body: Uint8Array<ArrayBuffer>, type = 'audio/webm') =>
+    fetch(`${base}/sos/${sosId}/recordings`, {
+      method: 'POST',
+      headers: { 'Content-Type': type, Cookie: `herspace_session=${token}`, 'X-Requested-With': 'HerSpace' },
+      body,
+    });
+
+  test('pieces upload during an SOS and only the owner can play them', async () => {
+    const { token } = await userWithConfirmedContact('Mira');
+    const sos = await call('/sos', { token, body: {} });
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2, 3, 4]);
+    assert.equal((await put(token, sos.data.id, audio)).status, 201);
+    assert.equal((await put(token, sos.data.id, audio)).status, 201);
+    assert.equal((await put(token, sos.data.id, audio, 'image/png')).status, 415);
+
+    const test = await call('/sos/test', { token, method: 'POST' });
+    assert.equal((await put(token, test.data.id, audio)).status, 404, 'not for test alerts');
+
+    const list = await call('/sos/recordings', { token });
+    const event = list.data.events.find((e: { id: number }) => e.id === sos.data.id);
+    assert.equal(event.pieces.length, 2);
+
+    const res = await fetch(`${base}/sos/${sos.data.id}/recordings/${event.pieces[0].id}`, { headers: { Cookie: `herspace_session=${token}` } });
+    assert.equal(res.headers.get('content-type'), 'audio/webm');
+    assert.deepEqual(new Uint8Array(await res.arrayBuffer()), audio);
+
+    const other = await newUser('Other');
+    assert.equal((await call(`/sos/${sos.data.id}/recordings/${event.pieces[0].id}`, { token: other.token })).status, 404);
+    assert.equal((await put(other.token, sos.data.id, audio)).status, 404);
+  });
+});

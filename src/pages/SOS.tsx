@@ -19,6 +19,8 @@ import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
 import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
 import { useSilentSos } from "@/lib/disguise";
+import { readRecordSetting, saveRecordSetting, useSosRecorder } from "@/hooks/use-sos-recorder";
+import LoudAlarm from "@/components/LoudAlarm";
 import { Switch } from "@/components/ui/switch";
 import type { MessageKey } from "@/i18n/en";
 
@@ -123,9 +125,15 @@ const SOS = () => {
       .then((res) => setLiveShare((current) => current ?? res.share))
       .catch(() => {});
   }, [user]);
-  const endLiveShare = useCallback(() => setLiveShare(null), []);
-
   const { silent, setSilent } = useSilentSos();
+  const [recordAudio, setRecordAudio] = useState(readRecordSetting);
+  const recorder = useSosRecorder();
+  const { start: startRecording, stop: stopRecording } = recorder;
+  // "I'm safe" also ends the recording.
+  const endLiveShare = useCallback(() => {
+    stopRecording();
+    setLiveShare(null);
+  }, [stopRecording]);
   const sendSOS = useCallback(async () => {
     setSending(true);
     setResult(null);
@@ -134,6 +142,8 @@ const SOS = () => {
       const res = await api<SosResult>("/api/sos", { body: { coords, silent } });
       setResult(res);
       if (res.share) setLiveShare(res.share);
+      // Evidence: record audio in short pieces that upload as they go.
+      if (user && res.id && readRecordSetting()) startRecording(res.id);
     } catch (err) {
       setResult({
         deliveries: [],
@@ -144,7 +154,7 @@ const SOS = () => {
     } finally {
       setSending(false);
     }
-  }, [user, t, silent]);
+  }, [user, t, silent, startRecording]);
 
   // Upgrade "sent" to "delivered"/"answered" as Twilio reports back.
   const resultId = result?.id;
@@ -376,6 +386,42 @@ const SOS = () => {
                   ))}
                 </div>
               </fieldset>
+              {recorder.status === "recording" && (
+                <div role="status" className="mx-auto flex max-w-md items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-left text-sm">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-destructive motion-safe:animate-pulse" />
+                  <span className="flex-1">{t("rec.recording", { count: recorder.saved })}</span>
+                  <Button size="sm" variant="outline" onClick={recorder.stop}>
+                    {t("rec.stop")}
+                  </Button>
+                </div>
+              )}
+              {(recorder.status === "denied" || recorder.status === "unsupported") && (
+                <p role="alert" className="mx-auto max-w-md text-sm text-destructive">
+                  {recorder.status === "denied" ? t("rec.denied") : t("rec.unsupported")}
+                </p>
+              )}
+              <div className="flex justify-center">
+                <LoudAlarm />
+              </div>
+              {user && (
+                <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
+                  <Mic className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="record-toggle" className="text-sm font-semibold">
+                      {t("rec.settingLabel")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">{t("rec.settingHint")}</p>
+                  </div>
+                  <Switch
+                    id="record-toggle"
+                    checked={recordAudio}
+                    onCheckedChange={(on) => {
+                      setRecordAudio(on);
+                      saveRecordSetting(on);
+                    }}
+                  />
+                </div>
+              )}
               <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
                 <BellOff className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">

@@ -39,15 +39,19 @@ export function stripJpegMetadata(input: Buffer): Buffer | null {
   return null;
 }
 
-const FILE_NAME = /^[a-f0-9]{32}\.jpg$/;
+// Stored files: report photos (.jpg) and SOS audio recordings (.webm/.ogg/.m4a).
+const FILE_NAME = /^[a-f0-9]{32}\.(jpg|webm|ogg|m4a)$/;
+export type StoredExt = 'jpg' | 'webm' | 'ogg' | 'm4a';
 
-export function savePhoto(data: Buffer): string {
+export function saveFile(data: Buffer, ext: StoredExt): string {
   const dir = uploadDir();
   fs.mkdirSync(dir, { recursive: true });
-  const file = `${crypto.randomBytes(16).toString('hex')}.jpg`;
+  const file = `${crypto.randomBytes(16).toString('hex')}.${ext}`;
   fs.writeFileSync(path.join(dir, file), data, { flag: 'wx' });
   return file;
 }
+
+export const savePhoto = (data: Buffer) => saveFile(data, 'jpg');
 
 export function photoPath(file: string): string | null {
   return FILE_NAME.test(file) ? path.join(uploadDir(), file) : null;
