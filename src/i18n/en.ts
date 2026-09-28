@@ -850,6 +850,13 @@ const en = {
   "fakeCall.speaker": "Speaker",
   "fakeCall.keypadHint": "During the call, tapping Keypad quietly sends a silent SOS to your contacts.",
 
+  // Reach: group text, read aloud
+  "sos.textAll": "Text all {count} contacts at once",
+  "sos.readAloud": "Read aloud",
+  "sos.stopReading": "Stop reading",
+  "sos.readAloudIntro": "Emergency SOS. If you are in immediate danger, call {number}. The big red button in the middle of the screen sends your location to your emergency contacts.",
+  "sos.cantSpeak": "Can't speak or hear?",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

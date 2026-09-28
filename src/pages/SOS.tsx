@@ -21,6 +21,7 @@ import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
 import { useSilentSos } from "@/lib/disguise";
 import { readRecordSetting, saveRecordSetting, useSosRecorder } from "@/hooks/use-sos-recorder";
 import LoudAlarm from "@/components/LoudAlarm";
+import ReadAloud from "@/components/ReadAloud";
 import { Switch } from "@/components/ui/switch";
 import type { MessageKey } from "@/i18n/en";
 
@@ -92,6 +93,8 @@ const fallbackMessage = (t: T, name: string | undefined, coords?: Coords) => {
 
 // "?&body=" is understood by both Android and iOS messaging apps.
 const smsLink = (phone: string, body: string) => `sms:${phone}?&body=${encodeURIComponent(body)}`;
+// One message to everyone: Android's messaging app accepts comma-separated numbers.
+const groupSmsLink = (phones: string[], body: string) => smsLink(phones.join(","), body);
 
 const SOS = () => {
   const { user } = useAuth();
@@ -236,6 +239,12 @@ const SOS = () => {
               ),
             })}
           >
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
+              <ReadAloud text={[t("sos.readAloudIntro", { number: EMERGENCY_NUMBER }), holdMode ? t("sos.holdCaption", { seconds: HOLD_SECONDS }) : t("sos.buttonCaption"), t("sos.voiceHint")].join(" ")} />
+              <Link to="/help#cant-speak" className="font-semibold text-primary underline underline-offset-2">
+                {t("sos.cantSpeak")}
+              </Link>
+            </div>
             {!online && (
               <p
                 role="alert"
@@ -488,6 +497,13 @@ const SOS = () => {
                     <span className="text-muted-foreground">{describe(d, Boolean(result.trackingDelivery), t)}</span>
                   </div>
                 ))}
+                {fallbackContacts.length > 1 && !deliveredAll && (
+                  <a href={groupSmsLink(fallbackContacts.map((c) => c.phone), result.message)} className="block pt-2">
+                    <Button variant="emergency" size="lg" className="w-full gap-2">
+                      <MessageSquare className="h-5 w-5" /> {t("sos.textAll", { count: fallbackContacts.length })}
+                    </Button>
+                  </a>
+                )}
                 {fallbackContacts.length > 0 && !deliveredAll && (
                   <div className="grid sm:grid-cols-2 gap-2 pt-2">
                     {fallbackContacts.map((c) => (

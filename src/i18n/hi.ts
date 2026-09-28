@@ -851,6 +851,13 @@ const hi: Record<MessageKey, string> = {
   "fakeCall.speaker": "स्पीकर",
   "fakeCall.keypadHint": "कॉल के दौरान कीपैड दबाने पर आपके संपर्कों को चुपचाप SOS चला जाता है।",
 
+  // Reach: group text, read aloud
+  "sos.textAll": "सभी {count} संपर्कों को एक साथ मैसेज करें",
+  "sos.readAloud": "पढ़कर सुनाएं",
+  "sos.stopReading": "सुनाना बंद करें",
+  "sos.readAloudIntro": "आपातकालीन SOS। अगर आप तुरंत खतरे में हैं, तो {number} पर कॉल करें। स्क्रीन के बीच में बड़ा लाल बटन आपकी लोकेशन आपके आपातकालीन संपर्कों को भेजता है।",
+  "sos.cantSpeak": "बोल या सुन नहीं सकतीं?",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",
