@@ -836,6 +836,23 @@ const messages: Partial<Record<MessageKey, string>> = {
   "chatVoice.stop": "শোনা বন্ধ করুন",
   "chatVoice.notHeard": "শোনা যায়নি। মাইক্রোফোন চেপে আবার চেষ্টা করুন।",
   "chatVoice.readReplies": "উত্তর পড়ে শোনান",
+  "safeWord.title": "সেফ ওয়ার্ড",
+  "safeWord.intro": "নিজের শব্দ বেছে নিন: ভয়েস শোনা চালু থাকার সময় এটি দ্রুত {count} বার বললে SOS শুরু হবে।",
+  "safeWord.current": "আপনার সেফ ওয়ার্ড \"{word}\"। SOS শুরু করতে এটি দ্রুত {count} বার বলুন।",
+  "safeWord.set": "সেট করুন",
+  "safeWord.change": "বদলান",
+  "safeWord.placeholder": "যেমন আনারস",
+  "safeWord.tip": "এমন শব্দ বেছে নিন যা ভুল করে পরপর {count} বার বলবেন না, আর যা আপনার ফোন পরিষ্কার শুনতে পায়। যাচাই করতে টেস্ট করুন।",
+  "safeWord.helpWords": "\"বাঁচাও\"-তেও সাড়া দিন",
+  "safeWord.helpWordsHint": "জোরে \"বাঁচাও\" বলা নিরাপদ না হলে বন্ধ করুন, যাতে শুধু আপনার সেফ ওয়ার্ডেই SOS শুরু হয়।",
+  "safeWord.test": "আমার সেফ ওয়ার্ড টেস্ট করুন",
+  "safeWord.testing": "শুনছি... এটি {count} বার বলুন",
+  "safeWord.testOk": "এটি কাজ করে।",
+  "safeWord.testCount": "{count} বারের মধ্যে {heard} বার শোনা গেছে। আবার চেষ্টা করুন, বা আরও পরিষ্কার শব্দ বেছে নিন।",
+  "safeWord.save": "সেভ করুন",
+  "safeWord.remove": "সেফ ওয়ার্ড সরান",
+  "safeWord.listeningBoth": "\"বাঁচাও\" বলুন, বা আপনার সেফ ওয়ার্ড \"{word}\" দ্রুত {count} বার। ৩ সেকেন্ডের কাউন্টডাউন শুরু হবে, যা বাতিল করতে পারবেন।",
+  "safeWord.listeningOnly": "আপনার সেফ ওয়ার্ড \"{word}\" দ্রুত {count} বার বলুন। ৩ সেকেন্ডের কাউন্টডাউন শুরু হবে, যা বাতিল করতে পারবেন।",
 };
 
 export default messages;

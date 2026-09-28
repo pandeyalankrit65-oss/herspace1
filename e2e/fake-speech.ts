@@ -14,6 +14,7 @@ export async function installFakeSpeech(page: Page) {
       onerror: Handler = null;
       onend: (() => void) | null = null;
       running = false;
+      said: unknown[] = [];
       constructor() {
         speech.instances.push(this);
       }
@@ -41,8 +42,12 @@ export async function installFakeSpeech(page: Page) {
         get listening() {
           return Boolean(current());
         },
+        // Like a real continuous session, earlier phrases stay in the results list.
         say(text: string) {
-          current()?.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: text }], { isFinal: true })] });
+          const r = current();
+          if (!r) return;
+          r.said.push(Object.assign([{ transcript: text }], { isFinal: true }));
+          r.onresult?.({ resultIndex: r.said.length - 1, results: r.said });
         },
         fail(error: string) {
           const r = current();

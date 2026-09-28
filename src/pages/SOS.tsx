@@ -17,6 +17,8 @@ import PageHeader from "@/components/PageHeader";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
+import { SAFE_WORD_REPEATS, useSafeWord } from "@/lib/safe-word";
+import SafeWordSettings from "@/components/SafeWordSettings";
 import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
 import { useSilentSos } from "@/lib/disguise";
 import { readRecordSetting, saveRecordSetting, useSosRecorder } from "@/hooks/use-sos-recorder";
@@ -193,7 +195,8 @@ const SOS = () => {
     setCountdown((c) => (c === null ? COUNTDOWN_SECONDS : c));
   }, []);
 
-  const voice = useVoiceTrigger({ lang, onTrigger: startCountdown });
+  const safeWord = useSafeWord();
+  const voice = useVoiceTrigger({ lang, onTrigger: startCountdown, safeWord: safeWord.word, helpWords: safeWord.helpWords });
   // Voice commands open this page with ?start=sos|alarm|fakecall.
   // Each command gets a fresh signal, so it also works when this page is already open.
   const [params, setParams] = useSearchParams();
@@ -375,7 +378,15 @@ const SOS = () => {
               </div>
               {voice.status === "listening" && (
                 <div className="space-y-1 text-xs text-muted-foreground" aria-live="polite">
-                  <p>{t("sos.voiceHint")}</p>
+                  {safeWord.word ? (
+                    <p>
+                      {safeWord.helpWords
+                        ? t("safeWord.listeningBoth", { word: safeWord.word, count: SAFE_WORD_REPEATS })
+                        : t("safeWord.listeningOnly", { word: safeWord.word, count: SAFE_WORD_REPEATS })}
+                    </p>
+                  ) : (
+                    <p>{t("sos.voiceHint")}</p>
+                  )}
                   <p className="font-medium text-foreground">
                     {voice.heard ? t("sos.voiceHeard", { text: voice.heard }) : t("sos.voiceWaiting")}
                   </p>
@@ -387,6 +398,7 @@ const SOS = () => {
                   {t(VOICE_ERRORS[voice.error], { error: voice.errorDetail })}
                 </p>
               )}
+              {voice.supported && <SafeWordSettings settings={{ word: safeWord.word, helpWords: safeWord.helpWords }} onSave={safeWord.save} />}
               <fieldset className="mx-auto max-w-md rounded-xl border bg-muted/40 p-3 text-left">
                 <legend className="px-1 text-sm font-semibold">{t("sos.modeLabel")}</legend>
                 <div className="grid grid-cols-2 gap-2" role="radiogroup">

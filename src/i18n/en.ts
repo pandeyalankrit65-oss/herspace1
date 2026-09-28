@@ -907,6 +907,25 @@ const en = {
   "chatVoice.notHeard": "I didn't hear that. Tap the microphone and try again.",
   "chatVoice.readReplies": "Read replies aloud",
 
+  // Safe word
+  "safeWord.title": "Safe word",
+  "safeWord.intro": "Choose your own word: saying it {count} times quickly while voice listening is on starts SOS.",
+  "safeWord.current": "Your safe word is \"{word}\". Say it {count} times quickly to start SOS.",
+  "safeWord.set": "Set",
+  "safeWord.change": "Change",
+  "safeWord.placeholder": "e.g. pineapple",
+  "safeWord.tip": "Pick a word you wouldn't say {count} times in a row by accident, and that your phone hears clearly. Use the test to check.",
+  "safeWord.helpWords": "Also respond to \"help\"",
+  "safeWord.helpWordsHint": "Turn off so only your safe word starts SOS, if saying \"help\" out loud isn't safe.",
+  "safeWord.test": "Test my safe word",
+  "safeWord.testing": "Listening... say it {count} times",
+  "safeWord.testOk": "That works.",
+  "safeWord.testCount": "Heard it {heard} of {count} times. Try again, or choose a clearer word.",
+  "safeWord.save": "Save",
+  "safeWord.remove": "Remove safe word",
+  "safeWord.listeningBoth": "Say \"help\", or your safe word \"{word}\" {count} times quickly. A 3-second countdown starts, which you can cancel.",
+  "safeWord.listeningOnly": "Say your safe word \"{word}\" {count} times quickly. A 3-second countdown starts, which you can cancel.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

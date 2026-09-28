@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isNative } from "@/lib/native";
 import { speechLocale, type Lang } from "@/i18n";
+import { SafeWordCounter } from "@/lib/safe-word";
 
 // Minimal typing for the Web Speech API, which isn't in TypeScript's DOM lib.
 type RecognitionResultList = ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
@@ -48,10 +49,21 @@ const RESTART_DELAY_MS = 300;
 const NATIVE_CHECK_MS = 2000;
 
 /**
- * Listens continuously for a call for help and calls `onTrigger` once when it hears one.
+ * Listens continuously for a call for help and calls `onTrigger` once when it hears one: one of
+ * the built-in words (unless `helpWords` is off), or the user's safe word said 3 times quickly.
  * Only works while the page is open and visible; browsers stop recognition in the background.
  */
-export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: () => void }) {
+export function useVoiceTrigger({
+  lang,
+  onTrigger,
+  safeWord = null,
+  helpWords = true,
+}: {
+  lang: Lang;
+  onTrigger: () => void;
+  safeWord?: string | null;
+  helpWords?: boolean;
+}) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<VoiceError | null>(null);
   const [errorDetail, setErrorDetail] = useState("");
@@ -62,6 +74,14 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: ()
   const onTriggerRef = useRef(onTrigger);
   onTriggerRef.current = onTrigger;
   const nativeStopRef = useRef<(() => void) | null>(null);
+  // Read at the moment something is heard, so changing the settings needs no restart.
+  const helpWordsRef = useRef(helpWords);
+  helpWordsRef.current = helpWords;
+  const counterRef = useRef<{ word: string; counter: SafeWordCounter } | null>(null);
+  if ((counterRef.current?.word ?? null) !== safeWord) {
+    counterRef.current = safeWord ? { word: safeWord, counter: new SafeWordCounter(safeWord) } : null;
+  }
+  const sessionRef = useRef(0);
 
   const cleanup = useCallback(() => {
     wantRef.current = false;
@@ -98,12 +118,16 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: ()
   );
 
   // Checks what was heard (all of the recognizer's guesses) and triggers at most once.
+  // `session` identifies one recognition session; `transcripts` is everything heard in it so
+  // far (used to count the safe word without counting the same word twice).
   const handleHeard = useCallback(
-    (candidates: string[]) => {
+    (candidates: string[], session = sessionRef.current, transcripts = candidates) => {
       const text = candidates[0]?.trim();
       if (!text) return;
       setHeard(text);
-      if (candidates.some(isTriggerPhrase)) {
+      const byHelpWord = helpWordsRef.current && candidates.some(isTriggerPhrase);
+      const bySafeWord = counterRef.current?.counter.update(session, transcripts) ?? false;
+      if (byHelpWord || bySafeWord) {
         // One trigger per session: stop listening so continued speech can't start a second alert.
         stop();
         onTriggerRef.current();
@@ -128,6 +152,7 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: ()
       // Starting again while the previous session is still closing makes the recognizer busy.
       if (!wantRef.current || Date.now() - lastLaunch < 1000) return;
       lastLaunch = Date.now();
+      sessionRef.current++;
       SpeechRecognition.start({ language, partialResults: true, popup: false, maxResults: 5 }).catch((err: Error) => {
         if (/permission/i.test(err?.message || "")) fail("blocked");
       });
@@ -176,6 +201,7 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: ()
     const launch = () => {
       if (!wantRef.current) return;
       const rec = new Ctor();
+      const session = ++sessionRef.current;
       rec.continuous = true;
       rec.interimResults = true;
       rec.lang = recognitionLang;
@@ -183,7 +209,9 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: ()
       rec.onresult = (e) => {
         let text = "";
         for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
-        handleHeard([text]);
+        let all = "";
+        for (let i = 0; i < e.results.length; i++) all += ` ${e.results[i][0].transcript}`;
+        handleHeard([text], session, [all]);
       };
 
       rec.onerror = (e) => {

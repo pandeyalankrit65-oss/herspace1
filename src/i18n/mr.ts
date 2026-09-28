@@ -836,6 +836,23 @@ const messages: Partial<Record<MessageKey, string>> = {
   "chatVoice.stop": "ऐकणे थांबवा",
   "chatVoice.notHeard": "ऐकू आले नाही. मायक्रोफोन दाबून पुन्हा प्रयत्न करा.",
   "chatVoice.readReplies": "उत्तरे मोठ्याने वाचा",
+  "safeWord.title": "सेफ वर्ड",
+  "safeWord.intro": "तुमचा स्वतःचा शब्द निवडा: आवाज ऐकणे सुरू असताना तो पटकन {count} वेळा म्हटल्यास SOS सुरू होतो.",
+  "safeWord.current": "तुमचा सेफ वर्ड \"{word}\" आहे. SOS सुरू करण्यासाठी तो पटकन {count} वेळा म्हणा.",
+  "safeWord.set": "सेट करा",
+  "safeWord.change": "बदला",
+  "safeWord.placeholder": "उदा. अननस",
+  "safeWord.tip": "असा शब्द निवडा जो तुम्ही चुकून सलग {count} वेळा म्हणणार नाही, आणि जो तुमचा फोन स्पष्ट ऐकू शकतो. तपासण्यासाठी टेस्ट करा.",
+  "safeWord.helpWords": "\"वाचवा\" लाही प्रतिसाद द्या",
+  "safeWord.helpWordsHint": "मोठ्याने \"वाचवा\" म्हणणे सुरक्षित नसल्यास हे बंद करा, म्हणजे फक्त तुमचा सेफ वर्ड SOS सुरू करेल.",
+  "safeWord.test": "माझा सेफ वर्ड तपासा",
+  "safeWord.testing": "ऐकत आहे... तो {count} वेळा म्हणा",
+  "safeWord.testOk": "हे काम करते.",
+  "safeWord.testCount": "{count} पैकी {heard} वेळा ऐकू आले. पुन्हा प्रयत्न करा, किंवा अधिक स्पष्ट शब्द निवडा.",
+  "safeWord.save": "सेव्ह करा",
+  "safeWord.remove": "सेफ वर्ड काढा",
+  "safeWord.listeningBoth": "\"वाचवा\" म्हणा, किंवा तुमचा सेफ वर्ड \"{word}\" पटकन {count} वेळा. 3 सेकंदांचे काउंटडाउन सुरू होईल, जे तुम्ही रद्द करू शकता.",
+  "safeWord.listeningOnly": "तुमचा सेफ वर्ड \"{word}\" पटकन {count} वेळा म्हणा. 3 सेकंदांचे काउंटडाउन सुरू होईल, जे तुम्ही रद्द करू शकता.",
 };
 
 export default messages;
