@@ -18,6 +18,8 @@ if (import.meta.env.PROD && !isNative && "serviceWorker" in navigator) {
           .map((entry) => entry.name)
           .filter((name) => new URL(name).pathname.startsWith("/assets/"));
         registration.active?.postMessage({ type: "CACHE_URLS", urls: loaded });
+        // Store the rest of the app (every page) so it all works offline.
+        registration.active?.postMessage({ type: "PRECACHE" });
       })
       .catch((err) => console.warn("Service worker registration failed:", err));
   });

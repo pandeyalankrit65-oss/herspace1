@@ -4,6 +4,8 @@ import { AlertCircle, Car, Copy, Footprints, Timer, Users } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
+import NeedsInternet from "@/components/NeedsInternet";
+import { useOnline } from "@/lib/offline";
 import LoadingRows from "@/components/LoadingRows";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +41,7 @@ function currentPosition(): Promise<{ lat: number; lng: number; accuracy: number
 
 // "Walk with me": live location for confirmed contacts on a journey, without an alert.
 const Walk = () => {
+  const online = useOnline();
   const { t, tn } = useI18n();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -262,7 +265,7 @@ const Walk = () => {
               </div>
             </fieldset>
           )}
-          <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy || confirmed === 0 || (kind === "ride" && !details.vehicle.trim()) || (kind === "meeting" && !details.person.trim())}>
+          <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy || !online || confirmed === 0 || (kind === "ride" && !details.vehicle.trim()) || (kind === "meeting" && !details.person.trim())}>
             <Footprints className="h-5 w-5" /> {busy ? t("walk.starting") : t("walk.start")}
           </Button>
         </CardContent>
@@ -276,6 +279,7 @@ const Walk = () => {
       <main className="px-4 pb-16 pt-24">
         <div className="container mx-auto max-w-xl space-y-4">
           <PageHeader icon={Footprints} title={t("walk.title")} subtitle={t("walk.intro")} />
+          <NeedsInternet message="offline.walk" />
           {body()}
         </div>
       </main>

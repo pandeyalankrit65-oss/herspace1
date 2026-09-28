@@ -11,11 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { offlineContacts } from "@/lib/offline";
 import { useI18n } from "@/i18n";
 import LoadingRows from "@/components/LoadingRows";
 import PageHeader from "@/components/PageHeader";
+import NeedsInternet from "@/components/NeedsInternet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +92,9 @@ const Contacts = () => {
       setContacts(res.contacts);
       offlineContacts.set(res.contacts);
     } catch (err) {
-      toast({ title: t("contacts.loadFailed"), description: (err as Error).message, variant: "destructive" });
+      // Offline: show the copy kept on this phone (the notice above explains why it can't change).
+      if (err instanceof ApiError && err.status === 0) setContacts(offlineContacts.get<Contact>());
+      else toast({ title: t("contacts.loadFailed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setLoaded(true);
     }
@@ -268,6 +271,8 @@ const Contacts = () => {
               <Plus className="h-4 w-4" /> {t("contacts.add")}
             </Button>
           </PageHeader>
+
+          <NeedsInternet message="offline.contacts" />
 
           <Card className="overflow-hidden">
             {!loaded && (

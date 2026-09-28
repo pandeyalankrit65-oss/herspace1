@@ -1,6 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import type { Plugin } from "vite";
+
+// Lists every built file so the service worker can store the whole app for offline use,
+// including pages the user hasn't opened yet.
+const precacheManifest = (): Plugin => ({
+  name: "herspace-precache-manifest",
+  apply: "build",
+  generateBundle(_options, bundle) {
+    const files = Object.keys(bundle)
+      .filter((f) => f.startsWith("assets/") && !f.endsWith(".map"))
+      .map((f) => `/${f}`)
+      .sort();
+    this.emitFile({ type: "asset", fileName: "precache-manifest.json", source: JSON.stringify({ files }) });
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -15,7 +30,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react()],
+  plugins: [react(), precacheManifest()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

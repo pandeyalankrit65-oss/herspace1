@@ -31,7 +31,7 @@ test("offline, the dashboard still shows the contacts kept on the device", async
   await context.setOffline(true);
   // Navigate inside the app (no reload), as someone would after losing signal.
   await page.getByRole("banner").getByRole("link", { name: "HerSpace", exact: true }).click();
-  await expect(page.getByText(/You're offline/)).toBeVisible();
+  await expect(page.getByText(/You're offline, so HerSpace can't send alerts/)).toBeVisible();
   await expect(page.getByText("1 confirmed contact will get your location when you press SOS.")).toBeVisible();
   await expect(page.getByText("No one will be alerted yet.", { exact: false })).toHaveCount(0);
   await context.setOffline(false);

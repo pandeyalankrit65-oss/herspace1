@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { api } from "@/lib/api";
+import { savedData } from "@/lib/offline";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -43,6 +44,7 @@ const Map = () => {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const nearby = useNearby(me);
   const [visible, setVisible] = useState<Record<PlaceType, boolean>>({ police: true, hospital: true, pharmacy: true });
   const { toast } = useToast();
@@ -60,8 +62,18 @@ const Map = () => {
 
   useEffect(() => {
     api<{ points: Point[] }>("/api/reports/map")
-      .then((res) => setPoints(res.points))
-      .catch((err) => setError(err.message));
+      .then((res) => {
+        setPoints(res.points);
+        savedData.set("map", res.points);
+      })
+      .catch((err) => {
+        // Offline: show the incidents from the last visit, and say how old they are.
+        const saved = savedData.get<Point[]>("map");
+        if (saved) {
+          setPoints(saved.data);
+          setSavedAt(saved.at);
+        } else setError(err.message);
+      });
   }, []);
 
   const locate = () => {
@@ -98,6 +110,11 @@ const Map = () => {
             <CardContent className="p-0">
               <NearbyFilters state={nearby} visible={visible} onToggle={(type) => setVisible((v) => ({ ...v, [type]: !v[type] }))} />
               <NearestHelp places={nearby.places} me={me} />
+              {savedAt && (
+                <p role="status" className="border-b bg-warning/10 px-4 py-2 text-sm">
+                  {t("offline.mapSaved", { date: new Date(savedAt).toLocaleString() })}
+                </p>
+              )}
               {(error || locateError) && (
                 <p className="px-4 py-2 text-sm text-destructive">{error ? t("map.loadFailed", { error }) : locateError}</p>
               )}
@@ -123,6 +140,7 @@ const Map = () => {
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    crossOrigin="anonymous"
                   />
                   {points.map((p) => {
                     const style = TYPE_STYLES[p.incidentType] ?? TYPE_STYLES.other;

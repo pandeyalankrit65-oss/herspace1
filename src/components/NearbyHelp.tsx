@@ -4,6 +4,7 @@ import { Marker, Popup } from "react-leaflet";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { api } from "@/lib/api";
+import { savedData } from "@/lib/offline";
 import { cn } from "@/lib/utils";
 
 export type PlaceType = "police" | "hospital" | "pharmacy";
@@ -46,8 +47,17 @@ export function useNearby(center: [number, number] | null) {
         if (cancelled) return;
         setPlaces(res.places);
         setStatus(res.available ? "ready" : "unavailable");
+        if (res.available) savedData.set("nearby", { center, places: res.places });
       })
-      .catch(() => !cancelled && setStatus("unavailable"));
+      .catch(() => {
+        if (cancelled) return;
+        // Offline: the last places found, if they were looked up near here.
+        const saved = savedData.get<{ center: [number, number]; places: Place[] }>("nearby");
+        if (saved && distance(saved.data.center, center) < 3000) {
+          setPlaces(saved.data.places);
+          setStatus("ready");
+        } else setStatus("unavailable");
+      });
     return () => {
       cancelled = true;
     };

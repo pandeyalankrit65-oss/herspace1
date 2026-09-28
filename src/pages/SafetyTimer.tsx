@@ -15,6 +15,8 @@ import type { Contact } from "./Contacts";
 import { watchLocation } from "@/lib/location";
 import { cancelTimerWarning, scheduleTimerWarning } from "@/lib/timerNotifications";
 import PageHeader from "@/components/PageHeader";
+import NeedsInternet from "@/components/NeedsInternet";
+import { useOnline } from "@/lib/offline";
 import LoadingRows from "@/components/LoadingRows";
 
 type CheckIn = {
@@ -60,6 +62,7 @@ const coordsOf = (pos: GeolocationPosition) => ({
 });
 
 const SafetyTimer = () => {
+  const online = useOnline();
   const { t } = useI18n();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -302,7 +305,7 @@ const SafetyTimer = () => {
             />
             <p className="text-xs text-muted-foreground">{t("timer.noteHint")}</p>
           </div>
-          <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy}>
+          <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy || !online}>
             <Timer className="h-5 w-5" /> {busy ? t("timer.starting") : t("timer.start")}
           </Button>
         </CardContent>
@@ -316,6 +319,7 @@ const SafetyTimer = () => {
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-xl space-y-6">
           <PageHeader icon={Timer} title={t("timer.title")} subtitle={t("timer.intro")} />
+          <NeedsInternet message="offline.timer" />
           {body()}
         </div>
       </main>

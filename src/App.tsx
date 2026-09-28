@@ -10,6 +10,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import NativeBridge from "./components/NativeBridge";
 import ScrollManager from "./components/ScrollManager";
 import DisguiseGate from "./components/DisguiseGate";
+import OfflineStatus from "./components/OfflineStatus";
 import BottomNav from "./components/BottomNav";
 // Home and SOS ship in the main bundle so the emergency page never waits on a download.
 import Index from "./pages/Index";
@@ -82,6 +83,7 @@ const App = () => (
                   </Routes>
                 </Suspense>
                 <BottomNav />
+                <OfflineStatus />
                 </DisguiseGate>
               </BrowserRouter>
             </TooltipProvider>

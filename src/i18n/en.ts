@@ -861,6 +861,20 @@ const en = {
   "legal.englishOnly": "This page is only available in English for now.",
   "help.englishOnly": "This guide is in English for now. The helplines work in many languages.",
 
+  // Offline
+  "offline.pill": "You're offline · SOS still texts and calls",
+  "offline.useSos": "Without internet, the SOS page can still text and call your contacts through your phone network, with your location.",
+  "offline.openSos": "Open SOS",
+  "offline.timer": "You're offline. A safety timer needs internet to start, and to alert your contacts automatically.",
+  "offline.walk": "You're offline. Sharing your journey needs internet, so your contacts can follow you.",
+  "offline.contacts": "You're offline. Your saved contacts are shown, but adding or changing contacts needs internet.",
+  "offline.chat": "You're offline, so the chat can't reply. If you want to talk to someone now:",
+  "offline.mapSaved": "You're offline. Showing incidents saved on {date}.",
+  "offline.reportQueuedTitle": "Report saved on this phone",
+  "offline.reportQueuedDesc": "You're offline. It will be sent automatically when you're back online.",
+  "offline.reportsSent_one": "{count} report saved offline has been sent.",
+  "offline.reportsSent_other": "{count} reports saved offline have been sent.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

@@ -11,7 +11,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { queueReport } from "@/lib/outbox";
 import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
 import { MAX_PHOTOS, preparePhoto, uploadPhoto } from "@/lib/photos";
@@ -80,16 +81,27 @@ const Report = () => {
       if (formData.includeCoords && !coords) {
         toast({ title: t("report.locUnavailableTitle"), description: t("report.locUnavailableDesc") });
       }
-      const created = await api<{ id: number; uploadToken: string }>("/api/reports", {
-        body: {
-          incidentType: formData.incidentType,
-          description: formData.description,
-          location: formData.location,
-          date: formData.date,
-          anonymous: formData.anonymous || !user,
-          coords,
-        },
-      });
+      const body = {
+        incidentType: formData.incidentType,
+        description: formData.description,
+        location: formData.location,
+        date: formData.date,
+        anonymous: formData.anonymous || !user,
+        coords,
+      };
+      let created: { id: number; uploadToken: string };
+      try {
+        created = await api<{ id: number; uploadToken: string }>("/api/reports", { body });
+      } catch (err) {
+        if (!(err instanceof ApiError) || err.status !== 0) throw err;
+        // No connection: keep it on this phone and send it when back online.
+        await queueReport({ body, photos: photos.map((p) => p.blob), createdAt: new Date().toISOString() });
+        toast({ title: t("offline.reportQueuedTitle"), description: t("offline.reportQueuedDesc") });
+        setFormData(emptyForm);
+        photos.forEach((p) => URL.revokeObjectURL(p.url));
+        setPhotos([]);
+        return;
+      }
       let failedUploads = 0;
       for (const photo of photos) {
         await uploadPhoto(created.id, created.uploadToken, photo.blob).catch(() => failedUploads++);

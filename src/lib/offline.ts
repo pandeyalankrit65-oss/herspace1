@@ -55,3 +55,11 @@ export function useOnline() {
   }, []);
   return online;
 }
+
+// Last-known copies of public data (map incidents, nearby help), shown when offline.
+// Nothing personal is kept here.
+const SAVED_PREFIX = "herspace_saved_";
+export const savedData = {
+  get: <T>(key: string) => read<{ data: T; at: string }>(SAVED_PREFIX + key),
+  set: (key: string, data: unknown) => write(SAVED_PREFIX + key, { data, at: new Date().toISOString() }),
+};

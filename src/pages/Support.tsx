@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
+import { useOnline } from "@/lib/offline";
 import Logo from "@/components/Logo";
 import type { MessageKey } from "@/i18n/en";
 
@@ -30,6 +31,7 @@ const Support = () => {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<"ai" | "fallback" | null>(null);
+  const online = useOnline();
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -76,6 +78,16 @@ const Support = () => {
       <main className="pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-5xl">
           <PageHeader icon={MessageCircle} title={t("support.title")} subtitle={t("support.subtitle")} />
+          {!online && (
+            <div role="alert" className="mb-6 space-y-2 rounded-2xl border border-warning/60 bg-warning/10 p-4 text-sm">
+              <p className="font-semibold">{t("offline.chat")}</p>
+              <p className="flex flex-wrap gap-x-4 gap-y-1">
+                <a href="tel:181" className="font-semibold underline underline-offset-2">181 · {t("support.helplineWomen")}</a>
+                <a href="tel:14416" className="font-semibold underline underline-offset-2">14416 · {t("support.helplineTeleManas")}</a>
+                <a href={`tel:${EMERGENCY_NUMBER}`} className="font-semibold underline underline-offset-2">{t("common.call", { number: EMERGENCY_NUMBER })}</a>
+              </p>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Chat Interface */}
