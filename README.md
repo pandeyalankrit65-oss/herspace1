@@ -40,8 +40,12 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 ## Not built yet
 
 - **Corporate Connect** and **Safe Circles**: the pages describe planned features and say so on the page.
-- Triggers that work with the screen off or the app closed (lock screen, power button, background voice or shake).
-- Audio recording, and video or other files with reports.
+- **Safe word and voice trigger in the background**: today they listen only while the SOS page is open with the screen on. Listening with the screen off or the app closed needs an Android foreground service with microphone access (a permanent notification, battery use, and Google Play's rules for background microphone use), ideally with on-device recognition so audio never leaves the phone.
+- Other triggers that work with the screen off or the app closed: shake, lock-screen widget, power-button presses (needs an accessibility service, which Play Store policy restricts), smartwatch or Bluetooth panic button.
+- A missed-call SOS number for phones without data (needs a telephony provider).
+- Disguised mode can't change the app's name or icon on the home screen (needs native Android work).
+- Audio or video attached to reports (audio is recorded during SOS already).
+- Native-speaker review of the Tamil, Bengali and Marathi translations, and legal review of the Hindi legal pages and the help guide.
 - AI or ML risk prediction and safe-route navigation.
 - End-to-end encryption. Data is protected by access control on the server, not encrypted per user.
 - Admin or HR dashboards beyond map moderation.
