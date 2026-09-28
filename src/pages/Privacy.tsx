@@ -23,11 +23,17 @@ const PrivacyEn = () => (
           <strong>SOS alerts:</strong> when you press SOS we store the time, your location if you allow location access, and
           whether each message or call was delivered. If you're logged in, your contacts also get a private live-location link:
           while the SOS page is open we keep only your latest position, and delete it as soon as you tap "I'm safe" or after 4
-          hours. If a contact taps "I'm on my way" on that page, we record their reply so you can see it.
+          hours. With each position we also keep your phone's battery level, so contacts know if it's about to switch off. If a
+          contact taps "I'm on my way" on that page, we record their reply so you can see it.
         </li>
         <li>
           <strong>SOS audio recordings (only if you turn them on):</strong> after an alert, sound around you is recorded in short
           pieces and uploaded as evidence. Only you can play or download them, and they're deleted with the alert after 90 days.
+        </li>
+        <li>
+          <strong>Emergency info (only if you add it):</strong> your blood group, allergies, medicines, health conditions and
+          notes. This is health information, so it's private by default. If you turn sharing on, your contacts see it only on the
+          live-location link while an SOS is active. You can change or remove it at any time on your account page.
         </li>
         <li>
           <strong>Walk with me and safety timers:</strong> the same live-location sharing, started by you, with an optional note
@@ -57,7 +63,8 @@ const PrivacyEn = () => (
       <ul>
         <li>
           <strong>Your emergency contacts</strong> receive your name (and your phone number, if you've verified it) and a map
-          link to your location when you trigger SOS, and only if they have agreed to be your contact.
+          link to your location when you trigger SOS, and only if they have agreed to be your contact. The live-location link
+          also shows your phone's battery level and, if you chose to share it, your emergency info.
         </li>
         <li>
           <strong>Everyone using the Safe Map</strong> can see reports that include a location, but only the incident type, the

@@ -27,6 +27,8 @@ type ShareRow = {
   updated_at: string | null;
   created_at: string;
   check_in_id: number | null;
+  battery: number | null;
+  charging: number | null;
 };
 
 const isActive = (s: Pick<ShareRow, 'ended_at' | 'expires_at'>) => !s.ended_at && new Date(s.expires_at) > new Date();
@@ -198,16 +200,24 @@ locationSharesRouter.get('/active', (req, res) => {
 const updateLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 600, key: perUser });
 
 locationSharesRouter.post('/:id/location', updateLimiter, (req, res) => {
-  const body = parse(z.object({ coords: coordsSchema }), req, res);
+  const body = parse(
+    z.object({ coords: coordsSchema, battery: z.object({ level: z.number().min(0).max(1), charging: z.boolean() }).optional() }),
+    req,
+    res
+  );
   if (!body) return;
   const share = ownShare(Number(req.params.id), req.user!.id);
   if (!share) return res.status(404).json({ error: 'Share not found.' });
   if (!isActive(share)) return res.status(410).json({ error: 'Location sharing has ended.' });
-  db.prepare('UPDATE location_shares SET lat = ?, lng = ?, accuracy = ?, updated_at = ?, stale_alerted_at = NULL WHERE id = ?').run(
+  db.prepare(
+    'UPDATE location_shares SET lat = ?, lng = ?, accuracy = ?, updated_at = ?, stale_alerted_at = NULL, battery = ?, charging = ? WHERE id = ?'
+  ).run(
     body.coords.lat,
     body.coords.lng,
     body.coords.accuracy ?? null,
     now(),
+    body.battery?.level ?? null,
+    body.battery ? (body.battery.charging ? 1 : 0) : null,
     share.id
   );
   // A journey's safety timer alerts with the latest position.
@@ -243,9 +253,14 @@ locationSharesRouter.post('/:id/stop', (req, res) => {
 const trackLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 const ackLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
 
-type ShareWithUser = ShareRow & { name: string };
+type ShareWithUser = ShareRow & { name: string; emergencyInfo: string | null; emergencyInfoShare: number };
 const shareByToken = (token: string) =>
-  db.prepare('SELECT s.*, u.name FROM location_shares s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?').get(sha256(token)) as
+  db
+    .prepare(
+      `SELECT s.*, u.name, u.emergency_info AS emergencyInfo, u.emergency_info_share AS emergencyInfoShare
+       FROM location_shares s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`
+    )
+    .get(sha256(token)) as
     | ShareWithUser
     | undefined;
 
@@ -277,6 +292,9 @@ trackRouter.get('/:token', trackLimiter, (req, res) => {
       active && share.lat !== null && share.lng !== null
         ? { lat: share.lat, lng: share.lng, accuracy: share.accuracy, updatedAt: share.updated_at }
         : null,
+    battery: active && share.battery !== null ? { level: share.battery, charging: Boolean(share.charging) } : null,
+    // Health details only during an emergency, and only if the user chose to share them.
+    emergencyInfo: active && share.kind === 'sos' && share.emergencyInfoShare && share.emergencyInfo ? JSON.parse(share.emergencyInfo) : null,
   });
 });
 

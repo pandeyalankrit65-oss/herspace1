@@ -205,6 +205,14 @@ const migrations: string[] = [
   ALTER TABLE location_shares ADD COLUMN check_in_id INTEGER;
   ALTER TABLE location_shares ADD COLUMN stale_alerted_at TEXT;
   `,
+  `
+  -- Emergency info (blood group, allergies...) the user chooses to show contacts during an SOS.
+  ALTER TABLE users ADD COLUMN emergency_info TEXT;
+  ALTER TABLE users ADD COLUMN emergency_info_share INTEGER NOT NULL DEFAULT 0;
+  -- The phone's battery with each position, so contacts know why updates might stop.
+  ALTER TABLE location_shares ADD COLUMN battery REAL;
+  ALTER TABLE location_shares ADD COLUMN charging INTEGER;
+  `,
 ];
 
 function migrate() {

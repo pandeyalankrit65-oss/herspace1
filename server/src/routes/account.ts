@@ -94,6 +94,38 @@ accountRouter.put('/code-phrase', codePhraseLimiter, async (req, res) => {
   res.json({ phrase: body.phrase, told });
 });
 
+// Emergency info: shown to contacts on the live link of an active SOS, only if the user turns
+// sharing on. Health details are sensitive, so it's off by default.
+const field = z.string().trim().max(300).optional().default('');
+const emergencyInfoSchema = z.object({
+  bloodGroup: z.enum(['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).default(''),
+  allergies: field,
+  medications: field,
+  conditions: field,
+  notes: field,
+});
+export type EmergencyInfo = z.infer<typeof emergencyInfoSchema>;
+
+accountRouter.get('/emergency-info', (req, res) => {
+  const row = db.prepare('SELECT emergency_info AS info, emergency_info_share AS share FROM users WHERE id = ?').get(req.user!.id) as {
+    info: string | null;
+    share: number;
+  };
+  res.json({ info: row.info ? JSON.parse(row.info) : null, share: Boolean(row.share) });
+});
+
+accountRouter.put('/emergency-info', (req, res) => {
+  const body = parse(z.object({ info: emergencyInfoSchema, share: z.boolean() }), req, res);
+  if (!body) return;
+  const empty = Object.values(body.info).every((v) => !v);
+  db.prepare('UPDATE users SET emergency_info = ?, emergency_info_share = ? WHERE id = ?').run(
+    empty ? null : JSON.stringify(body.info),
+    body.share && !empty ? 1 : 0,
+    req.user!.id
+  );
+  res.json({ info: empty ? null : body.info, share: body.share && !empty });
+});
+
 accountRouter.delete('/phone', (req, res) => {
   db.prepare('UPDATE users SET phone = NULL, phone_verified_at = NULL WHERE id = ?').run(req.user!.id);
   db.prepare('DELETE FROM phone_codes WHERE user_id = ?').run(req.user!.id);
@@ -129,7 +161,13 @@ accountRouter.post('/password', passwordLimiter, (req, res) => {
 
 accountRouter.get('/export', (req, res) => {
   const userId = req.user!.id;
-  const user = db.prepare('SELECT id, name, email, phone, phone_verified_at AS phoneVerifiedAt, code_phrase AS codePhrase, created_at AS createdAt FROM users WHERE id = ?').get(userId);
+  const row = db
+    .prepare(
+      `SELECT id, name, email, phone, phone_verified_at AS phoneVerifiedAt, code_phrase AS codePhrase, emergency_info AS emergencyInfo,
+              emergency_info_share AS emergencyInfoShared, created_at AS createdAt FROM users WHERE id = ?`
+    )
+    .get(userId) as { emergencyInfo: string | null; emergencyInfoShared: number };
+  const user = { ...row, emergencyInfo: row.emergencyInfo ? JSON.parse(row.emergencyInfo) : null, emergencyInfoShared: Boolean(row.emergencyInfoShared) };
   const contacts = db.prepare('SELECT name, phone, relation, status FROM contacts WHERE user_id = ?').all(userId);
   const reports = db
     .prepare(
@@ -150,7 +188,7 @@ accountRouter.get('/export', (req, res) => {
   }));
   res.setHeader('Content-Disposition', 'attachment; filename="herspace-data.json"');
   const locationShares = db
-    .prepare('SELECT created_at AS createdAt, expires_at AS expiresAt, ended_at AS endedAt, lat, lng, updated_at AS updatedAt FROM location_shares WHERE user_id = ?')
+    .prepare('SELECT created_at AS createdAt, expires_at AS expiresAt, ended_at AS endedAt, lat, lng, updated_at AS updatedAt, battery FROM location_shares WHERE user_id = ?')
     .all(userId);
   const checkIns = db
     .prepare('SELECT note, status, created_at AS createdAt, due_at AS dueAt, alerted_at AS alertedAt FROM check_ins WHERE user_id = ?')

@@ -16,6 +16,7 @@ import ReportPhotos from "@/components/ReportPhotos";
 import PhoneVerification from "@/components/PhoneVerification";
 import SafetyAtHome from "@/components/SafetyAtHome";
 import SosRecordings from "@/components/SosRecordings";
+import EmergencyInfoSettings from "@/components/EmergencyInfoSettings";
 
 const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimination", "other"];
 
@@ -150,6 +151,8 @@ const Account = () => {
           <PhoneVerification />
 
           <SafetyAtHome />
+
+          <EmergencyInfoSettings />
 
           <SosRecordings />
 

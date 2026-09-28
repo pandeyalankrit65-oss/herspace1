@@ -53,6 +53,41 @@ test("SOS alerts a confirmed contact, who can follow live location until the use
   assertNoErrors();
 });
 
+test("during an SOS, contacts see the phone's battery and the emergency info she chose to share", async ({ page, browser }) => {
+  const assertNoErrors = failOnConsoleErrors(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "getBattery", { value: () => Promise.resolve({ level: 0.08, charging: false }) });
+  });
+  await signUp(page, "Asha");
+  const mom = await addConfirmedContact(page, browser, "Mom");
+
+  await page.goto("/account");
+  await page.getByLabel("Blood group").selectOption("B+");
+  await page.getByLabel("Allergies").fill("Penicillin");
+  await page.getByLabel("Show this to my contacts during an SOS").click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Emergency info saved", { exact: true })).toBeVisible();
+
+  await page.goto("/sos");
+  await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
+  await expect(page.getByText("Sharing your live location")).toBeVisible({ timeout: 15_000 });
+  const sos = await waitForMessage((m) => m.to === mom.phone && m.body.startsWith("HerSpace SOS"));
+
+  const contact = await browser.newContext();
+  const contactPage = await contact.newPage();
+  await contactPage.goto(linkIn(sos.body, "/track/"));
+  await expect(contactPage.getByText("Phone battery: 8% · it may switch off soon")).toBeVisible();
+  await expect(contactPage.getByRole("heading", { name: "Asha's emergency info" })).toBeVisible();
+  const card = contactPage.locator("dl");
+  await expect(card.getByText("B+")).toBeVisible();
+  await expect(card.getByText("Penicillin")).toBeVisible();
+  await expect(card.getByText("Medicines you take")).toHaveCount(0); // empty fields aren't shown
+  await contact.close();
+
+  await page.getByRole("button", { name: "I'm safe, stop sharing" }).click();
+  assertNoErrors();
+});
+
 test("cancelling the countdown sends nothing", async ({ page, browser }) => {
   await signUp(page, "Neha");
   const sister = await addConfirmedContact(page, browser, "Sister");

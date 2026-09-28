@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { CheckCircle2, Footprints, Phone, ShieldCheck } from "lucide-react";
+import { BatteryCharging, BatteryLow, BatteryMedium, CheckCircle2, Footprints, HeartPulse, Phone, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import type { EmergencyInfo } from "@/components/EmergencyInfoSettings";
 
 type Position = { lat: number; lng: number; accuracy: number | null; updatedAt: string };
 type TrackView = {
@@ -19,9 +20,12 @@ type TrackView = {
   endedAt: string | null;
   expiresAt: string;
   position: Position | null;
+  battery: { level: number; charging: boolean } | null;
+  emergencyInfo: EmergencyInfo | null;
 };
 
 const POLL_MS = 15_000;
+const LOW_BATTERY = 0.15;
 const STALE_MS = 2 * 60_000;
 
 // Keeps the map centred on the latest position.
@@ -37,6 +41,55 @@ function ago(iso: string, now: number, tn: (key: string, count: number) => strin
   const s = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   return s < 60 ? tn("track.secondsAgo", s) : tn("track.minutesAgo", Math.round(s / 60));
 }
+
+// "Phone battery: 8%": if updates stop, contacts can tell the phone probably died.
+const BatteryLine = ({ battery }: { battery: { level: number; charging: boolean } }) => {
+  const { t } = useI18n();
+  const percent = Math.round(battery.level * 100);
+  const low = !battery.charging && battery.level <= LOW_BATTERY;
+  const Icon = battery.charging ? BatteryCharging : low ? BatteryLow : BatteryMedium;
+  return (
+    <span className={`mt-0.5 flex items-center gap-1.5 ${low ? "font-semibold text-destructive" : ""}`}>
+      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+      {t(battery.charging ? "track.batteryCharging" : "track.battery", { percent })}
+      {low && ` · ${t("track.batteryLow")}`}
+    </span>
+  );
+};
+
+// Health details she chose to share, for paramedics or whoever reaches her first.
+const EmergencyInfoCard = ({ info, name }: { info: EmergencyInfo; name: string }) => {
+  const { t } = useI18n();
+  const rows = [
+    ["medical.bloodGroup", info.bloodGroup],
+    ["medical.allergies", info.allergies],
+    ["medical.medications", info.medications],
+    ["medical.conditions", info.conditions],
+    ["medical.notes", info.notes],
+  ] as const;
+  return (
+    <Card className="border-destructive/40">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <HeartPulse className="h-5 w-5 text-destructive" /> {t("track.medicalTitle", { name })}
+        </CardTitle>
+        <CardDescription>{t("track.medicalDesc")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[auto_1fr]">
+          {rows
+            .filter(([, value]) => value)
+            .map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className="font-semibold">{t(label)}</dt>
+                <dd className="whitespace-pre-wrap text-muted-foreground sm:text-foreground">{value}</dd>
+              </div>
+            ))}
+        </dl>
+      </CardContent>
+    </Card>
+  );
+};
 
 // Opened by an emergency contact from the SOS text message. No account needed.
 const Track = () => {
@@ -172,6 +225,7 @@ const Track = () => {
                     <div className={`px-4 py-2 text-sm ${stale ? "bg-destructive/15 text-foreground" : "text-muted-foreground"}`}>
                       {t("track.updated", { ago: ago(view.position.updatedAt, now, tn) })}
                       {view.position.accuracy ? ` · ${t("track.accuracy", { meters: Math.round(view.position.accuracy) })}` : ""}
+                      {view.battery && <BatteryLine battery={view.battery} />}
                       {stale && <strong className="block">{t("track.stale")}</strong>}
                     </div>
                     <div className="relative z-0 h-[55vh] min-h-[320px]">
@@ -206,6 +260,8 @@ const Track = () => {
                   </CardHeader>
                 </Card>
               )}
+
+              {view.emergencyInfo && <EmergencyInfoCard info={view.emergencyInfo} name={view.name} />}
 
               <div className="flex flex-col sm:flex-row gap-2">
                 {view.position && (

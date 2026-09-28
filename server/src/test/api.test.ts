@@ -716,6 +716,57 @@ describe('journeys', () => {
   });
 });
 
+describe('emergency info and battery', () => {
+  const info = { bloodGroup: 'O-', allergies: 'Penicillin', medications: '', conditions: 'Asthma', notes: '' };
+
+  test('private until sharing is on, then shown only on an active SOS', async () => {
+    const { token } = await userWithConfirmedContact('Ira');
+    assert.deepEqual((await call('/account/emergency-info', { token })).data, { info: null, share: false });
+    assert.equal((await call('/account/emergency-info', { token, method: 'PUT', body: { info: { ...info, bloodGroup: 'Z+' }, share: true } })).status, 400);
+
+    await call('/account/emergency-info', { token, method: 'PUT', body: { info, share: false } });
+    const sos = await call('/sos', { token, body: {} });
+    const track = () => call(`/track/${sos.data.share.url.split('/track/')[1]}`);
+    assert.equal((await track()).data.emergencyInfo, null, 'not shared');
+
+    const saved = await call('/account/emergency-info', { token, method: 'PUT', body: { info, share: true } });
+    assert.deepEqual(saved.data, { info, share: true });
+    assert.deepEqual((await track()).data.emergencyInfo, info);
+    assert.deepEqual((await call('/account/export', { token })).data.user.emergencyInfo, info);
+
+    await call(`/location-shares/${sos.data.share.id}/stop`, { token, body: {} });
+    assert.equal((await track()).data.emergencyInfo, null, 'gone once she is safe');
+  });
+
+  test('never shown on a walk', async () => {
+    const { token } = await userWithConfirmedContact('Jaya');
+    await call('/account/emergency-info', { token, method: 'PUT', body: { info, share: true } });
+    const walk = await call('/location-shares', { token, body: { minutes: 30 } });
+    assert.equal((await call(`/track/${walk.data.share.url.split('/track/')[1]}`)).data.emergencyInfo, null);
+  });
+
+  test('clearing every field removes it and turns sharing off', async () => {
+    const { token } = await newUser('Kiran');
+    await call('/account/emergency-info', { token, method: 'PUT', body: { info, share: true } });
+    const cleared = await call('/account/emergency-info', { token, method: 'PUT', body: { info: {}, share: true } });
+    assert.deepEqual(cleared.data, { info: null, share: false });
+  });
+
+  test('contacts see the battery level sent with the location', async () => {
+    const { token } = await userWithConfirmedContact('Lata');
+    const walk = await call('/location-shares', { token, body: { minutes: 30 } });
+    const track = () => call(`/track/${walk.data.share.url.split('/track/')[1]}`);
+    assert.equal((await track()).data.battery, null);
+    const coords = { lat: 28.6, lng: 77.2 };
+    await call(`/location-shares/${walk.data.share.id}/location`, { token, body: { coords, battery: { level: 0.08, charging: false } } });
+    assert.deepEqual((await track()).data.battery, { level: 0.08, charging: false });
+    assert.equal((await call(`/location-shares/${walk.data.share.id}/location`, { token, body: { coords, battery: { level: 3, charging: false } } })).status, 400);
+    // Browsers without the Battery API send none: the last known level is cleared rather than kept stale.
+    await call(`/location-shares/${walk.data.share.id}/location`, { token, body: { coords } });
+    assert.equal((await track()).data.battery, null);
+  });
+});
+
 describe('security fixes', () => {
   test('SOS recordings must really be audio', async () => {
     const { token } = await userWithConfirmedContact('Gita');

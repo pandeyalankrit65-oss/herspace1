@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
+import { readBattery } from "@/lib/battery";
 
 export type ShareAck = { name: string | null; at: string };
 export type LiveShare = { id: number; expiresAt: string; url?: string; kind?: "sos" | "walk" | "ride" | "meeting"; checkInDueAt?: string | null; acks?: ShareAck[] };
@@ -61,7 +62,8 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         if (!due) return;
         lastRef.current = { at: Date.now(), coords: pos };
         try {
-          const res = await api<{ acks?: ShareAck[] }>(`/api/location-shares/${share.id}/location`, { body: { coords: pos } });
+          const battery = await readBattery();
+          const res = await api<{ acks?: ShareAck[] }>(`/api/location-shares/${share.id}/location`, { body: { coords: pos, battery } });
           if (!cancelled) {
             if (res.acks) setAcks(res.acks);
             setLastSent(new Date());
