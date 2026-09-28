@@ -767,6 +767,37 @@ describe('emergency info and battery', () => {
   });
 });
 
+describe('arriving at a saved place', () => {
+  test('contacts see where she is heading, and that she arrived', async () => {
+    const { token } = await userWithConfirmedContact('Meera');
+    const walk = await call('/location-shares', { token, body: { minutes: 30, destination: 'Home' } });
+    assert.equal(walk.data.share.destination, 'Home');
+    const track = () => call(`/track/${walk.data.share.url.split('/track/')[1]}`);
+    assert.equal((await track()).data.destination, 'Home');
+    assert.equal((await call('/location-shares/active', { token })).data.share.destination, 'Home', 'survives a reload');
+    assert.equal((await call('/location-shares', { token, body: { minutes: 30, destination: 'x'.repeat(41) } })).status, 400);
+
+    const stop = await call(`/location-shares/${walk.data.share.id}/stop`, { token, body: { arrived: true } });
+    assert.equal(stop.status, 200);
+    const ended = (await track()).data;
+    assert.equal(ended.active, false);
+    assert.equal(ended.arrived, true);
+    assert.equal(ended.destination, 'Home');
+  });
+
+  test('an SOS never counts as arriving, and a stop without a body still works', async () => {
+    const { token } = await userWithConfirmedContact('Neha');
+    const sos = await call('/sos', { token, body: {} });
+    await call(`/location-shares/${sos.data.share.id}/stop`, { token, body: { arrived: true } });
+    const view = (await call(`/track/${sos.data.share.url.split('/track/')[1]}`)).data;
+    assert.equal(view.arrived, false);
+    assert.equal(view.destination, null);
+
+    const walk = await call('/location-shares', { token, body: { minutes: 30 } });
+    assert.equal((await call(`/location-shares/${walk.data.share.id}/stop`, { token, method: 'POST' })).status, 200);
+  });
+});
+
 describe('security fixes', () => {
   test('SOS recordings must really be audio', async () => {
     const { token } = await userWithConfirmedContact('Gita');

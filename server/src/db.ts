@@ -213,6 +213,12 @@ const migrations: string[] = [
   ALTER TABLE location_shares ADD COLUMN battery REAL;
   ALTER TABLE location_shares ADD COLUMN charging INTEGER;
   `,
+  `
+  -- Where a journey is heading ("Home"): only the name; the place itself stays on the phone,
+  -- which detects arrival. arrived: the journey ended by reaching it.
+  ALTER TABLE location_shares ADD COLUMN destination TEXT;
+  ALTER TABLE location_shares ADD COLUMN arrived INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 function migrate() {

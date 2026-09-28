@@ -188,7 +188,7 @@ accountRouter.get('/export', (req, res) => {
   }));
   res.setHeader('Content-Disposition', 'attachment; filename="herspace-data.json"');
   const locationShares = db
-    .prepare('SELECT created_at AS createdAt, expires_at AS expiresAt, ended_at AS endedAt, lat, lng, updated_at AS updatedAt, battery FROM location_shares WHERE user_id = ?')
+    .prepare('SELECT created_at AS createdAt, expires_at AS expiresAt, ended_at AS endedAt, lat, lng, updated_at AS updatedAt, battery, kind, destination, arrived FROM location_shares WHERE user_id = ?')
     .all(userId);
   const checkIns = db
     .prepare('SELECT note, status, created_at AS createdAt, due_at AS dueAt, alerted_at AS alertedAt FROM check_ins WHERE user_id = ?')

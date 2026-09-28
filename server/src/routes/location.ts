@@ -27,6 +27,8 @@ type ShareRow = {
   updated_at: string | null;
   created_at: string;
   check_in_id: number | null;
+  destination: string | null;
+  arrived: number;
   battery: number | null;
   charging: number | null;
 };
@@ -99,6 +101,8 @@ const journeySchema = z.object({
     .default({}),
   // Optional safety timer: contacts are alerted if the user doesn't check in by then.
   checkInMinutes: z.number().int().min(5).max(12 * 60).optional(),
+  // A saved place's name ("Home"). Contacts get a text when she arrives.
+  destination: z.string().trim().min(1).max(40).optional(),
 });
 
 // One line describing the journey, for the tracking page and the texts.
@@ -139,8 +143,11 @@ locationSharesRouter.post('/', walkLimiter, async (req, res) => {
     checkIn = { id: Number(result.lastInsertRowid), dueAt };
     db.prepare('UPDATE location_shares SET check_in_id = ? WHERE id = ?').run(checkIn.id, share.id);
   }
+  if (body.destination) db.prepare('UPDATE location_shares SET destination = ? WHERE id = ?').run(body.destination, share.id);
 
-  const timer = checkIn ? ` If they don't check in by ${clock(checkIn.dueAt)}, you'll get an alert.` : ' No action needed unless they ask for help.';
+  const timer =
+    (body.destination ? ` They're heading to ${body.destination}; you'll get a text when they arrive.` : '') +
+    (checkIn ? ` If they don't check in by ${clock(checkIn.dueAt)}, you'll get an alert.` : ' No action needed unless they ask for help.');
   const text = (link: string) =>
     body.kind === 'ride'
       ? `HerSpace: ${user.name} is taking a ride: ${summary}. Follow the trip live: ${link}${timer}`
@@ -149,7 +156,7 @@ locationSharesRouter.post('/', walkLimiter, async (req, res) => {
         : `HerSpace: ${user.name} is sharing their live location with you while they travel${summary ? ` ("${summary}")` : ''}. Follow along: ${link}${timer}`;
   const results = await Promise.all(confirmed.map((c) => sendSms(c.phone, text(contactLink(share.url, share.id, c.id)))));
   res.status(201).json({
-    share: { id: share.id, kind: body.kind, note: summary, expiresAt: share.expiresAt, url: share.url },
+    share: { id: share.id, kind: body.kind, note: summary, destination: body.destination ?? null, expiresAt: share.expiresAt, url: share.url },
     checkIn,
     sent: results.filter((r) => r.status === 'sent').length,
     total: confirmed.length,
@@ -192,7 +199,15 @@ locationSharesRouter.get('/active', (req, res) => {
     .get(req.user!.id) as ShareRow | undefined;
   if (!share || !isActive(share)) return res.json({ share: null });
   res.json({
-    share: { id: share.id, kind: share.kind, note: share.note, expiresAt: share.expires_at, updatedAt: share.updated_at, acks: listAcks(share.id) },
+    share: {
+      id: share.id,
+      kind: share.kind,
+      note: share.note,
+      destination: share.destination,
+      expiresAt: share.expires_at,
+      updatedAt: share.updated_at,
+      acks: listAcks(share.id),
+    },
   });
 });
 
@@ -233,19 +248,33 @@ locationSharesRouter.post('/:id/location', updateLimiter, (req, res) => {
   res.json({ success: true, acks: listAcks(share.id) });
 });
 
-// "I'm safe" / "I've arrived": stop sharing and forget the position immediately.
-locationSharesRouter.post('/:id/stop', (req, res) => {
+// "I'm safe" / "I've arrived": stop sharing and forget the position immediately. A journey to a
+// saved place that ends by arriving there texts contacts, as promised when it started.
+locationSharesRouter.post('/:id/stop', async (req, res) => {
+  const body = parse(z.object({ arrived: z.boolean().optional() }).default({}), req, res);
+  if (!body) return;
   const share = ownShare(Number(req.params.id), req.user!.id);
   if (!share) return res.status(404).json({ error: 'Share not found.' });
-  db.prepare('UPDATE location_shares SET ended_at = COALESCE(ended_at, ?), lat = NULL, lng = NULL, accuracy = NULL WHERE id = ?').run(
-    now(),
-    share.id
-  );
+  const arrived = Boolean(body.arrived) && share.kind !== 'sos' && isActive(share);
+  // Only the request that actually ends it can send the text (a retry or a second tab can't).
+  const ended =
+    db
+      .prepare('UPDATE location_shares SET ended_at = ?, arrived = ? WHERE id = ? AND ended_at IS NULL')
+      .run(now(), arrived ? 1 : 0, share.id).changes > 0;
+  db.prepare('UPDATE location_shares SET lat = NULL, lng = NULL, accuracy = NULL WHERE id = ?').run(share.id);
   // Arriving also ends the journey's safety timer.
   if (share.check_in_id) {
     db.prepare("UPDATE check_ins SET status = 'completed' WHERE id = ? AND status = 'active'").run(share.check_in_id);
   }
-  res.json({ success: true });
+  let told = 0;
+  if (ended && arrived && share.destination) {
+    const confirmed = listContacts(share.user_id).filter((c) => c.status === 'confirmed');
+    const results = await Promise.all(
+      confirmed.map((c) => sendSms(c.phone, `HerSpace: ${req.user!.name} has arrived at ${share.destination}. No action needed.`))
+    );
+    told = results.filter((r) => r.status === 'sent').length;
+  }
+  res.json({ success: true, told });
 });
 
 // Public: what a contact sees when they open the tracking link. No account needed; the
@@ -293,6 +322,8 @@ trackRouter.get('/:token', trackLimiter, (req, res) => {
         ? { lat: share.lat, lng: share.lng, accuracy: share.accuracy, updatedAt: share.updated_at }
         : null,
     battery: active && share.battery !== null ? { level: share.battery, charging: Boolean(share.charging) } : null,
+    destination: share.kind === 'sos' ? null : share.destination,
+    arrived: Boolean(share.arrived),
     // Health details only during an emergency, and only if the user chose to share them.
     emergencyInfo: active && share.kind === 'sos' && share.emergencyInfoShare && share.emergencyInfo ? JSON.parse(share.emergencyInfo) : null,
   });

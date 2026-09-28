@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Navigation, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, MapPin, Navigation, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -7,22 +7,28 @@ import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
 import { readBattery } from "@/lib/battery";
+import { isAt, journeyDestination, metresBetween } from "@/lib/places";
 
 export type ShareAck = { name: string | null; at: string };
-export type LiveShare = { id: number; expiresAt: string; url?: string; kind?: "sos" | "walk" | "ride" | "meeting"; checkInDueAt?: string | null; acks?: ShareAck[] };
+export type LiveShare = {
+  id: number;
+  expiresAt: string;
+  url?: string;
+  kind?: "sos" | "walk" | "ride" | "meeting";
+  destination?: string | null;
+  checkInDueAt?: string | null;
+  acks?: ShareAck[];
+};
 
 const ACKS_POLL_MS = 10_000;
 
 const SEND_EVERY_MS = 20_000;
 const SEND_IF_MOVED_M = 30;
 
-// Rough distance in metres; plenty accurate for "has she moved?".
-function metresBetween(a: Position, b: Position) {
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const x = dLng * Math.cos((((a.lat + b.lat) / 2) * Math.PI) / 180);
-  return Math.sqrt(x * x + dLat * dLat) * 6_371_000;
-}
+// Arrival at a saved place: two fixes in a row there (one could be a GPS jump), then a short
+// countdown she can cancel. Ending by mistake would also end the safety timer, so never silently.
+const ARRIVAL_FIXES = 2;
+const ARRIVAL_COUNTDOWN_MS = 30_000;
 
 type WakeLockSentinel = { release: () => Promise<void> };
 
@@ -41,6 +47,11 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
   const [error, setError] = useState<"" | "live.noGeo" | "live.updateFailed" | "live.permission">("");
   const [stopping, setStopping] = useState(false);
   const lastRef = useRef<{ at: number; coords: Position } | null>(null);
+  const place = useMemo(() => (walk ? journeyDestination.get(share.id) : null), [walk, share.id]);
+  const nearRef = useRef(0);
+  const keepSharingRef = useRef(false);
+  const stoppingRef = useRef(false);
+  const [arrivingAt, setArrivingAt] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +68,10 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
     // In the Android app this keeps running with the screen locked (with a notification).
     const stop = watchLocation(
       async (pos) => {
+        if (place && !keepSharingRef.current) {
+          nearRef.current = isAt(pos, place) ? nearRef.current + 1 : 0;
+          if (nearRef.current >= ARRIVAL_FIXES) setArrivingAt((at) => at ?? Date.now() + ARRIVAL_COUNTDOWN_MS);
+        }
         const last = lastRef.current;
         const due = !last || Date.now() - last.at >= SEND_EVERY_MS || metresBetween(last.coords, pos) >= SEND_IF_MOVED_M;
         if (!due) return;
@@ -85,7 +100,7 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
     };
     // t is only used for the notification text when the watch starts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [share.id, onEnded]);
+  }, [share.id, onEnded, place]);
 
   // Responses can arrive while the phone is standing still (no location updates), so poll too.
   useEffect(() => {
@@ -107,16 +122,39 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
   };
 
   const stop = async () => {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
     setStopping(true);
     try {
-      await api(`/api/location-shares/${share.id}/stop`, { method: "POST" });
+      // "I've arrived" on a journey: contacts get a text if it was heading to a saved place.
+      await api(`/api/location-shares/${share.id}/stop`, { body: walk ? { arrived: true } : {} });
+      journeyDestination.set(share.id, null);
       toast(walk ? { title: t("live.arrivedTitle"), description: t("live.arrivedDesc") } : { title: t("live.safeTitle"), description: t("live.safeDesc") });
       onEnded();
     } catch (err) {
       toast({ title: t("live.stopFailed"), description: (err as Error).message, variant: "destructive" });
+      setArrivingAt(null);
     } finally {
+      stoppingRef.current = false;
       setStopping(false);
     }
+  };
+
+  // The arrival countdown.
+  useEffect(() => {
+    if (arrivingAt === null) return;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tick);
+  }, [arrivingAt]);
+  useEffect(() => {
+    if (arrivingAt !== null && now >= arrivingAt) stop();
+    // stop is recreated each render; this only needs to run as the countdown ticks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now, arrivingAt]);
+
+  const keepSharing = () => {
+    keepSharingRef.current = true;
+    setArrivingAt(null);
   };
 
   return (
@@ -133,6 +171,25 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {place && arrivingAt === null && (
+          <p className="flex items-center gap-2 text-sm font-medium">
+            <MapPin className="h-4 w-4 shrink-0 text-primary" /> {t("places.headingTo", { place: place.label })}
+          </p>
+        )}
+        {place && arrivingAt !== null && (
+          <div role="alert" className="space-y-2 rounded-xl border border-success/50 bg-success/10 p-3">
+            <p className="font-semibold">{t("places.arrivedAt", { place: place.label })}</p>
+            <p className="text-sm">{t("places.stoppingIn", { seconds: Math.max(0, Math.ceil((arrivingAt - now) / 1000)) })}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="hero" onClick={stop} disabled={stopping}>
+                {t("places.stopNow")}
+              </Button>
+              <Button size="sm" variant="outline" onClick={keepSharing} disabled={stopping}>
+                {t("places.keepSharing")}
+              </Button>
+            </div>
+          </div>
+        )}
         <p className="text-sm text-muted-foreground">
           {error
             ? t(error)

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Car, Copy, Footprints, Timer, Users } from "lucide-react";
+import { AlertCircle, Car, Copy, Footprints, MapPin, Timer, Users } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
+import { currentPosition } from "@/lib/location";
+import { journeyDestination, usePlaces, type SavedPlace } from "@/lib/places";
 import type { Contact } from "./Contacts";
 
 const DURATIONS = [30, 60, 120, 240];
@@ -27,17 +29,6 @@ const KINDS: Array<{ id: Kind; icon: typeof Car }> = [
   { id: "meeting", icon: Users },
 ];
 const VEHICLES = ["Cab", "Auto", "Bike taxi", "Bus"];
-
-function currentPosition(): Promise<{ lat: number; lng: number; accuracy: number } | undefined> {
-  if (!navigator.geolocation) return Promise.resolve(undefined);
-  return new Promise((resolve) =>
-    navigator.geolocation.getCurrentPosition(
-      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
-      () => resolve(undefined),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30_000 }
-    )
-  );
-}
 
 // "Walk with me": live location for confirmed contacts on a journey, without an alert.
 const Walk = () => {
@@ -57,6 +48,8 @@ const Walk = () => {
   const detail = (key: keyof typeof details) => (e: React.ChangeEvent<HTMLInputElement>) => setDetails((d) => ({ ...d, [key]: e.target.value }));
   const [busy, setBusy] = useState(false);
   const [manualLink, setManualLink] = useState<string | null>(null);
+  const places = usePlaces();
+  const [destination, setDestination] = useState<SavedPlace | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -79,16 +72,22 @@ const Walk = () => {
     try {
       const coords = await currentPosition();
       const journey = kind !== "walk";
+      // Meetings aren't journeys to a place of her own.
+      const going = kind !== "meeting" ? destination : null;
       const res = await api<{ share: LiveShare & { url: string }; checkIn: { dueAt: string } | null; sent: number; total: number }>("/api/location-shares", {
         body: {
           kind,
           minutes: journey ? checkIn : minutes,
           note: note.trim() || undefined,
           coords,
-          details: Object.fromEntries(Object.entries(details).map(([k, v]) => [k, v.trim() || undefined])),
+          details: Object.fromEntries(
+            Object.entries({ ...details, destination: details.destination || going?.label || "" }).map(([k, v]) => [k, v.trim() || undefined])
+          ),
           checkInMinutes: journey ? checkIn : undefined,
+          destination: going?.label,
         },
       });
+      journeyDestination.set(res.share.id, going);
       setShare({ ...res.share, acks: [] });
       setCheckInDue(res.checkIn?.dueAt ?? null);
       if (res.sent > 0) toast({ title: tn("walk.sent", res.sent) });
@@ -248,6 +247,36 @@ const Walk = () => {
                 <Input id="meet-profile" value={details.profile} maxLength={80} placeholder={t("journey.profilePlaceholder")} onChange={detail("profile")} />
               </div>
             </div>
+          )}
+
+          {kind !== "meeting" && (
+            <fieldset className="space-y-2">
+              <legend className="mb-1 flex items-center gap-2 text-sm font-semibold">
+                <MapPin className="h-4 w-4 text-primary" /> {t("places.goingTo")}
+              </legend>
+              {places.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {t("places.noneYet")}{" "}
+                  <Link to="/account#places" className="font-semibold text-primary underline underline-offset-2">
+                    {t("places.addOne")}
+                  </Link>
+                </p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button type="button" size="sm" variant={!destination ? "hero" : "outline"} aria-pressed={!destination} onClick={() => setDestination(null)}>
+                      {t("places.nowhere")}
+                    </Button>
+                    {places.map((p) => (
+                      <Button key={p.id} type="button" size="sm" variant={destination?.id === p.id ? "hero" : "outline"} aria-pressed={destination?.id === p.id} onClick={() => setDestination(p)}>
+                        {p.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t("places.arriveHint")}</p>
+                </>
+              )}
+            </fieldset>
           )}
 
           {kind !== "walk" && (

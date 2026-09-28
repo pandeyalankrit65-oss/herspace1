@@ -99,3 +99,15 @@ export function watchLocation(
   );
   return () => navigator.geolocation.clearWatch(watch);
 }
+
+// One position, now (or undefined if location is off or it takes too long).
+export function currentPosition(): Promise<Position | undefined> {
+  if (!navigator.geolocation) return Promise.resolve(undefined);
+  return new Promise((resolve) =>
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+      () => resolve(undefined),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30_000 }
+    )
+  );
+}

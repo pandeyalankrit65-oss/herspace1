@@ -38,6 +38,8 @@ const PrivacyEn = () => (
         <li>
           <strong>Walk with me and safety timers:</strong> the same live-location sharing, started by you, with an optional note
           about where you're going. We keep only your latest position and delete it when you stop sharing or the time runs out.
+          If you head to one of your saved places, we store only its name (such as "Home") so your contacts know where you're
+          going and can be told when you arrive.
         </li>
         <li>
           <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose to
@@ -51,7 +53,9 @@ const PrivacyEn = () => (
         </li>
         <li>
           <strong>On your device:</strong> the app keeps a copy of your name and emergency contacts in your browser so the SOS
-          page can still offer to text or call them when you're offline. It's removed when you log out.
+          page can still offer to text or call them when you're offline. Your saved places (such as Home and Work) are kept
+          only on your device, never on our server; the app uses them to notice when you've arrived. All of this is removed
+          when you log out.
         </li>
         <li>
           <strong>Support chat:</strong> messages are sent to our AI provider to generate a reply. HerSpace does not save them.

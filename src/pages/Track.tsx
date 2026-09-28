@@ -22,6 +22,8 @@ type TrackView = {
   position: Position | null;
   battery: { level: number; charging: boolean } | null;
   emergencyInfo: EmergencyInfo | null;
+  destination: string | null;
+  arrived: boolean;
 };
 
 const POLL_MS = 15_000;
@@ -164,7 +166,9 @@ const Track = () => {
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="h-6 w-6 text-green-500" />
                   {view.kind !== "sos"
-                    ? t("track.walkEndedTitle", { name: view.name })
+                    ? view.arrived && view.destination
+                      ? t("track.arrivedTitle", { name: view.name, place: view.destination })
+                      : t("track.walkEndedTitle", { name: view.name })
                     : view.endedAt
                       ? t("track.safeTitle", { name: view.name })
                       : t("track.endedTitle")}
@@ -197,6 +201,7 @@ const Track = () => {
                   </>
                 )}
                 {view.note && <p className="font-semibold">"{view.note}"</p>}
+                {view.destination && <p className="text-sm">{t("track.headingTo", { name: view.name, place: view.destination })}</p>}
               </div>
 
               {/* Tell them someone is responding: very reassuring in an emergency. */}
