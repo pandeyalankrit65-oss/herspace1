@@ -199,6 +199,12 @@ const migrations: string[] = [
   );
   CREATE INDEX sos_recordings_sos ON sos_recordings(sos_id);
   `,
+  `
+  -- Journeys (rides, meetings) can have a safety timer, and ride shares warn contacts once if
+  -- the location stops updating.
+  ALTER TABLE location_shares ADD COLUMN check_in_id INTEGER;
+  ALTER TABLE location_shares ADD COLUMN stale_alerted_at TEXT;
+  `,
 ];
 
 function migrate() {

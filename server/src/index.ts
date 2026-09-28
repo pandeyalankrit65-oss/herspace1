@@ -3,6 +3,7 @@ import { app } from './app';
 import { db, purgeExpiredData } from './db';
 import { emailConfigured, smsConfigured, statusCallbackUrl, voiceCallsEnabled } from './messaging';
 import { processOverdueCheckIns } from './routes/checkins';
+import { processStaleRides } from './routes/location';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
@@ -17,6 +18,7 @@ setInterval(async () => {
   checking = true;
   try {
     await processOverdueCheckIns();
+    await processStaleRides();
   } catch (err) {
     console.error('[check-in] Scheduler error:', err);
   } finally {

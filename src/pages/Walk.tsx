@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Copy, Footprints } from "lucide-react";
+import { AlertCircle, Car, Copy, Footprints, Timer, Users } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
@@ -17,6 +17,14 @@ import { api } from "@/lib/api";
 import type { Contact } from "./Contacts";
 
 const DURATIONS = [30, 60, 120, 240];
+const CHECK_IN = [15, 30, 60, 120];
+type Kind = "walk" | "ride" | "meeting";
+const KINDS: Array<{ id: Kind; icon: typeof Car }> = [
+  { id: "walk", icon: Footprints },
+  { id: "ride", icon: Car },
+  { id: "meeting", icon: Users },
+];
+const VEHICLES = ["Cab", "Auto", "Bike taxi", "Bus"];
 
 function currentPosition(): Promise<{ lat: number; lng: number; accuracy: number } | undefined> {
   if (!navigator.geolocation) return Promise.resolve(undefined);
@@ -39,6 +47,11 @@ const Walk = () => {
   const [confirmed, setConfirmed] = useState<number | null>(null);
   const [minutes, setMinutes] = useState(60);
   const [note, setNote] = useState("");
+  const [kind, setKind] = useState<Kind>("walk");
+  const [details, setDetails] = useState({ vehicle: "", vehicleType: "Cab", app: "", driver: "", destination: "", person: "", place: "", profile: "" });
+  const [checkIn, setCheckIn] = useState(60);
+  const [checkInDue, setCheckInDue] = useState<string | null>(null);
+  const detail = (key: keyof typeof details) => (e: React.ChangeEvent<HTMLInputElement>) => setDetails((d) => ({ ...d, [key]: e.target.value }));
   const [busy, setBusy] = useState(false);
   const [manualLink, setManualLink] = useState<string | null>(null);
 
@@ -62,10 +75,19 @@ const Walk = () => {
     setBusy(true);
     try {
       const coords = await currentPosition();
-      const res = await api<{ share: LiveShare & { url: string }; sent: number; total: number }>("/api/location-shares", {
-        body: { minutes, note: note.trim() || undefined, coords },
+      const journey = kind !== "walk";
+      const res = await api<{ share: LiveShare & { url: string }; checkIn: { dueAt: string } | null; sent: number; total: number }>("/api/location-shares", {
+        body: {
+          kind,
+          minutes: journey ? checkIn : minutes,
+          note: note.trim() || undefined,
+          coords,
+          details: Object.fromEntries(Object.entries(details).map(([k, v]) => [k, v.trim() || undefined])),
+          checkInMinutes: journey ? checkIn : undefined,
+        },
       });
       setShare({ ...res.share, acks: [] });
+      setCheckInDue(res.checkIn?.dueAt ?? null);
       if (res.sent > 0) toast({ title: tn("walk.sent", res.sent) });
       else setManualLink(res.share.url);
     } catch (err) {
@@ -99,6 +121,12 @@ const Walk = () => {
       return (
         <>
           <LiveLocation share={share} onEnded={ended} />
+          {checkInDue && (
+            <p className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+              <Timer className="h-4 w-4 shrink-0 text-primary" />
+              {t("journey.checkInBy", { time: new Date(checkInDue).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
+            </p>
+          )}
           {manualLink && (
             <Card>
               <CardContent className="space-y-3 pt-6">
@@ -135,21 +163,106 @@ const Walk = () => {
               </Link>
             </div>
           )}
-          <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-semibold">{t("walk.duration")}</legend>
-            <div className="grid grid-cols-4 gap-2">
-              {DURATIONS.map((m) => (
-                <Button key={m} type="button" variant={minutes === m ? "hero" : "outline"} aria-pressed={minutes === m} onClick={() => setMinutes(m)}>
-                  {m >= 60 ? t("timer.hoursShort", { count: m / 60 }) : t("timer.minutesShort", { count: m })}
-                </Button>
-              ))}
-            </div>
-          </fieldset>
-          <div className="space-y-1">
-            <Label htmlFor="walk-note">{t("walk.note")}</Label>
-            <Input id="walk-note" value={note} maxLength={120} placeholder={t("walk.notePlaceholder")} onChange={(e) => setNote(e.target.value)} />
+          <div role="tablist" aria-label={t("journey.type")} className="grid grid-cols-3 gap-1 rounded-xl border bg-muted/50 p-1">
+            {KINDS.map(({ id, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={kind === id}
+                onClick={() => setKind(id)}
+                className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold transition-colors sm:flex-row sm:justify-center sm:text-sm ${
+                  kind === id ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" /> {t(`journey.${id}` as "journey.walk")}
+              </button>
+            ))}
           </div>
-          <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy || confirmed === 0}>
+
+          {kind === "walk" && (
+            <>
+              <fieldset className="space-y-2">
+                <legend className="mb-2 text-sm font-semibold">{t("walk.duration")}</legend>
+                <div className="grid grid-cols-4 gap-2">
+                  {DURATIONS.map((m) => (
+                    <Button key={m} type="button" variant={minutes === m ? "hero" : "outline"} aria-pressed={minutes === m} onClick={() => setMinutes(m)}>
+                      {m >= 60 ? t("timer.hoursShort", { count: m / 60 }) : t("timer.minutesShort", { count: m })}
+                    </Button>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="space-y-1">
+                <Label htmlFor="walk-note">{t("walk.note")}</Label>
+                <Input id="walk-note" value={note} maxLength={120} placeholder={t("walk.notePlaceholder")} onChange={(e) => setNote(e.target.value)} />
+              </div>
+            </>
+          )}
+
+          {kind === "ride" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="ride-vehicle">{t("journey.vehicle")}</Label>
+                <Input id="ride-vehicle" value={details.vehicle} maxLength={20} placeholder="DL 01 AB 1234" className="uppercase" onChange={detail("vehicle")} />
+              </div>
+              <fieldset className="space-y-1">
+                <legend className="text-sm font-medium">{t("journey.vehicleType")}</legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {VEHICLES.map((v) => (
+                    <Button key={v} type="button" size="sm" variant={details.vehicleType === v ? "hero" : "outline"} aria-pressed={details.vehicleType === v} onClick={() => setDetails((d) => ({ ...d, vehicleType: v }))}>
+                      {t(`journey.vehicle.${v.replace(" ", "")}` as "journey.vehicle.Cab")}
+                    </Button>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="space-y-1">
+                <Label htmlFor="ride-app">{t("journey.app")}</Label>
+                <Input id="ride-app" value={details.app} maxLength={40} placeholder="Uber, Ola, Rapido..." onChange={detail("app")} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ride-driver">{t("journey.driver")}</Label>
+                <Input id="ride-driver" value={details.driver} maxLength={60} onChange={detail("driver")} />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="ride-destination">{t("journey.destination")}</Label>
+                <Input id="ride-destination" value={details.destination} maxLength={80} onChange={detail("destination")} />
+              </div>
+            </div>
+          )}
+
+          {kind === "meeting" && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="meet-person">{t("journey.person")}</Label>
+                <Input id="meet-person" value={details.person} maxLength={60} onChange={detail("person")} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="meet-place">{t("journey.place")}</Label>
+                <Input id="meet-place" value={details.place} maxLength={80} onChange={detail("place")} />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="meet-profile">{t("journey.profile")}</Label>
+                <Input id="meet-profile" value={details.profile} maxLength={80} placeholder={t("journey.profilePlaceholder")} onChange={detail("profile")} />
+              </div>
+            </div>
+          )}
+
+          {kind !== "walk" && (
+            <fieldset className="space-y-2">
+              <legend className="mb-1 flex items-center gap-2 text-sm font-semibold">
+                <Timer className="h-4 w-4 text-primary" /> {t("journey.checkIn")}
+              </legend>
+              <p className="text-xs text-muted-foreground">{t("journey.checkInHint")}</p>
+              <div className="grid grid-cols-4 gap-2">
+                {CHECK_IN.map((m) => (
+                  <Button key={m} type="button" variant={checkIn === m ? "hero" : "outline"} aria-pressed={checkIn === m} onClick={() => setCheckIn(m)}>
+                    {m >= 60 ? t("timer.hoursShort", { count: m / 60 }) : t("timer.minutesShort", { count: m })}
+                  </Button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+          <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy || confirmed === 0 || (kind === "ride" && !details.vehicle.trim()) || (kind === "meeting" && !details.person.trim())}>
             <Footprints className="h-5 w-5" /> {busy ? t("walk.starting") : t("walk.start")}
           </Button>
         </CardContent>

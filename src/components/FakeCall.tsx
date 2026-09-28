@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, User } from "lucide-react";
+import { Phone, PhoneOff, User, MicOff, Grid3x3, Volume2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,7 +42,8 @@ type Phase = "idle" | "waiting" | "ringing" | "onCall";
 
 // Shows a realistic incoming call as an excuse to leave an uncomfortable situation.
 const FakeCall = () => {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const { user } = useAuth();
   const [caller, setCaller] = useState("");
   const [delay, setDelay] = useState(10);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -71,8 +74,33 @@ const FakeCall = () => {
     };
   }, [phase]);
 
+  // Once answered, a voice speaks from the phone, so the call sounds real to people nearby.
+  useEffect(() => {
+    if (phase !== "onCall" || !("speechSynthesis" in window)) return;
+    const line = new SpeechSynthesisUtterance(t("fakeCall.script"));
+    line.lang = lang === "hi" ? "hi-IN" : "en-IN";
+    const timer = window.setTimeout(() => window.speechSynthesis.speak(line), 1200);
+    return () => {
+      window.clearTimeout(timer);
+      window.speechSynthesis.cancel();
+    };
+  }, [phase, t, lang]);
+
+  // "Keypad" on the call screen sends a silent SOS without anything visible changing.
+  const [sosSent, setSosSent] = useState(false);
+  const silentSos = () => {
+    if (sosSent || !user) return;
+    setSosSent(true);
+    navigator.geolocation?.getCurrentPosition(
+      (p) => api("/api/sos", { body: { coords: { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }, silent: true } }).catch(() => {}),
+      () => api("/api/sos", { body: { silent: true } }).catch(() => {}),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30_000 }
+    );
+  };
+
   useEffect(() => {
     if (phase !== "onCall") return;
+    setSosSent(false);
     setCallSeconds(0);
     const timer = window.setInterval(() => setCallSeconds((s) => s + 1), 1000);
     return () => window.clearInterval(timer);
@@ -91,7 +119,9 @@ const FakeCall = () => {
         <CardHeader>
           <Phone className="h-8 w-8 text-primary mb-2" />
           <CardTitle className="text-lg">{t("fakeCall.title")}</CardTitle>
-          <CardDescription>{t("fakeCall.desc")}</CardDescription>
+          <CardDescription>
+            {t("fakeCall.desc")} {user && t("fakeCall.keypadHint")}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {phase === "waiting" ? (
@@ -174,6 +204,19 @@ const FakeCall = () => {
                 />
               </div>
             ) : (
+              <div className="space-y-8">
+                <div className="grid grid-cols-3 gap-6 text-center text-xs text-white/70">
+                  {[
+                    { key: "mute", icon: <MicOff className="h-6 w-6" />, onClick: undefined },
+                    { key: "keypad", icon: <Grid3x3 className="h-6 w-6" />, onClick: silentSos },
+                    { key: "speaker", icon: <Volume2 className="h-6 w-6" />, onClick: undefined },
+                  ].map((b) => (
+                    <button key={b.key} type="button" onClick={b.onClick} className="flex flex-col items-center gap-2">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10">{b.icon}</span>
+                      {t(`fakeCall.${b.key}` as "fakeCall.mute")}
+                    </button>
+                  ))}
+                </div>
               <div className="flex justify-center">
                 <CallButton
                   label={t("fakeCall.end")}
@@ -181,6 +224,7 @@ const FakeCall = () => {
                   onClick={() => setPhase("idle")}
                   icon={<PhoneOff className="h-8 w-8" />}
                 />
+              </div>
               </div>
             )}
             <p className="text-center text-xs text-white/40">{t("fakeCall.disclaimer")}</p>

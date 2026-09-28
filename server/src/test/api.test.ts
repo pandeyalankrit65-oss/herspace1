@@ -6,7 +6,7 @@ import type { Server } from 'node:http';
 import { app } from '../app';
 import { db } from '../db';
 import { processOverdueCheckIns } from '../routes/checkins';
-import { contactCode } from '../routes/location';
+import { contactCode, processStaleRides } from '../routes/location';
 import { formatAddress, parsePlaces } from '../geo';
 import { keyedHash } from '../util';
 
@@ -670,5 +670,48 @@ describe('SOS audio recordings', () => {
     const other = await newUser('Other');
     assert.equal((await call(`/sos/${sos.data.id}/recordings/${event.pieces[0].id}`, { token: other.token })).status, 404);
     assert.equal((await put(other.token, sos.data.id, audio)).status, 404);
+  });
+});
+
+describe('journeys', () => {
+  test('a ride needs a vehicle, starts a timer, and arriving ends both', async () => {
+    const { token } = await userWithConfirmedContact('Anu');
+    assert.equal((await call('/location-shares', { token, body: { kind: 'ride', minutes: 60, details: {} } })).status, 400);
+
+    const ride = await call('/location-shares', {
+      token,
+      body: { kind: 'ride', minutes: 60, checkInMinutes: 45, details: { vehicle: 'DL01AB1234', vehicleType: 'Cab', app: 'Uber', driver: 'Ramesh', destination: 'Saket' } },
+    });
+    assert.equal(ride.status, 201);
+    assert.equal(ride.data.share.note, 'Cab DL01AB1234 (Uber, driver Ramesh) to Saket');
+    assert.ok(ride.data.checkIn.dueAt);
+    assert.equal((await call('/check-ins/current', { token })).data.checkIn.note, 'Cab DL01AB1234 (Uber, driver Ramesh) to Saket');
+
+    await call(`/location-shares/${ride.data.share.id}/stop`, { token, body: {} });
+    assert.equal((await call('/check-ins/current', { token })).data.checkIn, null, 'arriving completes the timer');
+  });
+
+  test('a meeting needs a person; a missed check-in alerts contacts', async () => {
+    const { token } = await userWithConfirmedContact('Bina');
+    assert.equal((await call('/location-shares', { token, body: { kind: 'meeting', minutes: 60, details: {} } })).status, 400);
+    const meet = await call('/location-shares', { token, body: { kind: 'meeting', minutes: 60, checkInMinutes: 30, details: { person: 'Rahul', place: 'Cafe Blue' } } });
+    assert.equal(meet.data.share.note, 'Meeting Rahul at Cafe Blue');
+    const alerted = await processOverdueCheckIns(new Date(Date.now() + 31 * 60_000));
+    assert.ok(alerted >= 1);
+    assert.equal((await call('/check-ins/current', { token })).data.checkIn.status, 'alerted');
+  });
+
+  test('a ride whose location stops updating warns contacts once', async () => {
+    const { token } = await userWithConfirmedContact('Chitra');
+    const ride = await call('/location-shares', { token, body: { kind: 'ride', minutes: 60, details: { vehicle: 'KA05MN4321' } } });
+    const later = new Date(Date.now() + 11 * 60_000);
+    assert.ok((await processStaleRides(later)) >= 1);
+    const row = db.prepare('SELECT stale_alerted_at FROM location_shares WHERE id = ?').get(ride.data.share.id) as { stale_alerted_at: string | null };
+    assert.ok(row.stale_alerted_at);
+    const again = db.prepare('SELECT COUNT(*) AS n FROM location_shares WHERE id = ? AND stale_alerted_at IS NULL').get(ride.data.share.id) as { n: number };
+    assert.equal(again.n, 0);
+    // A new position re-arms the warning.
+    await call(`/location-shares/${ride.data.share.id}/location`, { token, body: { coords: { lat: 12.9, lng: 77.6 } } });
+    assert.equal((db.prepare('SELECT stale_alerted_at FROM location_shares WHERE id = ?').get(ride.data.share.id) as { stale_alerted_at: string | null }).stale_alerted_at, null);
   });
 });

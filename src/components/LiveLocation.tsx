@@ -8,7 +8,7 @@ import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
 
 export type ShareAck = { name: string | null; at: string };
-export type LiveShare = { id: number; expiresAt: string; url?: string; kind?: "sos" | "walk"; acks?: ShareAck[] };
+export type LiveShare = { id: number; expiresAt: string; url?: string; kind?: "sos" | "walk" | "ride" | "meeting"; checkInDueAt?: string | null; acks?: ShareAck[] };
 
 const ACKS_POLL_MS = 10_000;
 
@@ -31,7 +31,8 @@ type WakeLockSentinel = { release: () => Promise<void> };
 const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => void }) => {
   const { toast } = useToast();
   const { t, tn } = useI18n();
-  const walk = share.kind === "walk";
+  // Walks, rides and meetings are journeys: calm wording and "I've arrived" to stop.
+  const walk = share.kind !== undefined && share.kind !== "sos";
   const [acks, setAcks] = useState<ShareAck[]>(share.acks ?? []);
   const [now, setNow] = useState(Date.now());
   const [lastSent, setLastSent] = useState<Date | null>(null);

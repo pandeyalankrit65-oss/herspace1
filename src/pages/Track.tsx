@@ -12,7 +12,7 @@ import { useI18n } from "@/i18n";
 type Position = { lat: number; lng: number; accuracy: number | null; updatedAt: string };
 type TrackView = {
   name: string;
-  kind: "sos" | "walk";
+  kind: "sos" | "walk" | "ride" | "meeting";
   note: string | null;
   active: boolean;
   acked: boolean;
@@ -110,7 +110,7 @@ const Track = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="h-6 w-6 text-green-500" />
-                  {view.kind === "walk"
+                  {view.kind !== "sos"
                     ? t("track.walkEndedTitle", { name: view.name })
                     : view.endedAt
                       ? t("track.safeTitle", { name: view.name })
@@ -118,9 +118,9 @@ const Track = () => {
                 </CardTitle>
                 <CardDescription>
                   {view.endedAt
-                    ? t(view.kind === "walk" ? "track.walkEndedDesc" : "track.safeDesc", { time: new Date(view.endedAt).toLocaleString() })
+                    ? t(view.kind !== "sos" ? "track.walkEndedDesc" : "track.safeDesc", { time: new Date(view.endedAt).toLocaleString() })
                     : t("track.expiredDesc")}{" "}
-                  {view.kind !== "walk" && t("track.stillWorried")}
+                  {view.kind === "sos" && t("track.stillWorried")}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -129,11 +129,11 @@ const Track = () => {
           {view?.active && (
             <>
               <div className="space-y-2">
-                {view.kind === "walk" ? (
+                {view.kind !== "sos" ? (
                   <>
                     <h1 className="flex items-center gap-2 text-3xl font-extrabold">
                       <Footprints className="h-7 w-7 text-primary" />
-                      {t("track.walkTitle", { name: view.name })}
+                      {t(view.kind === "ride" ? "track.rideTitle" : view.kind === "meeting" ? "track.meetingTitle" : "track.walkTitle", { name: view.name })}
                     </h1>
                     <p className="text-muted-foreground">{t("track.walkIntro", { name: view.name })}</p>
                   </>
@@ -150,18 +150,18 @@ const Track = () => {
               {view.acked ? (
                 <p role="status" className="flex items-center gap-2 rounded-xl border border-success/40 bg-success/10 p-3 text-sm font-semibold">
                   <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
-                  {t(view.kind === "walk" ? "track.followingThanks" : "track.ackThanks", { name: view.name })}
+                  {t(view.kind !== "sos" ? "track.followingThanks" : "track.ackThanks", { name: view.name })}
                 </p>
               ) : (
                 <Button
-                  variant={view.kind === "walk" ? "glass" : "hero"}
+                  variant={view.kind !== "sos" ? "glass" : "hero"}
                   size="lg"
                   className="w-full gap-2"
                   onClick={acknowledge}
                   disabled={acking}
                 >
                   <CheckCircle2 className="h-5 w-5" />
-                  {t(view.kind === "walk" ? "track.following" : "track.onMyWay")}
+                  {t(view.kind !== "sos" ? "track.following" : "track.onMyWay")}
                 </Button>
               )}
 
