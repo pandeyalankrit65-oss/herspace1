@@ -1,7 +1,7 @@
 import Logo from "@/components/Logo";
 import QuickExit from "@/components/QuickExit";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, ChevronDown, Languages, LogOut, Monitor, Moon, ShieldCheck, Sun, User, Users } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, Languages, LogOut, Monitor, Moon, ShieldCheck, Sun, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme, type ThemeChoice } from "@/contexts/ThemeContext";
-import { LANGS, useI18n } from "@/i18n";
+import { LANGS, useI18n, type Lang } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { cn } from "@/lib/utils";
 
@@ -36,19 +36,26 @@ const THEME_ICONS: Record<ThemeChoice, typeof Sun> = { system: Monitor, light: S
 
 export const LanguageToggle = () => {
   const { t, lang, setLang } = useI18n();
-  const other = lang === "en" ? "hi" : "en";
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="gap-1.5 text-muted-foreground hover:text-foreground"
-      onClick={() => setLang(other)}
-      aria-label={t("nav.switchLanguage")}
-      lang={other}
-    >
-      <Languages className="h-4 w-4" />
-      {LANGS[other].label}
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" aria-label={t("nav.switchLanguage")}>
+          <Languages className="h-4 w-4" />
+          <span lang={lang}>{LANGS[lang].label}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {(Object.keys(LANGS) as Lang[]).map((l) => (
+          <DropdownMenuItem key={l} lang={l} onSelect={() => setLang(l)} className="justify-between gap-4">
+            <span>
+              {LANGS[l].label}
+              {l !== "en" && <span className="ml-2 text-xs text-muted-foreground">{LANGS[l].english}</span>}
+            </span>
+            {LANGS[l].beta ? <span className="text-[10px] font-semibold uppercase text-muted-foreground">beta</span> : lang === l ? <Check className="h-4 w-4" /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

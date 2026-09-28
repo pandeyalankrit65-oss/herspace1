@@ -64,6 +64,13 @@ const TranslationNote = ({ lang }: { lang: LegalLang }) => {
       </p>
     );
   }
+  if (appLang !== "en") {
+    return (
+      <p lang={appLang} className="rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm">
+        {t("legal.englishOnly")}
+      </p>
+    );
+  }
   return null;
 };
 

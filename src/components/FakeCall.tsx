@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useI18n } from "@/i18n";
+import { speechLocale, useI18n } from "@/i18n";
 
 const DELAYS = [0, 10, 30, 60];
 
@@ -78,7 +78,7 @@ const FakeCall = () => {
   useEffect(() => {
     if (phase !== "onCall" || !("speechSynthesis" in window)) return;
     const line = new SpeechSynthesisUtterance(t("fakeCall.script"));
-    line.lang = lang === "hi" ? "hi-IN" : "en-IN";
+    line.lang = speechLocale(lang);
     const timer = window.setTimeout(() => window.speechSynthesis.speak(line), 1200);
     return () => {
       window.clearTimeout(timer);

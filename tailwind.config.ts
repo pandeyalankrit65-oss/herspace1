@@ -22,11 +22,14 @@ export default {
         },
       },
       fontFamily: {
-        // Latin text uses Plus Jakarta Sans; Devanagari characters fall through to Noto Sans
-        // Devanagari, so Hindi and English share one consistent, self-hosted type system.
+        // Latin text uses Plus Jakarta Sans; Devanagari (Hindi, Marathi), Tamil and Bengali
+        // characters fall through to Noto Sans. Fonts are self-hosted and split by script, so a
+        // browser only downloads the ones a page actually uses.
         sans: [
           '"Plus Jakarta Sans Variable"',
           '"Noto Sans Devanagari Variable"',
+          '"Noto Sans Tamil Variable"',
+          '"Noto Sans Bengali Variable"',
           "ui-sans-serif",
           "system-ui",
           "sans-serif",

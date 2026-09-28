@@ -99,10 +99,25 @@ test("a speech-service failure is shown instead of silently looping", async ({ p
 
 test("in Hindi it listens in hi-IN and responds to बचाओ", async ({ page }) => {
   await page.getByRole("button", { name: "Change language" }).click();
+  await page.getByRole("menuitem", { name: /हिन्दी/ }).click();
   await expect.poll(() => page.evaluate(() => (window as never as { __speech: Speech }).__speech.lang)).toBe("hi-IN");
   await page.evaluate(() => (window as never as { __speech: Speech }).__speech.say("बचाओ"));
   await expect(page.getByText("अलर्ट भेजा जा रहा है...")).toBeVisible();
 });
+
+for (const [menu, locale, word, sending] of [
+  [/தமிழ்/, "ta-IN", "உதவி", "எச்சரிக்கை அனுப்புகிறது..."],
+  [/বাংলা/, "bn-IN", "বাঁচাও", "সতর্কতা পাঠানো হচ্ছে..."],
+  [/मराठी/, "mr-IN", "वाचवा", "अलर्ट पाठवत आहे..."],
+] as const) {
+  test(`in ${locale} it listens in that language and responds to ${word}`, async ({ page }) => {
+    await page.getByRole("button", { name: "Change language" }).click();
+    await page.getByRole("menuitem", { name: menu }).click();
+    await expect.poll(() => page.evaluate(() => (window as never as { __speech: Speech }).__speech.lang)).toBe(locale);
+    await page.evaluate((w) => (window as never as { __speech: Speech }).__speech.say(w), word);
+    await expect(page.getByText(sending)).toBeVisible();
+  });
+}
 
 test("the listening button's label fits inside it on small screens", async ({ page }) => {
   const button = page.getByRole("button", { name: /Listening for/ });

@@ -5,6 +5,7 @@ test("switching to Hindi translates the SOS page and is remembered", async ({ pa
   await expect(page.getByRole("button", { name: /EMERGENCY SOS/ })).toBeVisible();
 
   await page.getByRole("button", { name: "Change language" }).click();
+  await page.getByRole("menuitem", { name: /हिन्दी/ }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
   await expect(page.getByRole("heading", { name: "आपातकालीन SOS" })).toBeVisible();
   await expect(page.getByRole("link", { name: "112 पर कॉल करें" })).toBeVisible();
@@ -32,6 +33,7 @@ test("switching to Hindi translates the SOS page and is remembered", async ({ pa
 
   // And back to English.
   await page.getByRole("button", { name: "भाषा बदलें" }).click();
+  await page.getByRole("menuitem", { name: /English/ }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.getByLabel("Email")).toBeVisible();
 });

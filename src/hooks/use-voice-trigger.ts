@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isNative } from "@/lib/native";
+import { speechLocale, type Lang } from "@/i18n";
 
 // Minimal typing for the Web Speech API, which isn't in TypeScript's DOM lib.
 type RecognitionResultList = ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
@@ -25,7 +26,9 @@ const getRecognition = (): RecognitionCtor | undefined => {
 // Words that start the SOS countdown. The countdown can be cancelled, so this leans towards
 // triggering: a missed call for help is worse than a cancelled false alarm. Chrome sometimes
 // writes English words in Devanagari when listening in Hindi, hence "हेल्प".
-const TRIGGER = /\bhelp\b|\bbachao\b|\bbachaao\b|बचाओ|बचाव|मदद|हेल्प/i;
+// Tamil: உதவி (help), காப்பாத்து/காப்பாற்று (save me). Bengali: বাঁচাও (save me), সাহায্য (help).
+// Marathi: वाचवा (save me), मदत (help).
+const TRIGGER = /\bhelp\b|\bbachao\b|\bbachaao\b|बचाओ|बचाव|मदद|हेल्प|உதவி|காப்பா|বাঁচাও|বাচাও|সাহায্য|वाचवा|मदत/i;
 export const isTriggerPhrase = (text: string) => TRIGGER.test(text);
 
 // Errors after which retrying won't help; anything else (silence, a dropped session) restarts.
@@ -48,7 +51,7 @@ const NATIVE_CHECK_MS = 2000;
  * Listens continuously for a call for help and calls `onTrigger` once when it hears one.
  * Only works while the page is open and visible; browsers stop recognition in the background.
  */
-export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrigger: () => void }) {
+export function useVoiceTrigger({ lang, onTrigger }: { lang: Lang; onTrigger: () => void }) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<VoiceError | null>(null);
   const [errorDetail, setErrorDetail] = useState("");
@@ -119,7 +122,7 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
     if (permission?.speechRecognition !== "granted") return fail("blocked");
     if (!wantRef.current) return;
 
-    const language = lang === "hi" ? "hi-IN" : navigator.language || "en-IN";
+    const language = lang === "en" ? navigator.language || "en-IN" : speechLocale(lang);
     let lastLaunch = 0;
     const launch = () => {
       // Starting again while the previous session is still closing makes the recognizer busy.
@@ -168,7 +171,7 @@ export function useVoiceTrigger({ lang, onTrigger }: { lang: "en" | "hi"; onTrig
     setHeard("");
     wantRef.current = true;
 
-    let recognitionLang = lang === "hi" ? "hi-IN" : navigator.language || "en-US";
+    let recognitionLang = lang === "en" ? navigator.language || "en-US" : speechLocale(lang);
 
     const launch = () => {
       if (!wantRef.current) return;

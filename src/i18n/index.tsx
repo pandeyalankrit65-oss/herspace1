@@ -1,12 +1,24 @@
 import { createContext, Fragment, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import en, { type MessageKey } from "./en";
 import hi from "./hi";
+import ta from "./ta";
+import bn from "./bn";
+import mr from "./mr";
 
-export type Lang = "en" | "hi";
-export const LANGS: Record<Lang, { label: string; messages: Record<MessageKey, string> }> = {
-  en: { label: "English", messages: en },
-  hi: { label: "हिन्दी", messages: hi },
+export type Lang = "en" | "hi" | "ta" | "bn" | "mr";
+// beta: machine-assisted translations that still need review by native speakers.
+export const LANGS: Record<Lang, { label: string; english: string; beta?: boolean; messages: Partial<Record<MessageKey, string>> }> = {
+  en: { label: "English", english: "English", messages: en },
+  hi: { label: "हिन्दी", english: "Hindi", messages: hi },
+  ta: { label: "தமிழ்", english: "Tamil", beta: true, messages: ta },
+  bn: { label: "বাংলা", english: "Bengali", beta: true, messages: bn },
+  mr: { label: "मराठी", english: "Marathi", beta: true, messages: mr },
 };
+const isLang = (v: unknown): v is Lang => typeof v === "string" && v in LANGS;
+
+// Locale for speech (voice trigger, read aloud, fake call) and dates.
+const LOCALES: Record<Lang, string> = { en: "en-IN", hi: "hi-IN", ta: "ta-IN", bn: "bn-IN", mr: "mr-IN" };
+export const speechLocale = (lang: Lang) => LOCALES[lang];
 
 const STORAGE_KEY = "herspace_lang";
 type Vars = Record<string, string | number>;
@@ -14,11 +26,12 @@ type Vars = Record<string, string | number>;
 export function initialLang(): Lang {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "en" || saved === "hi") return saved;
+    if (isLang(saved)) return saved;
   } catch {
     // ignore
   }
-  return typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("hi") ? "hi" : "en";
+  const browser = typeof navigator !== "undefined" ? navigator.language?.toLowerCase().slice(0, 2) : "";
+  return isLang(browser) ? browser : "en";
 }
 
 // Replaces {name} placeholders. Missing keys fall back to English (the types prevent this,

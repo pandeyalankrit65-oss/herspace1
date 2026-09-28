@@ -21,6 +21,9 @@ const Help = () => {
       <main className="px-4 pb-16 pt-24">
         <div className="container mx-auto max-w-3xl space-y-6">
           <PageHeader icon={LifeBuoy} title={t("help.title")} subtitle={t("help.intro")} />
+          {lang !== "en" && lang !== "hi" && (
+            <p className="rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm">{t("help.englishOnly")}</p>
+          )}
 
           <section aria-labelledby="helplines">
             <h2 id="helplines" className="mb-3 text-lg font-bold">
