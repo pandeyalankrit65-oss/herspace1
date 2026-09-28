@@ -8,7 +8,7 @@ import { signUp } from "./helpers";
 // Reduced motion shows scroll-reveal sections straight away, so axe checks all of them.
 test.use({ reducedMotion: "reduce" });
 
-const PUBLIC_PAGES = ["/", "/sos", "/report", "/support", "/map", "/circles", "/corporate", "/about", "/login", "/signup", "/forgot-password", "/timer", "/walk", "/privacy", "/terms", "/track/not-a-real-token", "/no-such-page"];
+const PUBLIC_PAGES = ["/", "/sos", "/report", "/support", "/map", "/circles", "/corporate", "/about", "/login", "/signup", "/forgot-password", "/timer", "/walk", "/privacy", "/terms", "/help", "/complaint", "/track/not-a-real-token", "/no-such-page"];
 const SIGNED_IN_PAGES = ["/", "/sos", "/contacts", "/account", "/timer", "/walk", "/moderation"];
 
 async function audit(page: Page, path: string) {

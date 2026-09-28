@@ -185,6 +185,9 @@ const Account = () => {
                   </p>
                   <p className="text-sm whitespace-pre-wrap">{r.description}</p>
                   <ReportPhotos reportId={r.id} photos={r.photos ?? []} />
+                  <Link to={`/complaint?report=${r.id}`} className="inline-block pt-1 text-sm font-semibold text-primary underline underline-offset-2">
+                    {t("account.writeComplaint")}
+                  </Link>
                 </div>
               ))}
             </CardContent>

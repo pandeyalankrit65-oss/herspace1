@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ChevronRight, FileText, Footprints, Map, MessageCircle, Phone, Radio, Timer, TriangleAlert, Users } from "lucide-react";
+import { AlertCircle, ChevronRight, FileText, Footprints, Map, MessageCircle, LifeBuoy, Phone, Radio, Timer, TriangleAlert, Users } from "lucide-react";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
@@ -20,6 +20,7 @@ const ACTIONS: Array<{ to: string; icon: typeof Timer; label: MessageKey; text: 
   { to: "/map", icon: Map, label: "nav.map", text: "dash.mapText" },
   { to: "/report", icon: FileText, label: "nav.report", text: "dash.reportText" },
   { to: "/support", icon: MessageCircle, label: "nav.support", text: "dash.supportText" },
+  { to: "/help", icon: LifeBuoy, label: "nav.help", text: "dash.helpText" },
 ];
 
 const greetingKey = (): MessageKey => {

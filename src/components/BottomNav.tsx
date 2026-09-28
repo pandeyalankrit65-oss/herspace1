@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { AlertCircle, FileText, Footprints, Home, LogIn, LogOut, Map, Menu, MessageCircle, ShieldCheck, Timer, User, Users } from "lucide-react";
+import { AlertCircle, FileText, Footprints, Home, LogIn, LogOut, Map, Menu, MessageCircle, ShieldCheck, Timer, LifeBuoy, User, Users } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
@@ -20,6 +20,7 @@ const SHEET_LINKS: Array<{ path: string; label: MessageKey; icon: typeof Home; a
   { path: "/walk", label: "nav.walk", icon: Footprints },
   { path: "/map", label: "nav.map", icon: Map },
   { path: "/support", label: "nav.support", icon: MessageCircle },
+  { path: "/help", label: "nav.help", icon: LifeBuoy },
   { path: "/contacts", label: "nav.emergencyContacts", icon: Users, auth: true },
   { path: "/account", label: "nav.account", icon: User, auth: true },
   { path: "/moderation", label: "nav.moderation", icon: ShieldCheck, moderator: true },
@@ -120,7 +121,7 @@ const BottomNav = () => {
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-            {MORE_LINKS.filter((l) => l.path !== "/walk").map((l) => (
+            {MORE_LINKS.filter((l) => l.path !== "/walk" && l.path !== "/help").map((l) => (
               <button
                 key={l.path}
                 type="button"

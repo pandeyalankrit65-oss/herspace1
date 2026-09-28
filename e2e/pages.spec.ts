@@ -16,6 +16,8 @@ const PAGES: Array<[string, RegExp]> = [
   ["/forgot-password", /Reset your password/],
   ["/privacy", /Privacy Policy/],
   ["/terms", /Terms of Use/],
+  ["/help", /Help & your rights/],
+  ["/complaint", /Write a complaint/],
   ["/track/not-a-real-link", /Link not available/],
   ["/confirm-contact/not-a-real-link", /Link not valid/],
   ["/no-such-page", /404|not found/i],
