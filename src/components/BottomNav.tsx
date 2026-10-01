@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { cn } from "@/lib/utils";
-import { MORE_LINKS } from "./Navbar";
+import { MORE_LINKS } from "./nav-links";
 
 const TABS: Array<{ path: string; label: MessageKey; icon: typeof Home }> = [
   { path: "/", label: "nav.home", icon: Home },

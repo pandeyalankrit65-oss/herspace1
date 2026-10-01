@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import PageHeader from "@/components/PageHeader";
-import { NearbyFilters, NearbyMarkers, NearestHelp, useNearby, type PlaceType } from "@/components/NearbyHelp";
+import { NearbyFilters, NearbyMarkers, NearestHelp } from "@/components/NearbyHelp";
+import { useNearby, type PlaceType } from "@/hooks/use-nearby";
 
 type Point = { id: number; incidentType: string; lat: number; lng: number; date: string };
 

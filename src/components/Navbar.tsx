@@ -17,21 +17,7 @@ import { useTheme, type ThemeChoice } from "@/contexts/ThemeContext";
 import { LANGS, useI18n, type Lang } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { cn } from "@/lib/utils";
-
-export const PRIMARY_LINKS: Array<{ path: string; label: MessageKey }> = [
-  { path: "/timer", label: "nav.timer" },
-  { path: "/report", label: "nav.report" },
-  { path: "/map", label: "nav.map" },
-  { path: "/support", label: "nav.support" },
-];
-
-export const MORE_LINKS: Array<{ path: string; label: MessageKey }> = [
-  { path: "/walk", label: "nav.walk" },
-  { path: "/help", label: "nav.help" },
-  { path: "/about", label: "nav.about" },
-  { path: "/circles", label: "nav.circles" },
-  { path: "/corporate", label: "nav.corporate" },
-];
+import { MORE_LINKS, PRIMARY_LINKS } from "./nav-links";
 
 const THEME_ICONS: Record<ThemeChoice, typeof Sun> = { system: Monitor, light: Sun, dark: Moon };
 

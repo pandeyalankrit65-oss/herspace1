@@ -44,8 +44,15 @@ for (const theme of ["light", "dark"] as const) {
 
     test("signed-in pages have no detectable accessibility violations", async ({ page }) => {
       await signUp(page, "Asha");
+      // A report, so the evidence pack and the complaint letter have something to show.
+      const report = await page.request.post("/api/reports", {
+        headers: { "X-Requested-With": "HerSpace" },
+        data: { incidentType: "harassment", description: "Followed from the bus stop.", location: "Sector 18" },
+      });
+      expect(report.ok()).toBe(true);
+      const { id } = await report.json();
       const found = [];
-      for (const path of SIGNED_IN_PAGES) found.push(...(await audit(page, path)));
+      for (const path of [...SIGNED_IN_PAGES, `/evidence/${id}`, `/complaint?report=${id}`]) found.push(...(await audit(page, path)));
       expect(found).toEqual([]);
     });
   });
