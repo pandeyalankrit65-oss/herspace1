@@ -730,7 +730,7 @@ const en = {
   // Legal page translations
   "legal.translationNote": "This is a translation for your convenience. If it differs from the English version, the English version applies.",
   "legal.readEnglish": "Read the English version",
-  "legal.readHindi": "हिन्दी में पढ़ें",
+  "legal.readTranslation": "Read the translation",
 
   // Safety at home
   "exit.button": "Exit",
@@ -858,7 +858,6 @@ const en = {
   "sos.cantSpeak": "Can't speak or hear?",
 
   // English-only notes
-  "legal.englishOnly": "This page is only available in English for now.",
   "help.englishOnly": "This guide is in English for now. The helplines work in many languages.",
 
   // Offline

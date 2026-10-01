@@ -731,7 +731,7 @@ const hi: Record<MessageKey, string> = {
   // Legal page translations
   "legal.translationNote": "यह अनुवाद आपकी सुविधा के लिए है। अगर इसमें और अंग्रेज़ी संस्करण में कोई अंतर हो, तो अंग्रेज़ी संस्करण मान्य होगा।",
   "legal.readEnglish": "अंग्रेज़ी संस्करण पढ़ें",
-  "legal.readHindi": "हिन्दी में पढ़ें",
+  "legal.readTranslation": "हिन्दी में पढ़ें",
 
   // Safety at home
   "exit.button": "बाहर निकलें",
@@ -859,7 +859,6 @@ const hi: Record<MessageKey, string> = {
   "sos.cantSpeak": "बोल या सुन नहीं सकतीं?",
 
   // English-only notes
-  "legal.englishOnly": "यह पेज अभी सिर्फ़ अंग्रेज़ी में उपलब्ध है।",
   "help.englishOnly": "यह गाइड अभी अंग्रेज़ी में है। हेल्पलाइन कई भाषाओं में काम करती हैं।",
 
   // Offline

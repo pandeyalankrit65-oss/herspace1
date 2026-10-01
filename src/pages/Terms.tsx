@@ -1,6 +1,6 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import LegalPage, { ContactLine, Section, useLegalLang } from "@/components/LegalPage";
-import TermsHi from "./legal/TermsHi";
+import LegalPage, { ContactLine, Section, useLegalLang, type LegalLang } from "@/components/LegalPage";
 import { EMERGENCY_NUMBER } from "@/lib/api";
 
 const TermsEn = () => (
@@ -80,7 +80,24 @@ const TermsEn = () => (
   </LegalPage>
 );
 
-// Hindi readers get the translation; the English text is the binding version.
-const Terms = () => (useLegalLang() === "hi" ? <TermsHi /> : <TermsEn />);
+// Readers get their language; the English text is the binding version. Each translation is
+// downloaded only by people reading it.
+const TRANSLATIONS: Record<Exclude<LegalLang, "en">, React.LazyExoticComponent<() => JSX.Element>> = {
+  hi: lazy(() => import("./legal/TermsHi")),
+  ta: lazy(() => import("./legal/TermsTa")),
+  bn: lazy(() => import("./legal/TermsBn")),
+  mr: lazy(() => import("./legal/TermsMr")),
+};
+
+const Terms = () => {
+  const lang = useLegalLang();
+  if (lang === "en") return <TermsEn />;
+  const Translation = TRANSLATIONS[lang];
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <Translation />
+    </Suspense>
+  );
+};
 
 export default Terms;

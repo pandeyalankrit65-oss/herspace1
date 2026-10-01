@@ -1,6 +1,6 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import LegalPage, { ContactLine, Section, useLegalLang } from "@/components/LegalPage";
-import PrivacyHi from "./legal/PrivacyHi";
+import LegalPage, { ContactLine, Section, useLegalLang, type LegalLang } from "@/components/LegalPage";
 
 const PrivacyEn = () => (
   <LegalPage title="Privacy Policy" updated="28 September 2026">
@@ -137,7 +137,24 @@ const PrivacyEn = () => (
   </LegalPage>
 );
 
-// Hindi readers get the translation; the English text is the binding version.
-const Privacy = () => (useLegalLang() === "hi" ? <PrivacyHi /> : <PrivacyEn />);
+// Readers get their language; the English text is the binding version. Each translation is
+// downloaded only by people reading it.
+const TRANSLATIONS: Record<Exclude<LegalLang, "en">, React.LazyExoticComponent<() => JSX.Element>> = {
+  hi: lazy(() => import("./legal/PrivacyHi")),
+  ta: lazy(() => import("./legal/PrivacyTa")),
+  bn: lazy(() => import("./legal/PrivacyBn")),
+  mr: lazy(() => import("./legal/PrivacyMr")),
+};
+
+const Privacy = () => {
+  const lang = useLegalLang();
+  if (lang === "en") return <PrivacyEn />;
+  const Translation = TRANSLATIONS[lang];
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <Translation />
+    </Suspense>
+  );
+};
 
 export default Privacy;

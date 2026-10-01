@@ -1,13 +1,22 @@
 import { test, expect } from "@playwright/test";
 
 const LANGS = [
-  { menu: /தமிழ்/, code: "ta", sos: "அவசர SOS", hero: "பெண்களுக்கு வலிமை", legalNote: "ஆங்கிலத்தில் மட்டுமே" },
-  { menu: /বাংলা/, code: "bn", sos: "জরুরি SOS", hero: "নারীর ক্ষমতায়ন", legalNote: "শুধু ইংরেজিতে" },
-  { menu: /मराठी/, code: "mr", sos: "आपत्कालीन SOS", hero: "महिलांचे सक्षमीकरण", legalNote: "फक्त इंग्रजीत" },
+  {
+    menu: /தமிழ்/, code: "ta", sos: "அவசர SOS", hero: "பெண்களுக்கு வலிமை",
+    privacy: "தனியுரிமைக் கொள்கை", terms: "பயன்பாட்டு விதிமுறைகள்", readEnglish: "ஆங்கிலப் பதிப்பைப் படி", readBack: "தமிழில் படிக்க",
+  },
+  {
+    menu: /বাংলা/, code: "bn", sos: "জরুরি SOS", hero: "নারীর ক্ষমতায়ন",
+    privacy: "গোপনীয়তা নীতি", terms: "ব্যবহারের শর্তাবলি", readEnglish: "ইংরেজি সংস্করণ পড়ুন", readBack: "বাংলায় পড়ুন",
+  },
+  {
+    menu: /मराठी/, code: "mr", sos: "आपत्कालीन SOS", hero: "महिलांचे सक्षमीकरण",
+    privacy: "गोपनीयता धोरण", terms: "वापराच्या अटी", readEnglish: "इंग्रजी आवृत्ती वाचा", readBack: "मराठीत वाचा",
+  },
 ];
 
 for (const l of LANGS) {
-  test(`the app works in ${l.code}, and says which pages are English only`, async ({ page }) => {
+  test(`the app works in ${l.code}, including the privacy policy and terms`, async ({ page }) => {
     await page.goto("/sos");
     await page.getByRole("button", { name: "Change language" }).click();
     const item = page.getByRole("menuitem", { name: l.menu });
@@ -29,9 +38,15 @@ for (const l of LANGS) {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: new RegExp(l.hero) })).toBeVisible();
 
+    // Legal pages are translated, say the English version is binding, and link to it and back.
     await page.goto("/privacy");
-    await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
-    await expect(page.getByText(l.legalNote, { exact: false })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: l.privacy })).toBeVisible();
+    await page.getByRole("link", { name: l.readEnglish }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Privacy Policy" })).toBeVisible();
+    await page.getByRole("link", { name: l.readBack }).click();
+    await expect(page.getByRole("heading", { level: 1, name: l.privacy })).toBeVisible();
+    await page.goto("/terms");
+    await expect(page.getByRole("heading", { level: 1, name: l.terms })).toBeVisible();
   });
 }
 
@@ -40,7 +55,7 @@ test("longer translations don't overflow a phone screen", async ({ page, isMobil
   for (const l of LANGS) {
     await page.goto("/");
     await page.evaluate((code) => localStorage.setItem("herspace_lang", code), l.code);
-    for (const path of ["/", "/sos", "/walk", "/map", "/help", "/report"]) {
+    for (const path of ["/", "/sos", "/walk", "/map", "/help", "/report", "/privacy", "/terms"]) {
       await page.goto(path);
       await page.waitForLoadState("networkidle");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
