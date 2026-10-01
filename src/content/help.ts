@@ -1,21 +1,26 @@
-// "Help & your rights": practical guidance for India, in English and Hindi. This is general
+import type { Lang } from "@/i18n";
+import { ta } from "./help-ta";
+import { bn } from "./help-bn";
+import { mr } from "./help-mr";
+
+// "Help & your rights": practical guidance for India, in every app language. This is general
 // information, not legal or medical advice. Review it with a lawyer or a women's-rights
 // organisation before launch, and whenever laws or helplines change (see REVIEWED).
 
-export const REVIEWED = { en: "September 2026", hi: "सितंबर 2026" };
+export const REVIEWED: Record<Lang, string> = { en: "September 2026", hi: "सितंबर 2026", ta: "செப்டம்பர் 2026", bn: "সেপ্টেম্বর 2026", mr: "सप्टेंबर 2026" };
 
-export type Helpline = { number: string; label: { en: string; hi: string } };
+export type Helpline = { number: string; label: Record<Lang, string> };
 
 // Tap-to-call numbers. National unless noted; some states run their own as well.
 export const HELPLINES: Helpline[] = [
-  { number: "112", label: { en: "Emergency: police, fire, ambulance", hi: "आपातकाल: पुलिस, फ़ायर, एम्बुलेंस" } },
-  { number: "181", label: { en: "Women Helpline (24x7)", hi: "महिला हेल्पलाइन (24x7)" } },
-  { number: "108", label: { en: "Ambulance (most states)", hi: "एम्बुलेंस (ज़्यादातर राज्य)" } },
-  { number: "1930", label: { en: "Cybercrime helpline", hi: "साइबर अपराध हेल्पलाइन" } },
-  { number: "7827170170", label: { en: "National Commission for Women (WhatsApp)", hi: "राष्ट्रीय महिला आयोग (WhatsApp)" } },
-  { number: "15100", label: { en: "Free legal aid (NALSA)", hi: "मुफ़्त कानूनी सहायता (NALSA)" } },
-  { number: "14416", label: { en: "Tele-MANAS mental health", hi: "टेली-मानस मानसिक स्वास्थ्य" } },
-  { number: "1098", label: { en: "Childline (under 18)", hi: "चाइल्डलाइन (18 से कम उम्र)" } },
+  { number: "112", label: { en: "Emergency: police, fire, ambulance", hi: "आपातकाल: पुलिस, फ़ायर, एम्बुलेंस", ta: "அவசரம்: காவல்துறை, தீயணைப்பு, ஆம்புலன்ஸ்", bn: "জরুরি: পুলিশ, দমকল, অ্যাম্বুলেন্স", mr: "आपत्कालीन: पोलीस, अग्निशमन, रुग्णवाहिका" } },
+  { number: "181", label: { en: "Women Helpline (24x7)", hi: "महिला हेल्पलाइन (24x7)", ta: "பெண்கள் உதவி எண் (24x7)", bn: "মহিলা হেল্পলাইন (24x7)", mr: "महिला हेल्पलाइन (24x7)" } },
+  { number: "108", label: { en: "Ambulance (most states)", hi: "एम्बुलेंस (ज़्यादातर राज्य)", ta: "ஆம்புலன்ஸ் (பெரும்பாலான மாநிலங்கள்)", bn: "অ্যাম্বুলেন্স (বেশিরভাগ রাজ্যে)", mr: "रुग्णवाहिका (बहुतांश राज्ये)" } },
+  { number: "1930", label: { en: "Cybercrime helpline", hi: "साइबर अपराध हेल्पलाइन", ta: "சைபர் குற்ற உதவி எண்", bn: "সাইবার অপরাধ হেল্পলাইন", mr: "सायबर गुन्हे हेल्पलाइन" } },
+  { number: "7827170170", label: { en: "National Commission for Women (WhatsApp)", hi: "राष्ट्रीय महिला आयोग (WhatsApp)", ta: "தேசிய மகளிர் ஆணையம் (WhatsApp)", bn: "জাতীয় মহিলা কমিশন (WhatsApp)", mr: "राष्ट्रीय महिला आयोग (WhatsApp)" } },
+  { number: "15100", label: { en: "Free legal aid (NALSA)", hi: "मुफ़्त कानूनी सहायता (NALSA)", ta: "இலவச சட்ட உதவி (NALSA)", bn: "বিনামূল্যে আইনি সাহায্য (NALSA)", mr: "मोफत कायदेशीर मदत (NALSA)" } },
+  { number: "14416", label: { en: "Tele-MANAS mental health", hi: "टेली-मानस मानसिक स्वास्थ्य", ta: "டெலி-மனஸ் மனநலம்", bn: "টেলি-মানস মানসিক স্বাস্থ্য", mr: "टेली-मानस मानसिक आरोग्य" } },
+  { number: "1098", label: { en: "Childline (under 18)", hi: "चाइल्डलाइन (18 से कम उम्र)", ta: "சைல்ட்லைன் (18 வயதுக்குக் கீழ்)", bn: "চাইল্ডলাইন (18 বছরের কম)", mr: "चाइल्डलाइन (18 वर्षांखालील)" } },
 ];
 
 export type HelpLink = { label: string; href: string };
@@ -201,4 +206,6 @@ const hi: HelpSection[] = [
   },
 ];
 
-export const HELP_SECTIONS: Record<"en" | "hi", HelpSection[]> = { en, hi };
+// Tamil, Bengali and Marathi (help-ta.ts and so on) were drafted with AI assistance from the
+// English; they keep the same section ids, so links like /help#police work in every language.
+export const HELP_SECTIONS: Record<Lang, HelpSection[]> = { en, hi, ta, bn, mr };

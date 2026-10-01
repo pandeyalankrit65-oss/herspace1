@@ -11,8 +11,7 @@ import { HELP_SECTIONS, HELPLINES, REVIEWED } from "@/content/help";
 // Help & your rights: helplines, what to do after an incident, and the law in plain words.
 const Help = () => {
   const { t, lang } = useI18n();
-  const l = lang === "hi" ? "hi" : "en";
-  const sections = HELP_SECTIONS[l];
+  const sections = HELP_SECTIONS[lang];
   const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : "";
 
   return (
@@ -21,9 +20,6 @@ const Help = () => {
       <main className="px-4 pb-16 pt-24">
         <div className="container mx-auto max-w-3xl space-y-6">
           <PageHeader icon={LifeBuoy} title={t("help.title")} subtitle={t("help.intro")} />
-          {lang !== "en" && lang !== "hi" && (
-            <p className="rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm">{t("help.englishOnly")}</p>
-          )}
 
           <section aria-labelledby="helplines">
             <h2 id="helplines" className="mb-3 text-lg font-bold">
@@ -41,7 +37,7 @@ const Help = () => {
                     </span>
                     <span className="min-w-0">
                       <span className="block text-lg font-extrabold tabular-nums">{h.number}</span>
-                      <span className="block text-sm text-muted-foreground">{h.label[l]}</span>
+                      <span className="block text-sm text-muted-foreground">{h.label[lang]}</span>
                     </span>
                   </a>
                 </li>
@@ -87,7 +83,7 @@ const Help = () => {
             </CardContent>
           </Card>
 
-          <p className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">{t("help.disclaimer", { date: REVIEWED[l] })}</p>
+          <p className="rounded-xl border bg-muted/40 p-4 text-sm text-muted-foreground">{t("help.disclaimer", { date: REVIEWED[lang] })}</p>
         </div>
       </main>
       <Footer />

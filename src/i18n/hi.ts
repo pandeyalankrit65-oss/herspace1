@@ -859,7 +859,6 @@ const hi: Record<MessageKey, string> = {
   "sos.cantSpeak": "बोल या सुन नहीं सकतीं?",
 
   // English-only notes
-  "help.englishOnly": "यह गाइड अभी अंग्रेज़ी में है। हेल्पलाइन कई भाषाओं में काम करती हैं।",
 
   // Offline
   "offline.pill": "आप ऑफ़लाइन हैं · SOS अब भी मैसेज और कॉल करता है",

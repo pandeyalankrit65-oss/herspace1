@@ -858,7 +858,6 @@ const en = {
   "sos.cantSpeak": "Can't speak or hear?",
 
   // English-only notes
-  "help.englishOnly": "This guide is in English for now. The helplines work in many languages.",
 
   // Offline
   "offline.pill": "You're offline · SOS still texts and calls",
