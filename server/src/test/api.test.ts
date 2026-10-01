@@ -720,19 +720,29 @@ describe('emergency info and battery', () => {
   const info = { bloodGroup: 'O-', allergies: 'Penicillin', medications: '', conditions: 'Asthma', notes: '' };
 
   test('private until sharing is on, then shown only on an active SOS', async () => {
-    const { token } = await userWithConfirmedContact('Ira');
+    const { token, contactId } = await userWithConfirmedContact('Ira');
     assert.deepEqual((await call('/account/emergency-info', { token })).data, { info: null, share: false });
     assert.equal((await call('/account/emergency-info', { token, method: 'PUT', body: { info: { ...info, bloodGroup: 'Z+' }, share: true } })).status, 400);
 
     await call('/account/emergency-info', { token, method: 'PUT', body: { info, share: false } });
     const sos = await call('/sos', { token, body: {} });
-    const track = () => call(`/track/${sos.data.share.url.split('/track/')[1]}`);
+    // The contact's personal link (as in their SMS) and the plain link (which can be forwarded).
+    const shareToken = sos.data.share.url.split('/track/')[1];
+    const track = () => call(`/track/${shareToken}?c=${contactCode(sos.data.share.id, contactId)}`);
+    const plain = () => call(`/track/${shareToken}`);
     assert.equal((await track()).data.emergencyInfo, null, 'not shared');
 
     const saved = await call('/account/emergency-info', { token, method: 'PUT', body: { info, share: true } });
     assert.deepEqual(saved.data, { info, share: true });
     assert.deepEqual((await track()).data.emergencyInfo, info);
+    assert.equal((await plain()).data.emergencyInfo, null, 'never on the plain link');
+    assert.ok((await plain()).data.battery !== undefined, 'the plain link still works');
     assert.deepEqual((await call('/account/export', { token })).data.user.emergencyInfo, info);
+
+    // A contact who withdraws stops seeing it.
+    db.prepare("UPDATE contacts SET status = 'declined' WHERE id = ?").run(contactId);
+    assert.equal((await track()).data.emergencyInfo, null, 'withdrawn contact');
+    db.prepare("UPDATE contacts SET status = 'confirmed' WHERE id = ?").run(contactId);
 
     await call(`/location-shares/${sos.data.share.id}/stop`, { token, body: {} });
     assert.equal((await track()).data.emergencyInfo, null, 'gone once she is safe');
@@ -825,6 +835,25 @@ describe('evidence pack', () => {
     const stranger = await newUser('Stranger');
     assert.equal((await call(`/reports/${report.data.id}/evidence`, { token: stranger.token })).status, 404);
     assert.equal((await call(`/reports/${report.data.id}/evidence`)).status, 401);
+  });
+});
+
+describe('security review 2', () => {
+  test('report dates must be real calendar dates', async () => {
+    const { token } = await newUser('Ritu');
+    for (const date of ['2026-13-45', '2026-02-30', '2026-00-10']) {
+      assert.equal((await call('/reports', { token, body: { incidentType: 'other', description: 'x', date } })).status, 400, date);
+    }
+    assert.equal((await call('/reports', { token, body: { incidentType: 'other', description: 'x', date: '2024-02-29' } })).status, 201, 'leap day');
+  });
+
+  test('an evidence pack still opens for a report saved with an impossible date', async () => {
+    const { token } = await newUser('Sana');
+    const report = await call('/reports', { token, body: { incidentType: 'other', description: 'old one' } });
+    db.prepare("UPDATE reports SET incident_date = '2026-13-45' WHERE id = ?").run(report.data.id);
+    const pack = await call(`/reports/${report.data.id}/evidence`, { token });
+    assert.equal(pack.status, 200);
+    assert.deepEqual(pack.data.sosEvents, []);
   });
 });
 

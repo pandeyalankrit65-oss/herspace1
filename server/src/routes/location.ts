@@ -324,8 +324,10 @@ trackRouter.get('/:token', trackLimiter, (req, res) => {
     battery: active && share.battery !== null ? { level: share.battery, charging: Boolean(share.charging) } : null,
     destination: share.kind === 'sos' ? null : share.destination,
     arrived: Boolean(share.arrived),
-    // Health details only during an emergency, and only if the user chose to share them.
-    emergencyInfo: active && share.kind === 'sos' && share.emergencyInfoShare && share.emergencyInfo ? JSON.parse(share.emergencyInfo) : null,
+    // Health details only during an emergency, only if the user chose to share them, and only
+    // on a confirmed contact's personal link: the plain link can end up in a forwarded group text.
+    emergencyInfo:
+      active && contact?.status === 'confirmed' && share.kind === 'sos' && share.emergencyInfoShare && share.emergencyInfo ? JSON.parse(share.emergencyInfo) : null,
   });
 });
 

@@ -36,9 +36,14 @@ const reportSchema = z.object({
   incidentType: z.enum(['harassment', 'assault', 'stalking', 'threat', 'discrimination', 'other']),
   description: z.string().trim().min(1).max(5000),
   location: z.string().trim().max(200).optional().default(''),
+  // A real calendar date (2026-13-45 matches the pattern but isn't one).
   date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((d) => {
+      const t = Date.parse(`${d}T00:00:00Z`);
+      return !Number.isNaN(t) && new Date(t).toISOString().startsWith(d);
+    }, 'Enter a real date.')
     .optional()
     .or(z.literal('')),
   coords: coordsSchema.optional(),
@@ -115,8 +120,10 @@ reportsRouter.get('/:id/evidence', requireAuth, (req, res) => {
     .get(Number(req.params.id), user.id) as { id: number; date: string | null; createdAt: string } | undefined;
   if (!report) return res.status(404).json({ error: 'Report not found.' });
 
-  // The incident's day (or the day it was reported), widened by a day each side.
-  const day = new Date(`${(report.date ?? report.createdAt).slice(0, 10)}T00:00:00Z`).getTime();
+  // The incident's day (or the day it was reported), widened by a day each side. Dates saved
+  // before they were checked for being real calendar dates fall back to the report's own date.
+  const parsed = new Date(`${report.date ?? ''}T00:00:00Z`).getTime();
+  const day = Number.isNaN(parsed) ? new Date(`${report.createdAt.slice(0, 10)}T00:00:00Z`).getTime() : parsed;
   const from = new Date(day - DAY_MS).toISOString();
   const to = new Date(day + 2 * DAY_MS).toISOString();
   const events = db
