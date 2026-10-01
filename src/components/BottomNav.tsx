@@ -65,7 +65,7 @@ const BottomNav = () => {
       <div aria-hidden className="pb-bottom-nav lg:hidden" />
       <nav
         aria-label={t("nav.mainNav")}
-        className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75 lg:hidden"
+        className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/90 lg:hidden"
       >
         <div className="mx-auto flex h-16 max-w-md items-stretch">
           {TABS.map((tab) => (
