@@ -38,6 +38,13 @@ test("a saved report becomes a complaint letter", async ({ page }) => {
   await expect(letter).toHaveValue(/Internal Committee \(POSH\)/);
   await expect(page.getByRole("link", { name: "Email" })).toHaveAttribute("href", /^mailto:\?subject=Complaint%20of%20sexual%20harassment/);
 
+  // The letter can be in another language than the app, e.g. Tamil for a station in Chennai.
+  await page.getByLabel("Letter language").selectOption("ta");
+  await expect(letter).toHaveValue(/பொருள்: POSH சட்டம்/);
+  await expect(letter).toHaveValue(/Kavita ஆகிய நான்/);
+  await expect(page.getByRole("link", { name: "Email" })).toHaveAttribute("href", new RegExp(`subject=${encodeURIComponent("POSH")}`));
+  await page.getByLabel("Letter language").selectOption("en");
+
   // Printing shows only the letter, not the form.
   const printed = page.locator(".print-doc");
   await expect(printed).toBeHidden();

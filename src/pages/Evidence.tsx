@@ -103,7 +103,7 @@ const Evidence = () => {
         witnesses: "",
         attachments: r.photos.length,
       },
-      lang === "hi" ? "hi" : "en",
+      lang,
     );
   }, [pack, lang]);
 

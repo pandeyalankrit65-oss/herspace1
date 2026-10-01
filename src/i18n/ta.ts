@@ -939,6 +939,8 @@ const messages: Partial<Record<MessageKey, string>> = {
   "evidence.letter": "புகார் கடிதம் (வரைவு)",
   "evidence.letterNote": "[அடைப்புக்குறிகளில்] உள்ள இடங்களை நிரப்பி, கையொப்பமிட்டு தேதியிடுங்கள்.",
   "evidence.footer": "நேரங்கள் {zone} நேர மண்டலத்தில் காட்டப்பட்டுள்ளன. HerSpace இந்த ஆவணத்தை யாருக்கும் அனுப்பாது: யாருக்குக் கொடுப்பது என்று நீங்களே முடிவு செய்கிறீர்கள்.",
+  // Complaint letter language
+  "complaint.letterLanguage": "கடிதத்தின் மொழி",
 };
 
 export default messages;

@@ -939,6 +939,8 @@ const messages: Partial<Record<MessageKey, string>> = {
   "evidence.letter": "অভিযোগপত্র (খসড়া)",
   "evidence.letterNote": "[বন্ধনীর] মধ্যে ফাঁকা জায়গাগুলো পূরণ করুন, তারপর সই করে তারিখ দিন।",
   "evidence.footer": "সময় {zone} টাইম জোনে দেখানো হয়েছে। HerSpace এই নথি কাউকে পাঠায় না: কাকে দেবেন তা আপনিই ঠিক করেন।",
+  // Complaint letter language
+  "complaint.letterLanguage": "চিঠির ভাষা",
 };
 
 export default messages;

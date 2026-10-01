@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useI18n } from "@/i18n";
+import { LANGS, useI18n } from "@/i18n";
 import { api } from "@/lib/api";
-import { buildComplaint, type ComplaintFields, type ComplaintKind } from "@/content/complaint";
+import { buildComplaint, LETTER_LANGS, letterSubject, type ComplaintFields, type ComplaintKind, type LetterLang } from "@/content/complaint";
 import { printPage } from "@/lib/print";
 
 type Report = { id: number; description: string; location: string | null; date: string | null; createdAt: string; photos?: number[] };
@@ -25,7 +25,10 @@ const Complaint = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [params] = useSearchParams();
-  const l = lang === "hi" ? "hi" : "en";
+  // The letter follows the app's language unless she picks another (a police station may
+  // prefer English, or the local language).
+  const [letterLang, setLetterLang] = useState<LetterLang | null>(null);
+  const l = letterLang ?? lang;
   const [fields, setFields] = useState<ComplaintFields>({
     kind: "police",
     to: "",
@@ -74,7 +77,7 @@ const Complaint = () => {
   const copy = () => navigator.clipboard.writeText(letter).then(() => toast({ title: t("common.copied") }));
   // Only the letter is printed (see .print-doc in index.css).
   const print = () => printPage(t("complaint.title")).catch(() => {});
-  const subject = letter.split("\n").find((line) => /^(Subject|विषय):/.test(line))?.replace(/^(Subject|विषय):\s*/, "") ?? t("complaint.title");
+  const subject = letterSubject(letter) ?? t("complaint.title");
   const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(letter)}`;
 
   const field = (key: keyof ComplaintFields, label: string, opts: { type?: string; textarea?: boolean; placeholder?: string } = {}) => (
@@ -136,9 +139,28 @@ const Complaint = () => {
             </Card>
 
             <div className="space-y-3">
-              <Label htmlFor="complaint-letter" className="text-base font-bold">
-                {t("complaint.letter")}
-              </Label>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <Label htmlFor="complaint-letter" className="text-base font-bold">
+                  {t("complaint.letter")}
+                </Label>
+                <label className="flex items-center gap-2 text-sm">
+                  {t("complaint.letterLanguage")}
+                  <select
+                    value={l}
+                    onChange={(e) => {
+                      setEdited(null);
+                      setLetterLang(e.target.value as LetterLang);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {LETTER_LANGS.map((code) => (
+                      <option key={code} value={code} lang={code}>
+                        {LANGS[code].label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
               <Textarea
                 id="complaint-letter"
                 value={letter}

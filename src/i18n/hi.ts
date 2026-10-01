@@ -1016,6 +1016,9 @@ const hi: Record<MessageKey, string> = {
   "evidence.letterNote": "[कोष्ठक] में खाली जगहें भरें, फिर हस्ताक्षर करें और तारीख डालें।",
   "evidence.footer": "समय {zone} टाइम ज़ोन में दिखाया गया है। HerSpace यह दस्तावेज़ किसी को नहीं भेजता: इसे किसे देना है, यह आप तय करती हैं।",
 
+  // Complaint letter language
+  "complaint.letterLanguage": "पत्र की भाषा",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

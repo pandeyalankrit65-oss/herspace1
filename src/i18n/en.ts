@@ -1015,6 +1015,9 @@ const en = {
   "evidence.letterNote": "Fill in the blanks in [brackets], then sign and date it.",
   "evidence.footer": "Times are shown in the {zone} time zone. HerSpace does not send this document to anyone: you choose who receives it.",
 
+  // Complaint letter language
+  "complaint.letterLanguage": "Letter language",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",
