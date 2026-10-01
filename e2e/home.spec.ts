@@ -3,6 +3,31 @@ import { addConfirmedContact, signUp } from "./helpers";
 
 test.use({ permissions: ["geolocation"], geolocation: { latitude: 12.9716, longitude: 77.5946 } });
 
+test("the landing page shows help for each situation, and switches language from its cards", async ({ page }) => {
+  await page.goto("/");
+  // The phone mockup describes itself to screen readers.
+  await expect(page.getByRole("img", { name: "Example: what you see in HerSpace during an SOS" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Call 112" })).toHaveAttribute("href", "tel:112");
+
+  const tabs = page.getByRole("tablist", { name: "For every situation" });
+  await expect(tabs.getByRole("tab")).toHaveCount(6);
+  await expect(page.getByRole("tabpanel")).toContainText("Walking home at night");
+  await tabs.getByRole("tab", { name: "Cab or auto" }).click();
+  await expect(page.getByRole("tabpanel")).toContainText("vehicle number");
+  await expect(page.getByRole("tabpanel").getByRole("link", { name: "Share a ride" })).toHaveAttribute("href", "/walk?type=ride");
+  // Arrow keys move between tabs.
+  await page.keyboard.press("ArrowRight");
+  await expect(tabs.getByRole("tab", { name: "Meeting someone" })).toBeFocused();
+  await expect(tabs.getByRole("tab", { name: "Meeting someone" })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("End");
+  await expect(page.getByRole("tabpanel")).toContainText("Online harassment");
+
+  await page.getByRole("button", { name: /हिन्दी/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "hi");
+  await expect(page.getByRole("heading", { name: "हर पल के हिसाब से मदद" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /हिन्दी/ })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("signed-in users get a dashboard with SOS first; visitors get the landing page", async ({ page, browser }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Ready in two minutes" })).toBeVisible();

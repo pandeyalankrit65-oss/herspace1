@@ -258,3 +258,9 @@
     margin: 16mm;
   }
 }
+
+/* Homepage: the voice tile's waveform. */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.45); }
+  50% { transform: scaleY(1); }
+}
