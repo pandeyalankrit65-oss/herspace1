@@ -934,7 +934,7 @@ const messages: Partial<Record<MessageKey, string>> = {
   "evidence.responses": "பதில்கள்",
   "evidence.responded": "{name} {time} அன்று \"வந்துகொண்டிருக்கிறேன்\" என்று பதிலளித்தார்",
   "evidence.respondedUnnamed": "ஒரு தொடர்பு {time} அன்று \"வந்துகொண்டிருக்கிறேன்\" என்று பதிலளித்தார்",
-  "evidence.recordings": "ஒலி: {from} முதல் {to} வரை {count} பகுதிகள் பதிவானது ({size} MB). ஒலிக் கோப்புகள் HerSpace கணக்கில் உள்ளன, கணக்குப் பக்கத்திலிருந்து பதிவிறக்கலாம்.",
+  "evidence.recordings": "ஒலி: {from} முதல் {to} வரை {count} பகுதிகள் பதிவானது ({size}). ஒலிக் கோப்புகள் HerSpace கணக்கில் உள்ளன, கணக்குப் பக்கத்திலிருந்து பதிவிறக்கலாம்.",
   "evidence.noRecordings": "ஒலி: எதுவும் பதிவாகவில்லை.",
   "evidence.letter": "புகார் கடிதம் (வரைவு)",
   "evidence.letterNote": "[அடைப்புக்குறிகளில்] உள்ள இடங்களை நிரப்பி, கையொப்பமிட்டு தேதியிடுங்கள்.",

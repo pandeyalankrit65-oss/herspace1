@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { buildComplaint, type ComplaintFields, type ComplaintKind } from "@/content/complaint";
+import { printPage } from "@/lib/print";
 
 type Report = { id: number; description: string; location: string | null; date: string | null; createdAt: string; photos?: number[] };
 
@@ -71,16 +72,8 @@ const Complaint = () => {
   };
 
   const copy = () => navigator.clipboard.writeText(letter).then(() => toast({ title: t("common.copied") }));
-  const print = () => {
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.title = t("complaint.title");
-    const pre = w.document.createElement("pre");
-    pre.textContent = letter;
-    pre.style.cssText = "white-space:pre-wrap;font:16px/1.6 system-ui,sans-serif;margin:40px";
-    w.document.body.appendChild(pre);
-    w.print();
-  };
+  // Only the letter is printed (see .print-doc in index.css).
+  const print = () => printPage(t("complaint.title")).catch(() => {});
   const subject = letter.split("\n").find((line) => /^(Subject|विषय):/.test(line))?.replace(/^(Subject|विषय):\s*/, "") ?? t("complaint.title");
   const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(letter)}`;
 
@@ -101,6 +94,7 @@ const Complaint = () => {
       <main className="px-4 pb-16 pt-24">
         <div className="container mx-auto max-w-5xl space-y-6">
           <PageHeader icon={FileSignature} title={t("complaint.title")} subtitle={t("complaint.intro")} />
+          <pre className="print-doc hidden whitespace-pre-wrap font-sans text-base leading-relaxed text-black print:block">{letter}</pre>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>

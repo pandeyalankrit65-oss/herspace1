@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiUrl } from "./native";
+import { apiUrl, asUpload } from "./native";
 
 export const MAX_PHOTOS = 3;
 const MAX_SIDE = 1600;
@@ -25,7 +25,7 @@ export async function uploadPhoto(reportId: number, uploadToken: string, photo: 
     method: "POST",
     headers: { "Content-Type": "image/jpeg", "X-Upload-Token": uploadToken, "X-Requested-With": "HerSpace" },
     credentials: "same-origin",
-    body: photo,
+    body: asUpload(photo, "photo.jpg", "image/jpeg"),
   });
   if (!res.ok) throw new Error(`Upload failed (${res.status})`);
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { apiUrl } from "@/lib/native";
+import { apiUrl, asUpload } from "@/lib/native";
 
 const SETTING_KEY = "herspace_record_sos";
 const PIECE_MS = 10_000;
@@ -69,7 +69,7 @@ export function useSosRecorder() {
           method: "POST",
           headers: { "Content-Type": mime, "X-Requested-With": "HerSpace" },
           credentials: "same-origin",
-          body: blob,
+          body: asUpload(blob, `piece.${mime.split("/")[1]}`, mime),
         })
           .then((r) => r.ok && setSaved((n) => n + 1))
           .catch(() => {});

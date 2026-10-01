@@ -89,6 +89,27 @@ test("a report written offline is kept on the phone and sent when back online", 
   await expect(page.getByText("Written with no signal on the train")).toBeVisible();
 });
 
+// Android's WebView can report "online" in airplane mode: failed requests must count as offline,
+// and the app must notice by itself when the server is reachable again.
+test("when the phone claims to be online but nothing gets through, reports still queue and send later", async ({ page }) => {
+  test.setTimeout(60_000);
+  await signUp(page, "Farah");
+  await page.goto("/report");
+  await page.route("**/api/**", (route) => route.abort("internetdisconnected"));
+  expect(await page.evaluate(() => navigator.onLine)).toBe(true);
+
+  await page.getByRole("combobox").click();
+  await page.getByRole("option", { name: "Threat" }).click();
+  await page.getByLabel("Incident Description *").fill("Sent after the signal came back");
+  await page.getByRole("button", { name: "Submit Report" }).click();
+  await expect(page.getByText("Report saved on this phone", { exact: true })).toBeVisible();
+  await expect(page.getByText("You're offline · SOS still texts and calls")).toBeVisible();
+
+  await page.unroute("**/api/**");
+  await expect(page.getByText("1 report saved offline has been sent.", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("You're offline · SOS still texts and calls")).toBeHidden();
+});
+
 test("offline, contacts show the saved copy instead of an empty list", async ({ page, browser, context }) => {
   await signUp(page, "Noor");
   await addConfirmedContact(page, browser, "Sister");

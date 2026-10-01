@@ -1,39 +1,40 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { speechLocale, useI18n } from "@/i18n";
+import { canSpeak, speak, stopSpeaking } from "@/lib/speak";
 
 // Reads text aloud with the phone's own voice, for people who find reading hard.
 const ReadAloud = ({ text }: { text: string }) => {
   const { t, lang } = useI18n();
   const [speaking, setSpeaking] = useState(false);
-  // Some devices have the API but no voice installed; then speaking fails at once. Hide the
+  // Some devices have speech but no voice installed; then speaking fails at once. Hide the
   // button rather than offer something that silently does nothing.
   const [failed, setFailed] = useState(false);
-  const supported = typeof window !== "undefined" && "speechSynthesis" in window && !failed;
+  // Only the latest reading may update the button (stopping one finishes it late).
+  const current = useRef(0);
 
   useEffect(() => () => {
-    if (supported) window.speechSynthesis.cancel();
-  }, [supported]);
+    if (canSpeak) stopSpeaking();
+  }, []);
 
-  if (!supported) return null;
+  if (!canSpeak || failed) return null;
 
   const toggle = () => {
+    const id = ++current.current;
     if (speaking) {
-      window.speechSynthesis.cancel();
+      stopSpeaking();
       setSpeaking(false);
       return;
     }
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = speechLocale(lang);
-    u.rate = 0.95;
-    u.onend = () => setSpeaking(false);
-    u.onerror = (e) => {
-      setSpeaking(false);
-      if (e.error !== "interrupted" && e.error !== "canceled") setFailed(true);
-    };
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
     setSpeaking(true);
+    speak(text, speechLocale(lang), 0.95).then(
+      () => id === current.current && setSpeaking(false),
+      () => {
+        if (id !== current.current) return;
+        setSpeaking(false);
+        setFailed(true);
+      }
+    );
   };
 
   return (

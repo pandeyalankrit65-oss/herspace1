@@ -234,19 +234,21 @@
   }
 }
 
-/* Evidence pack: print only the document, on white, whatever else is on screen. */
+/* Printable pages (evidence pack, complaint letter): print only the .print-doc element, on white. */
 @media print {
-  body:has(.evidence-doc) {
+  html:has(.print-doc),
+  body:has(.print-doc) {
     background: #fff !important;
+    color-scheme: light;
   }
-  body:has(.evidence-doc) * {
+  body:has(.print-doc) * {
     visibility: hidden;
   }
-  body:has(.evidence-doc) .evidence-doc,
-  body:has(.evidence-doc) .evidence-doc * {
+  body:has(.print-doc) .print-doc,
+  body:has(.print-doc) .print-doc * {
     visibility: visible;
   }
-  body:has(.evidence-doc) .evidence-doc {
+  body:has(.print-doc) .print-doc {
     position: absolute;
     left: 0;
     top: 0;

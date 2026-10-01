@@ -1009,7 +1009,7 @@ const en = {
   "evidence.responses": "Responses",
   "evidence.responded": "{name} replied \"I'm on my way\" at {time}",
   "evidence.respondedUnnamed": "A contact replied \"I'm on my way\" at {time}",
-  "evidence.recordings": "Audio: {count} pieces recorded from {from} to {to} ({size} MB). The audio files are kept in the HerSpace account and can be downloaded from its account page.",
+  "evidence.recordings": "Audio: {count} pieces recorded from {from} to {to} ({size}). The audio files are kept in the HerSpace account and can be downloaded from its account page.",
   "evidence.noRecordings": "Audio: none recorded.",
   "evidence.letter": "Complaint letter (draft)",
   "evidence.letterNote": "Fill in the blanks in [brackets], then sign and date it.",

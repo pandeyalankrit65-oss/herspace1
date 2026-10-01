@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { speechLocale, useI18n } from "@/i18n";
+import { canSpeak, speak, stopSpeaking } from "@/lib/speak";
 import { canListen, listenOnce, ListenFailed, type Listening } from "@/lib/listen";
 import PageHeader from "@/components/PageHeader";
 import { useOnline } from "@/lib/offline";
@@ -37,18 +38,13 @@ const Support = () => {
       return false;
     }
   });
-  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
-  const speak = (text: string) => {
-    if (!canSpeak) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = speechLocale(lang);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+  const readReply = (text: string) => {
+    if (canSpeak) speak(text, speechLocale(lang)).catch(() => {});
   };
   const toggleSpeak = () => {
     const next = !speakReplies;
     setSpeakReplies(next);
-    if (!next && canSpeak) window.speechSynthesis.cancel();
+    if (!next && canSpeak) stopSpeaking();
     try {
       localStorage.setItem("herspace_chat_speak", next ? "1" : "0");
     } catch {
@@ -58,7 +54,7 @@ const Support = () => {
   useEffect(
     () => () => {
       session.current?.stop();
-      if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (canSpeak) stopSpeaking();
     },
     []
   );
@@ -101,7 +97,7 @@ const Support = () => {
         ts: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
-      if (speakReplies) speak(assistantMessage.content);
+      if (speakReplies) readReply(assistantMessage.content);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: t("support.errorReply"), ts: new Date().toISOString() }]);
     } finally {

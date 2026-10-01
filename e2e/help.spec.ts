@@ -37,4 +37,12 @@ test("a saved report becomes a complaint letter", async ({ page }) => {
   await page.getByRole("radio", { name: "Workplace committee (POSH)" }).click();
   await expect(letter).toHaveValue(/Internal Committee \(POSH\)/);
   await expect(page.getByRole("link", { name: "Email" })).toHaveAttribute("href", /^mailto:\?subject=Complaint%20of%20sexual%20harassment/);
+
+  // Printing shows only the letter, not the form.
+  const printed = page.locator(".print-doc");
+  await expect(printed).toBeHidden();
+  await page.emulateMedia({ media: "print" });
+  await expect(printed).toBeVisible();
+  await expect(printed).toContainText("Internal Committee (POSH)");
+  await expect(page.getByLabel("Police station")).toBeHidden();
 });

@@ -44,16 +44,31 @@ export function clearOfflineData() {
   }
 }
 
+// navigator.onLine isn't reliable everywhere (Android's WebView can say "online" in airplane
+// mode), so every API request also reports whether the server could be reached.
+const REACHABLE = "herspace-reachable";
+let reachable: boolean | null = null;
+// When the phone says it's back online, trust that until a request says otherwise.
+if (typeof window !== "undefined") window.addEventListener("online", () => (reachable = null));
+export function reportReachable(ok: boolean) {
+  if (ok === reachable) return;
+  reachable = ok;
+  window.dispatchEvent(new CustomEvent(REACHABLE, { detail: ok }));
+}
+
 export function useOnline() {
-  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine));
+  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine && reachable !== false));
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
+    const reach = (e: Event) => setOnline((e as CustomEvent<boolean>).detail);
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
+    window.addEventListener(REACHABLE, reach);
     return () => {
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
+      window.removeEventListener(REACHABLE, reach);
     };
   }, []);
   return online;

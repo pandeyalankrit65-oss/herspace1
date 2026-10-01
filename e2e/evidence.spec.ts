@@ -44,7 +44,7 @@ test("the evidence pack puts a report, its photo, the SOS around it and a draft 
   await page.getByRole("link", { name: "Evidence pack (PDF)" }).click();
   await expect(page).toHaveURL(/\/evidence\/\d+$/);
 
-  const doc = page.locator(".evidence-doc");
+  const doc = page.locator(".print-doc");
   await expect(doc.getByRole("heading", { name: "Incident evidence" })).toBeVisible();
   await expect(doc.getByText("Prepared by Asha on")).toBeVisible();
   await expect(doc.getByText("Stalking")).toBeVisible();

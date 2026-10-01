@@ -10,6 +10,7 @@ import type { MessageKey } from "@/i18n/en";
 import { api, ApiError } from "@/lib/api";
 import { usePhotoUrl } from "@/lib/photos";
 import { buildComplaint } from "@/content/complaint";
+import { printPage } from "@/lib/print";
 
 type Delivery = { name: string; channel: "sms" | "call"; status: string };
 type SosEvent = {
@@ -44,6 +45,7 @@ const REPORT_TYPES = ["harassment", "assault", "stalking", "threat", "discrimina
 const dateTime = (iso: string) => new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "medium" });
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { timeStyle: "medium" });
 const coords = (lat: number, lng: number) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+const fileSize = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
 
 const Photo = ({ reportId, photoId, n }: { reportId: number; photoId: number; n: number }) => {
   const { t } = useI18n();
@@ -136,7 +138,7 @@ const Evidence = () => {
     const day = (iso: string) => new Date(iso).toLocaleDateString([], { dateStyle: "medium" });
     return (
       // Always light, like paper, so the preview matches what prints.
-      <article className="evidence-doc space-y-5 rounded-lg bg-white p-6 text-neutral-900 shadow-sm ring-1 ring-neutral-200 sm:p-10 print:p-0 print:shadow-none print:ring-0">
+      <article className="print-doc space-y-5 rounded-lg bg-white p-6 text-neutral-900 shadow-sm ring-1 ring-neutral-200 sm:p-10 print:p-0 print:shadow-none print:ring-0">
         <header className="space-y-1">
           <h1 className="text-2xl font-extrabold">{t("evidence.docTitle")}</h1>
           <p className="text-sm text-neutral-600">{t("evidence.preparedBy", { name: pack.user.name, date: dateTime(pack.generatedAt) })}</p>
@@ -212,7 +214,7 @@ const Evidence = () => {
                       count: e.recordings.pieces,
                       from: time(e.recordings.first),
                       to: time(e.recordings.last),
-                      size: (e.recordings.bytes / 1024 / 1024).toFixed(1),
+                      size: fileSize(e.recordings.bytes),
                     })
                   : t("evidence.noRecordings")}
               </p>
@@ -249,7 +251,7 @@ const Evidence = () => {
             <p className="text-muted-foreground">{t("evidence.intro")}</p>
             {pack && (
               <div className="flex flex-wrap items-center gap-3">
-                <Button variant="hero" className="gap-2" onClick={() => window.print()}>
+                <Button variant="hero" className="gap-2" onClick={() => printPage(`HerSpace evidence ${pack.report.id}`).catch(() => {})}>
                   <Printer className="h-4 w-4" /> {t("evidence.save")}
                 </Button>
                 <Link to={`/complaint?report=${pack.report.id}`} className="text-sm font-semibold text-primary underline underline-offset-2">

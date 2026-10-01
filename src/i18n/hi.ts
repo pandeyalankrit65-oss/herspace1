@@ -1010,7 +1010,7 @@ const hi: Record<MessageKey, string> = {
   "evidence.responses": "जवाब",
   "evidence.responded": "{name} ने {time} पर जवाब दिया \"मैं आ रहा/रही हूँ\"",
   "evidence.respondedUnnamed": "एक संपर्क ने {time} पर जवाब दिया \"मैं आ रहा/रही हूँ\"",
-  "evidence.recordings": "ऑडियो: {from} से {to} तक {count} हिस्से रिकॉर्ड हुए ({size} MB)। ऑडियो फ़ाइलें HerSpace खाते में रखी हैं और खाते के पेज से डाउनलोड की जा सकती हैं।",
+  "evidence.recordings": "ऑडियो: {from} से {to} तक {count} हिस्से रिकॉर्ड हुए ({size})। ऑडियो फ़ाइलें HerSpace खाते में रखी हैं और खाते के पेज से डाउनलोड की जा सकती हैं।",
   "evidence.noRecordings": "ऑडियो: कोई रिकॉर्डिंग नहीं।",
   "evidence.letter": "शिकायत पत्र (मसौदा)",
   "evidence.letterNote": "[कोष्ठक] में खाली जगहें भरें, फिर हस्ताक्षर करें और तारीख डालें।",

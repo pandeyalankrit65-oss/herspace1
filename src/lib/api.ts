@@ -1,4 +1,5 @@
 import { apiUrl } from "./native";
+import { reportReachable } from "./offline";
 
 // The session lives in an HttpOnly cookie set by the server, so page scripts never see it.
 // Every request carries X-Requested-With, which the server requires on state-changing
@@ -23,8 +24,10 @@ export async function api<T>(path: string, options: { method?: string; body?: un
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
   } catch {
+    reportReachable(false);
     throw new ApiError("Can't reach the HerSpace server. Check your connection.", 0);
   }
+  reportReachable(true);
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(data?.error || `Request failed (${res.status})`, res.status);

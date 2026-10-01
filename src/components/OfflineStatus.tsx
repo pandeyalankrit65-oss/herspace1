@@ -6,6 +6,12 @@ import { useI18n } from "@/i18n";
 import { useOnline } from "@/lib/offline";
 import { useAuth } from "@/contexts/AuthContext";
 import { sendQueuedReports } from "@/lib/outbox";
+import { api } from "@/lib/api";
+
+// Retry intervals: queued reports while online (in case a send failed), and a light check for
+// the connection coming back while offline (some phones never fire the "online" event).
+const RESEND_MS = 60_000;
+const RECHECK_MS = 15_000;
 
 // Shows a small "offline" pill on every page (the SOS page has its own, fuller notice), and
 // sends reports saved while offline as soon as the connection is back.
@@ -18,7 +24,19 @@ const OfflineStatus = () => {
   const userId = user?.id ?? null;
 
   useEffect(() => {
-    if (online && !loading) sendQueuedReports(userId);
+    if (loading) return;
+    const retry = () => {
+      if (document.visibilityState !== "visible") return;
+      if (online) sendQueuedReports(userId);
+      else api("/api/health").catch(() => {});
+    };
+    if (online) sendQueuedReports(userId);
+    const timer = setInterval(retry, online ? RESEND_MS : RECHECK_MS);
+    document.addEventListener("visibilitychange", retry);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", retry);
+    };
   }, [online, loading, userId]);
 
   useEffect(() => {

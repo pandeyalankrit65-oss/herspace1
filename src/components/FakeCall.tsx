@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { speechLocale, useI18n } from "@/i18n";
+import { canSpeak, speak, stopSpeaking } from "@/lib/speak";
 
 const DELAYS = [0, 10, 30, 60];
 
@@ -80,13 +81,11 @@ const FakeCall = ({ ringSignal }: { ringSignal?: number }) => {
 
   // Once answered, a voice speaks from the phone, so the call sounds real to people nearby.
   useEffect(() => {
-    if (phase !== "onCall" || !("speechSynthesis" in window)) return;
-    const line = new SpeechSynthesisUtterance(t("fakeCall.script"));
-    line.lang = speechLocale(lang);
-    const timer = window.setTimeout(() => window.speechSynthesis.speak(line), 1200);
+    if (phase !== "onCall" || !canSpeak) return;
+    const timer = window.setTimeout(() => speak(t("fakeCall.script"), speechLocale(lang)).catch(() => {}), 1200);
     return () => {
       window.clearTimeout(timer);
-      window.speechSynthesis.cancel();
+      stopSpeaking();
     };
   }, [phase, t, lang]);
 
