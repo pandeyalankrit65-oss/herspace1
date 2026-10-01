@@ -1,20 +1,31 @@
 import { createContext, Fragment, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import en, { type MessageKey } from "./en";
-import hi from "./hi";
-import ta from "./ta";
-import bn from "./bn";
-import mr from "./mr";
 
 export type Lang = "en" | "hi" | "ta" | "bn" | "mr";
 // beta: machine-assisted translations that still need review by native speakers.
-export const LANGS: Record<Lang, { label: string; english: string; beta?: boolean; messages: Partial<Record<MessageKey, string>> }> = {
-  en: { label: "English", english: "English", messages: en },
-  hi: { label: "हिन्दी", english: "Hindi", messages: hi },
-  ta: { label: "தமிழ்", english: "Tamil", beta: true, messages: ta },
-  bn: { label: "বাংলা", english: "Bengali", beta: true, messages: bn },
-  mr: { label: "मराठी", english: "Marathi", beta: true, messages: mr },
+export const LANGS: Record<Lang, { label: string; english: string; beta?: boolean }> = {
+  en: { label: "English", english: "English" },
+  hi: { label: "हिन्दी", english: "Hindi" },
+  ta: { label: "தமிழ்", english: "Tamil", beta: true },
+  bn: { label: "বাংলা", english: "Bengali", beta: true },
+  mr: { label: "मराठी", english: "Marathi", beta: true },
 };
 const isLang = (v: unknown): v is Lang => typeof v === "string" && v in LANGS;
+
+// English is built in (it's also the fallback). Each other language is a separate file,
+// downloaded only by people who choose it: together they'd triple what every visitor loads.
+type Messages = Partial<Record<MessageKey, string>>;
+const MESSAGES: Partial<Record<Lang, Messages>> = { en };
+const LOADERS: Record<Exclude<Lang, "en">, () => Promise<{ default: Messages }>> = {
+  hi: () => import("./hi"),
+  ta: () => import("./ta"),
+  bn: () => import("./bn"),
+  mr: () => import("./mr"),
+};
+export async function loadLang(lang: Lang) {
+  if (!MESSAGES[lang]) MESSAGES[lang] = (await LOADERS[lang as Exclude<Lang, "en">]()).default;
+}
+const messagesFor = (lang: Lang) => MESSAGES[lang] ?? en;
 
 // Locale for speech (voice trigger, read aloud, fake call) and dates.
 const LOCALES: Record<Lang, string> = { en: "en-IN", hi: "hi-IN", ta: "ta-IN", bn: "bn-IN", mr: "mr-IN" };
@@ -37,7 +48,7 @@ export function initialLang(): Lang {
 // Replaces {name} placeholders. Missing keys fall back to English (the types prevent this,
 // but it keeps a bad deploy readable).
 export function format(lang: Lang, key: MessageKey, vars?: Vars) {
-  const template = LANGS[lang].messages[key] ?? en[key] ?? key;
+  const template = messagesFor(lang)[key] ?? en[key] ?? key;
   return vars ? template.replace(/\{(\w+)\}/g, (_, name) => (name in vars ? String(vars[name]) : `{${name}}`)) : template;
 }
 
@@ -61,20 +72,27 @@ function interpolateNodes(template: string, nodes: Record<string, ReactNode>): R
 
 const I18nContext = createContext<I18n | null>(null);
 
+// Render after loadLang(initialLang()) (see main.tsx), so a saved language shows at once.
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [lang, setLangState] = useState<Lang>(initialLang);
+  const [lang, setLangState] = useState<Lang>(() => {
+    const saved = initialLang();
+    return MESSAGES[saved] ? saved : "en";
+  });
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {
-    setLangState(next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // ignore
     }
+    // If the file can't be fetched (offline before it was ever cached), stay as we are.
+    loadLang(next)
+      .then(() => setLangState(next))
+      .catch(() => {});
   }, []);
 
   const value = useMemo<I18n>(
@@ -83,7 +101,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
       setLang,
       t: (key, vars) => format(lang, key, vars),
       tn: (key, count, vars) => format(lang, `${key}_${count === 1 ? "one" : "other"}` as MessageKey, { count, ...vars }),
-      tr: (key, nodes) => interpolateNodes(LANGS[lang].messages[key] ?? en[key], nodes),
+      tr: (key, nodes) => interpolateNodes(messagesFor(lang)[key] ?? en[key], nodes),
     }),
     [lang, setLang]
   );

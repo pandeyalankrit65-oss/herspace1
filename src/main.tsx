@@ -2,8 +2,13 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { isNative } from "./lib/native";
+import { initialLang, loadLang } from "./i18n";
 
-createRoot(document.getElementById("root")!).render(<App />);
+// A saved language other than English is its own file: load it first, so the app doesn't
+// flash in English. If it can't load, the app starts in English.
+loadLang(initialLang())
+  .catch(() => {})
+  .finally(() => createRoot(document.getElementById("root")!).render(<App />));
 
 // Offline support (production only; a service worker would fight Vite's dev server).
 // (Not in the Android app: its pages are already stored on the phone.)

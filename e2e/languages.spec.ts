@@ -16,6 +16,16 @@ for (const l of LANGS) {
     await expect(page.locator("html")).toHaveAttribute("lang", l.code);
     await expect(page.getByRole("heading", { name: l.sos })).toBeVisible();
 
+    // Coming back: the saved language is loaded before the first paint, so English never shows.
+    await page.addInitScript(() => {
+      new MutationObserver(() => {
+        if (document.body?.textContent?.includes("Emergency SOS")) (window as unknown as { sawEnglish: boolean }).sawEnglish = true;
+      }).observe(document, { childList: true, subtree: true, characterData: true });
+    });
+    await page.goto("/sos");
+    await expect(page.getByRole("heading", { name: l.sos })).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { sawEnglish?: boolean }).sawEnglish ?? false)).toBe(false);
+
     await page.goto("/");
     await expect(page.getByRole("heading", { name: new RegExp(l.hero) })).toBeVisible();
 
