@@ -85,20 +85,20 @@ const SetupChecklist = ({ className, showWhenDone = false }: { className?: strin
 
   return (
     <Card className={cn("border-primary/30", className)}>
-      <CardContent className="space-y-4 p-5 sm:p-6">
+      <CardContent className="space-y-5 p-6 sm:p-8">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <ListChecks className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="font-bold">{t("setup.title")}</h2>
-            <p className="text-xs text-muted-foreground">{t("setup.progress", { done, total: steps.length })}</p>
+            <h2 className="text-lg font-bold md:text-xl">{t("setup.title")}</h2>
+            <p className="text-sm text-muted-foreground">{t("setup.progress", { done, total: steps.length })}</p>
           </div>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+        <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
           <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(done / steps.length) * 100}%` }} />
         </div>
-        <ol className="space-y-3">
+        <ol className="space-y-4">
           {steps.map((step, i) => (
             <li key={step.key} className="flex items-start gap-3">
               {step.done ? (
@@ -109,8 +109,8 @@ const SetupChecklist = ({ className, showWhenDone = false }: { className?: strin
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className={cn("text-sm font-semibold", step.done && "font-medium text-muted-foreground")}>{t(step.title)}</p>
-                {!step.done && <p className="text-xs text-muted-foreground">{t(step.desc)}</p>}
+                <p className={cn("font-semibold", step.done && "font-medium text-muted-foreground")}>{t(step.title)}</p>
+                {!step.done && <p className="text-sm text-muted-foreground">{t(step.desc)}</p>}
               </div>
               {step === next && (
                 <Link to={step.to!}>

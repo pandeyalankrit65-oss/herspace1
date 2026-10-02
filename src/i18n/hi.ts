@@ -678,7 +678,6 @@ const hi: Record<MessageKey, string> = {
   "dash.contactsTitle": "आपके आपातकालीन संपर्क",
   "dash.manage": "बदलें",
   "dash.noContacts": "अभी कोई संपर्क नहीं। किसी भरोसेमंद व्यक्ति को जोड़ें।",
-  "dash.toolsTitle": "आपके सुरक्षा टूल",
   "dash.walkText": "घर तक का सफ़र शेयर करें",
   "dash.timerText": "चेक-इन न करने पर संपर्कों को अलर्ट",
   "dash.fakeCallText": "वहां से निकलने का बहाना",
@@ -1080,6 +1079,13 @@ const hi: Record<MessageKey, string> = {
   // Homepage: recording tile
   "home.discreet.record.title": "जो हो रहा है, वह रिकॉर्ड होता है",
   "home.discreet.record.text": "ऑडियो हर 10 सेकंड में अपलोड होता है, फ़ोन छिन जाए तब भी बचा रहता है।",
+
+  // Dashboard status and tool groups
+  "dash.status_one": "तैयार · {count} संपर्क को अलर्ट मिलेगा",
+  "dash.status_other": "तैयार · {count} संपर्कों को अलर्ट मिलेगा",
+  "dash.statusNotReady": "अभी तैयार नहीं · किसी को अलर्ट नहीं मिलेगा",
+  "dash.toolsGoing": "कहीं जा रही हैं",
+  "dash.toolsAfter": "अगर कुछ हुआ हो",
 
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",

@@ -625,7 +625,6 @@ const messages: Partial<Record<MessageKey, string>> = {
   "dash.contactsTitle": "உங்கள் அவசரத் தொடர்புகள்",
   "dash.manage": "நிர்வகி",
   "dash.noContacts": "இன்னும் தொடர்புகள் இல்லை. நம்பிக்கைக்குரிய ஒருவரைச் சேருங்கள்.",
-  "dash.toolsTitle": "உங்கள் பாதுகாப்புக் கருவிகள்",
   "dash.walkText": "வீட்டுக்கான பயணத்தைப் பகிருங்கள்",
   "dash.timerText": "செக்-இன் செய்யாவிட்டால் தொடர்புகளுக்கு எச்சரிக்கை",
   "dash.fakeCallText": "வெளியேற ஒரு காரணம்",
@@ -1001,6 +1000,12 @@ const messages: Partial<Record<MessageKey, string>> = {
   // Homepage: recording tile
   "home.discreet.record.title": "நடப்பதைப் பதிவுசெய்கிறது",
   "home.discreet.record.text": "ஒலி ஒவ்வொரு 10 வினாடிக்கும் பதிவேற்றப்படும், தொலைபேசி பறிக்கப்பட்டாலும் இருக்கும்.",
+  // Dashboard status and tool groups
+  "dash.status_one": "தயார் · {count} தொடர்புக்கு எச்சரிக்கை போகும்",
+  "dash.status_other": "தயார் · {count} தொடர்புகளுக்கு எச்சரிக்கை போகும்",
+  "dash.statusNotReady": "இன்னும் தயாராகவில்லை · யாருக்கும் எச்சரிக்கை போகாது",
+  "dash.toolsGoing": "எங்காவது செல்லும்போது",
+  "dash.toolsAfter": "ஏதாவது நடந்திருந்தால்",
 };
 
 export default messages;

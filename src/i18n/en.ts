@@ -677,7 +677,6 @@ const en = {
   "dash.contactsTitle": "Your emergency contacts",
   "dash.manage": "Manage",
   "dash.noContacts": "No contacts yet. Add someone you trust.",
-  "dash.toolsTitle": "Your safety tools",
   "dash.walkText": "Share your journey home",
   "dash.timerText": "Alerts contacts if you don't check in",
   "dash.fakeCallText": "An excuse to leave",
@@ -1079,6 +1078,13 @@ const en = {
   // Homepage: recording tile
   "home.discreet.record.title": "Records what happens",
   "home.discreet.record.text": "Audio uploads every 10 seconds, so it's kept even if your phone is taken.",
+
+  // Dashboard status and tool groups
+  "dash.status_one": "Ready · {count} contact will be alerted",
+  "dash.status_other": "Ready · {count} contacts will be alerted",
+  "dash.statusNotReady": "Not ready yet · no one will be alerted",
+  "dash.toolsGoing": "Going somewhere",
+  "dash.toolsAfter": "If something happened",
 
   // Error screen
   "error.title": "Something went wrong",

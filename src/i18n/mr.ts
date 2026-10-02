@@ -625,7 +625,6 @@ const messages: Partial<Record<MessageKey, string>> = {
   "dash.contactsTitle": "तुमचे आपत्कालीन संपर्क",
   "dash.manage": "व्यवस्थापित करा",
   "dash.noContacts": "अजून संपर्क नाहीत. विश्वासू व्यक्तीला जोडा.",
-  "dash.toolsTitle": "तुमची सुरक्षा साधने",
   "dash.walkText": "घरापर्यंतचा प्रवास शेअर करा",
   "dash.timerText": "चेक-इन न केल्यास संपर्कांना अलर्ट",
   "dash.fakeCallText": "निघण्याचे निमित्त",
@@ -1001,6 +1000,12 @@ const messages: Partial<Record<MessageKey, string>> = {
   // Homepage: recording tile
   "home.discreet.record.title": "जे घडते ते रेकॉर्ड होते",
   "home.discreet.record.text": "ऑडिओ दर 10 सेकंदांनी अपलोड होतो, फोन हिसकावला तरी राहतो.",
+  // Dashboard status and tool groups
+  "dash.status_one": "तयार · {count} संपर्काला अलर्ट जाईल",
+  "dash.status_other": "तयार · {count} संपर्कांना अलर्ट जाईल",
+  "dash.statusNotReady": "अजून तयार नाही · कोणालाही अलर्ट जाणार नाही",
+  "dash.toolsGoing": "कुठे जात असताना",
+  "dash.toolsAfter": "काही घडले असल्यास",
 };
 
 export default messages;

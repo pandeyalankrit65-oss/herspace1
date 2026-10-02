@@ -625,7 +625,6 @@ const messages: Partial<Record<MessageKey, string>> = {
   "dash.contactsTitle": "আপনার জরুরি পরিচিতি",
   "dash.manage": "পরিচালনা",
   "dash.noContacts": "এখনও কোনো পরিচিত নেই। বিশ্বস্ত কাউকে যোগ করুন।",
-  "dash.toolsTitle": "আপনার নিরাপত্তার টুল",
   "dash.walkText": "বাড়ি ফেরার পথ শেয়ার করুন",
   "dash.timerText": "চেক-ইন না করলে পরিচিতদের সতর্কতা",
   "dash.fakeCallText": "চলে যাওয়ার অজুহাত",
@@ -1001,6 +1000,12 @@ const messages: Partial<Record<MessageKey, string>> = {
   // Homepage: recording tile
   "home.discreet.record.title": "যা ঘটছে তা রেকর্ড হয়",
   "home.discreet.record.text": "অডিও প্রতি 10 সেকেন্ডে আপলোড হয়, ফোন কেড়ে নিলেও থেকে যায়।",
+  // Dashboard status and tool groups
+  "dash.status_one": "প্রস্তুত · {count} জন পরিচিত সতর্কতা পাবেন",
+  "dash.status_other": "প্রস্তুত · {count} জন পরিচিত সতর্কতা পাবেন",
+  "dash.statusNotReady": "এখনও প্রস্তুত নয় · কেউ সতর্কতা পাবেন না",
+  "dash.toolsGoing": "কোথাও যাচ্ছেন",
+  "dash.toolsAfter": "যদি কিছু ঘটে থাকে",
 };
 
 export default messages;
