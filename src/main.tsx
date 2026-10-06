@@ -29,3 +29,15 @@ if (import.meta.env.PROD && !isNative && "serviceWorker" in navigator) {
       .catch((err) => console.warn("Service worker registration failed:", err));
   });
 }
+
+// In development, a service worker left over from a production build on the same address
+// would keep serving stored copies of old code. Remove it and its stored files, then load
+// the page once more so it comes straight from the dev server.
+if (import.meta.env.DEV && "serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(async (registrations) => {
+    if (registrations.length === 0) return;
+    await Promise.all(registrations.map((r) => r.unregister()));
+    if ("caches" in window) await Promise.all((await caches.keys()).map((key) => caches.delete(key)));
+    window.location.reload();
+  });
+}
