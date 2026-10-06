@@ -142,7 +142,7 @@ const Hero = () => {
           alt={t("home.heroImageAlt")}
           className="absolute inset-x-0 top-0 h-auto w-full [-webkit-mask-image:linear-gradient(to_bottom,black_50%,transparent_95%)] [mask-image:linear-gradient(to_bottom,black_50%,transparent_95%)]"
         />
-        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--background)/0.9)_0%,hsl(var(--background)/0.6)_32%,transparent_58%)]" />
+        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--background)/0.8)_0%,hsl(var(--background)/0.45)_30%,transparent_52%)]" />
       </div>
       {/* Phones and tablets: the whole photo, edge to edge under the navigation bar, fading into
           the page behind the headline. */}
@@ -163,7 +163,7 @@ const Hero = () => {
             <br />
             {t("home.heroTitle2")}
           </h1>
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl lg:mx-0">{t("home.heroText")}</p>
+          <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl lg:mx-0 lg:text-foreground/85 lg:[text-shadow:0_0_14px_hsl(var(--background)),0_0_4px_hsl(var(--background))]">{t("home.heroText")}</p>
           <div className="flex flex-col justify-center gap-4 pt-2 sm:flex-row lg:justify-start">
             <Link to="/sos">
               <Button variant="emergency" size="xl" className="w-full gap-2 sm:w-auto">
@@ -178,14 +178,14 @@ const Hero = () => {
               </Button>
             </Link>
           </div>
-          <ul className="flex flex-col items-center gap-3 pt-2 text-sm font-medium text-muted-foreground sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 lg:justify-start">
+          <ul className="flex flex-col items-center gap-3 pt-2 text-sm font-medium text-muted-foreground sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 lg:justify-start lg:text-foreground/85 lg:[text-shadow:0_0_14px_hsl(var(--background)),0_0_4px_hsl(var(--background))]">
             {(["home.trust1", "home.trust2", "home.trust3"] as MessageKey[]).map((k) => (
               <li key={k} className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-success" /> {t(k)}
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground lg:text-foreground/85 lg:[text-shadow:0_0_14px_hsl(var(--background)),0_0_4px_hsl(var(--background))]">
             {t("home.dangerNow")}{" "}
             <a href={`tel:${EMERGENCY_NUMBER}`} className="font-bold text-destructive underline underline-offset-2">
               {t("common.call", { number: EMERGENCY_NUMBER })}
