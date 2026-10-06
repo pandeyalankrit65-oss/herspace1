@@ -132,18 +132,28 @@ const PhoneMock = () => {
 const Hero = () => {
   const { t } = useI18n();
   return (
-    <section className="relative overflow-hidden px-4 pb-24 pt-16 sm:pt-32 md:pb-32 md:pt-40">
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_45%_at_20%_15%,hsl(var(--primary)/0.16),transparent),radial-gradient(40%_40%_at_90%_35%,hsl(var(--brand)/0.13),transparent)]" />
-      {/* Phones: the whole photo, edge to edge under the navigation bar, fading into the page
-          behind the headline. Larger screens show it beside the phone mockup instead. */}
-      <div className="relative -mx-4 -mb-12 sm:hidden">
+    <section className="relative px-4 pb-24 pt-16 md:pb-32 lg:flex lg:min-h-[54vw] lg:items-end lg:pb-16 lg:pt-28">
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden bg-[radial-gradient(50%_45%_at_20%_15%,hsl(var(--primary)/0.16),transparent),radial-gradient(40%_40%_at_90%_35%,hsl(var(--brand)/0.13),transparent)]" />
+      {/* Computers: the whole photo fills the hero. It fades into the page at the bottom and on
+          the left, behind the headline, so the text stays readable and the faces stay clear. */}
+      <div className="absolute inset-0 hidden overflow-hidden lg:block">
+        <img
+          src={heroImage}
+          alt={t("home.heroImageAlt")}
+          className="absolute inset-x-0 top-0 h-auto w-full [-webkit-mask-image:linear-gradient(to_bottom,black_50%,transparent_95%)] [mask-image:linear-gradient(to_bottom,black_50%,transparent_95%)]"
+        />
+        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--background)/0.9)_0%,hsl(var(--background)/0.6)_32%,transparent_58%)]" />
+      </div>
+      {/* Phones and tablets: the whole photo, edge to edge under the navigation bar, fading into
+          the page behind the headline. */}
+      <div className="relative -mx-4 -mb-12 lg:hidden">
         <img
           src={heroImage}
           alt={t("home.heroImageAlt")}
           className="block aspect-video w-full object-cover [-webkit-mask-image:linear-gradient(to_bottom,black_55%,transparent)] [mask-image:linear-gradient(to_bottom,black_55%,transparent)]"
         />
       </div>
-      <div className="container relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
+      <div className="container relative mx-auto grid w-full max-w-7xl items-end gap-16 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
         <div className="space-y-8 text-center lg:text-left">
           <span className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-4 py-1.5 text-sm font-semibold text-muted-foreground shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-success" /> {t("home.badge")}
@@ -183,16 +193,10 @@ const Hero = () => {
           </p>
         </div>
 
-        {/* The phone in front of the photo. */}
-        <div className="relative mx-auto flex w-full max-w-xl justify-center lg:justify-end">
-          <img
-            src={heroImage}
-            alt={t("home.heroImageAlt")}
-            className="absolute right-0 top-10 hidden aspect-[4/5] w-[64%] rounded-[2.5rem] object-cover shadow-raised ring-1 ring-border sm:block"
-          />
-          <div className="relative z-10 sm:mr-[40%]">
-            <PhoneMock />
-          </div>
+        {/* The phone in front of the photo; on computers it sits low and overlaps the next
+            section, so it covers as little of the photo as possible. */}
+        <div className="relative z-10 mx-auto flex w-full max-w-xl justify-center lg:translate-y-32 lg:justify-end">
+          <PhoneMock />
         </div>
       </div>
     </section>
