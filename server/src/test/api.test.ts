@@ -1,10 +1,12 @@
 import './setup';
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { app } from '../app';
-import { db } from '../db';
+import { db, purgeExpiredData } from '../db';
+import { photoPath } from '../photos';
 import { processOverdueCheckIns } from '../routes/checkins';
 import { contactCode, processStaleRides } from '../routes/location';
 import { formatAddress, parsePlaces } from '../geo';
@@ -670,6 +672,35 @@ describe('SOS audio recordings', () => {
     const other = await newUser('Other');
     assert.equal((await call(`/sos/${sos.data.id}/recordings/${event.pieces[0].id}`, { token: other.token })).status, 404);
     assert.equal((await put(other.token, sos.data.id, audio)).status, 404);
+  });
+
+  // The Privacy Policy promises recordings are deleted with the alert after 90 days, and with the
+  // account: the audio files on disk, not just the database rows.
+  const recordingFiles = (sosId: number) =>
+    (db.prepare('SELECT file FROM sos_recordings WHERE sos_id = ?').all(sosId) as Array<{ file: string }>).map((r) => photoPath(r.file)!);
+  const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 9]);
+
+  test('audio files are deleted from disk when the alert expires', async () => {
+    const { token } = await userWithConfirmedContact('Noor');
+    const sos = await call('/sos', { token, body: {} });
+    await put(token, sos.data.id, audio);
+    const files = recordingFiles(sos.data.id);
+    assert.equal(files.length, 1);
+    assert.ok(fs.existsSync(files[0]));
+    db.prepare("UPDATE sos_events SET created_at = '2020-01-01T00:00:00.000Z' WHERE id = ?").run(sos.data.id);
+    purgeExpiredData();
+    assert.equal(fs.existsSync(files[0]), false, 'file removed');
+    assert.equal(recordingFiles(sos.data.id).length, 0);
+  });
+
+  test('audio files are deleted from disk with the account', async () => {
+    const { token } = await userWithConfirmedContact('Ojas');
+    const sos = await call('/sos', { token, body: {} });
+    await put(token, sos.data.id, audio);
+    const [file] = recordingFiles(sos.data.id);
+    assert.ok(fs.existsSync(file));
+    assert.equal((await call('/account', { token, method: 'DELETE', body: { password: 'password123' } })).status, 200);
+    assert.equal(fs.existsSync(file), false);
   });
 });
 
