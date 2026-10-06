@@ -1,7 +1,5 @@
 import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { I18nProvider } from "./i18n";
@@ -40,57 +38,51 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
-
 const App = () => (
   <ErrorBoundary>
     <ThemeProvider>
       <I18nProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <BrowserRouter>
-                <NativeBridge />
-                <ScrollManager />
-                <DisguiseGate>
-                <Suspense fallback={<div className="min-h-screen" />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/sos" element={<SOS />} />
-                    <Route path="/report" element={<Report />} />
-                    <Route path="/support" element={<Support />} />
-                    <Route path="/map" element={<Map />} />
-                    <Route path="/circles" element={<Circles />} />
-                    <Route path="/corporate" element={<Corporate />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contacts" element={<Contacts />} />
-                    <Route path="/confirm-contact/:token" element={<ConfirmContact />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password/:token" element={<ResetPassword />} />
-                    <Route path="/account" element={<Account />} />
-                    <Route path="/moderation" element={<Moderation />} />
-                    <Route path="/help" element={<Help />} />
-                    <Route path="/complaint" element={<Complaint />} />
-                    <Route path="/evidence/:id" element={<Evidence />} />
-                    <Route path="/track/:token" element={<Track />} />
-                    <Route path="/timer" element={<SafetyTimer />} />
-                    <Route path="/walk" element={<Walk />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/terms" element={<Terms />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-                <BottomNav />
-                <OfflineStatus />
-                </DisguiseGate>
-              </BrowserRouter>
-            </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
+        <AuthProvider>
+          <Toaster />
+          <BrowserRouter>
+            <NativeBridge />
+            <ScrollManager />
+            <DisguiseGate>
+            <Suspense fallback={<div className="min-h-screen" />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/sos" element={<SOS />} />
+                <Route path="/report" element={<Report />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/map" element={<Map />} />
+                <Route path="/circles" element={<Circles />} />
+                <Route path="/corporate" element={<Corporate />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contacts" element={<Contacts />} />
+                <Route path="/confirm-contact/:token" element={<ConfirmContact />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/moderation" element={<Moderation />} />
+                <Route path="/help" element={<Help />} />
+                <Route path="/complaint" element={<Complaint />} />
+                <Route path="/evidence/:id" element={<Evidence />} />
+                <Route path="/track/:token" element={<Track />} />
+                <Route path="/timer" element={<SafetyTimer />} />
+                <Route path="/walk" element={<Walk />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <BottomNav />
+            <OfflineStatus />
+            </DisguiseGate>
+          </BrowserRouter>
+        </AuthProvider>
       </I18nProvider>
     </ThemeProvider>
   </ErrorBoundary>
