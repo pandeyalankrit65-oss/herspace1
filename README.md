@@ -129,6 +129,18 @@ npx cap open android             # or open the project in Android Studio
 
 For a real phone, deploy the API over HTTPS, set `VITE_API_BASE_URL` to it, and build a signed release in Android Studio (Build → Generate Signed Bundle/APK).
 
+### Checking the app on the emulator
+
+`npm run test:android` drives the app on a running emulator and checks what only the app can do: SOS with audio recording, battery and emergency info on the contact's link, photo uploads, the evidence pack's print dialog (Save as PDF), automatic arrival from real GPS fixes, the safe word and voice commands with Android's recognizer, the fake call's voice, disguised mode with its silent SOS code, and an offline report sent once the connection is back (34 checks).
+
+```sh
+emulator -avd <name>                 # start an emulator (Android Studio's Device Manager works too)
+npm run android:apk                  # build the app
+npm run test:android -- --install    # install it and run the checks
+```
+
+It needs `ANDROID_HOME` (or `ADB`) pointing at the Android SDK and port 3001 free: it starts its own throwaway API server there, because the emulator build calls `http://10.0.2.2:3001`, and it never touches your dev database. Speech can't be spoken into the emulator, so recognized words are delivered the way Android's recognizer delivers them. Results and screenshots go to `test-results/android/`. The emulator needs about 1.5 GB of free memory; with less, Android may restart the app's WebView mid-run.
+
 ## Tests and CI
 
 ```sh

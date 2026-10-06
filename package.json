@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "build:android": "vite build --mode android && cap sync android",
-    "android:apk": "npm run build:android && cd android && gradlew assembleDebug"
+    "android:apk": "npm run build:android && cd android && gradlew assembleDebug",
+    "test:android": "node scripts/android-test.cjs"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
