@@ -132,8 +132,17 @@ const PhoneMock = () => {
 const Hero = () => {
   const { t } = useI18n();
   return (
-    <section className="relative overflow-hidden px-4 pb-24 pt-32 md:pb-32 md:pt-40">
+    <section className="relative overflow-hidden px-4 pb-24 pt-16 sm:pt-32 md:pb-32 md:pt-40">
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_45%_at_20%_15%,hsl(var(--primary)/0.16),transparent),radial-gradient(40%_40%_at_90%_35%,hsl(var(--brand)/0.13),transparent)]" />
+      {/* Phones: the whole photo, edge to edge under the navigation bar, fading into the page
+          behind the headline. Larger screens show it beside the phone mockup instead. */}
+      <div className="relative -mx-4 -mb-12 sm:hidden">
+        <img
+          src={heroImage}
+          alt={t("home.heroImageAlt")}
+          className="block aspect-video w-full object-cover [-webkit-mask-image:linear-gradient(to_bottom,black_55%,transparent)] [mask-image:linear-gradient(to_bottom,black_55%,transparent)]"
+        />
+      </div>
       <div className="container relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
         <div className="space-y-8 text-center lg:text-left">
           <span className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-4 py-1.5 text-sm font-semibold text-muted-foreground shadow-sm backdrop-blur">
