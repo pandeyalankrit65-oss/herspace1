@@ -9,6 +9,7 @@ const PAGES: Array<[string, RegExp]> = [
   ["/map", /Safe Map/],
   ["/circles", /Safe Circles/],
   ["/corporate", /Corporate Connect/],
+  ["/partners", /Expert help/],
   ["/about", /About/],
   ["/contacts", /Emergency Contacts/],
   ["/login", /Log in/],

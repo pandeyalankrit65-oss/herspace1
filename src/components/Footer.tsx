@@ -53,6 +53,11 @@ const Footer = () => {
                   {t("footer.circles")}
                 </Link>
               </li>
+              <li>
+                <Link to="/partners" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  {t("nav.partners")}
+                </Link>
+              </li>
             </ul>
           </div>
 

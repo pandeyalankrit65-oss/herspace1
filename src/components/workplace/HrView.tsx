@@ -1,43 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Copy, EyeOff, Inbox, RefreshCw, Settings as SettingsIcon, UserRound } from "lucide-react";
+import { BarChart3, EyeOff, Inbox, RefreshCw, Settings as SettingsIcon, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
+import CodeBox from "@/components/CodeBox";
 import { api } from "@/lib/api";
 import Thread, { CategoryLabel } from "./Thread";
 import { STATUSES, statusKey, type Insights, type Settings, type Status, type WorkplaceReport } from "./types";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString([], { dateStyle: "medium" });
-
-const CodeBox = ({ code }: { code: string }) => {
-  const { t } = useI18n();
-  const { toast } = useToast();
-  const pretty = `${code.slice(0, 4)} ${code.slice(4)}`;
-  return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-primary/10 p-4 ring-1 ring-primary/25">
-      <span className="font-mono text-2xl font-bold tracking-[0.2em]" aria-label={t("work.joinCode")}>
-        {pretty}
-      </span>
-      <Button
-        type="button"
-        variant="glass"
-        size="sm"
-        className="gap-2"
-        onClick={() =>
-          navigator.clipboard.writeText(pretty).then(
-            () => toast({ title: t("common.copied") }),
-            () => {},
-          )
-        }
-      >
-        <Copy className="h-4 w-4" /> {t("common.copy")}
-      </Button>
-    </div>
-  );
-};
 
 export const NewCode = ({ code }: { code: string }) => {
   const { t } = useI18n();
@@ -45,7 +19,7 @@ export const NewCode = ({ code }: { code: string }) => {
     <div className="space-y-3 rounded-[2rem] bg-card p-6 shadow-card ring-1 ring-success/40 sm:p-8">
       <h2 className="text-xl font-extrabold">{t("work.codeTitle")}</h2>
       <p className="text-muted-foreground">{t("work.codeText")}</p>
-      <CodeBox code={code} />
+      <CodeBox code={code} label={t("work.joinCode")} />
     </div>
   );
 };
@@ -306,7 +280,7 @@ const SettingsTab = ({ onLeave }: { onLeave: () => void }) => {
       <section className="space-y-4 rounded-3xl bg-card p-6 shadow-card ring-1 ring-border">
         <h3 className="text-lg font-bold">{t("work.codeSection")}</h3>
         <p className="text-sm text-muted-foreground">{t("work.codeSectionText")}</p>
-        {newCode && <CodeBox code={newCode} />}
+        {newCode && <CodeBox code={newCode} label={t("work.joinCode")} />}
         <Button
           type="button"
           variant="glass"

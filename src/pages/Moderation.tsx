@@ -14,6 +14,7 @@ import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import PartnerReview from "@/components/partners/PartnerReview";
 
 type Queue = "review" | "approved" | "removed";
 type Action = "approve" | "remove" | "reopen";
@@ -173,6 +174,7 @@ const Moderation = () => {
         <div className="container mx-auto max-w-3xl space-y-4">
           <PageHeader icon={ShieldCheck} title={t("mod.title")} subtitle={t("mod.intro")} />
           {body()}
+          {user?.moderator && <PartnerReview />}
         </div>
       </main>
       <Footer />

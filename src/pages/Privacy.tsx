@@ -61,6 +61,12 @@ const PrivacyEn = () => (
           <strong>Corporate Connect (only if you join a workplace):</strong> which workplace you belong to, whether you're on its HR team, and the reports you send to your HR team with the conversation that follows. Each report is anonymous to HR unless you choose to share your name. If your HR team turns on Slack, Teams or email alerts, those alerts say only that a report or message arrived, never what it says or who sent it.
         </li>
         <li>
+          <strong>Safe Circles (only if you join one):</strong> the circles you're in or have asked to join, your role in each, and the posts, comments and flags you make there. For an anonymous post or comment we still store that it's yours, so you can delete it and a moderator can ban its author, but we never show it to anyone.
+        </li>
+        <li>
+          <strong>Expert help:</strong> when you request a session, which partner you asked and the contact detail, preferred time and message you entered. If you apply to be a partner, your listing, your credentials and the email and phone you give for requests.
+        </li>
+        <li>
           <strong>Support chat:</strong> messages are sent to our AI provider to generate a reply. HerSpace does not save them.
         </li>
       </ul>
@@ -83,6 +89,12 @@ const PrivacyEn = () => (
         </li>
         <li>
           <strong>Your workplace's HR team</strong>, only for the reports you send them through Corporate Connect: what you wrote and the conversation that follows. They see your name and email only if you chose to share them with that report. If you're on an HR team, the rest of that team sees your name and email. Your employer never sees anything else you do in HerSpace.
+        </li>
+        <li>
+          <strong>Members of your circles</strong> see your name, and what you post and comment in that circle, unless you post anonymously. Its moderators also see whether your account email is on the circle's verified domain, and your name when you ask to join. They never see who wrote an anonymous post, even when they remove it.
+        </li>
+        <li>
+          <strong>A partner you request a session from</strong> is emailed your name, the phone number or email you chose, your preferred time and your message, and only after you agree. Partners' credentials, email and phone are seen only by HerSpace moderators, who check them before listing anyone.
         </li>
         <li>
           <strong>Service providers</strong> that run parts of the app for us: Twilio (text messages and calls), Resend

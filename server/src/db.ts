@@ -266,6 +266,99 @@ const migrations: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  // Safe Circles: private communities. Anonymous posts keep user_id so the author can delete
+  // them and moderators can ban the author, but it is never shown to anyone.
+  `
+  CREATE TABLE circles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    email_domain TEXT,
+    require_domain INTEGER NOT NULL DEFAULT 0,
+    listed INTEGER NOT NULL DEFAULT 0,
+    join_code_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE circle_members (
+    circle_id INTEGER NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'member',
+    status TEXT NOT NULL DEFAULT 'active',
+    verified INTEGER NOT NULL DEFAULT 0,
+    joined_at TEXT NOT NULL,
+    last_seen_at TEXT,
+    PRIMARY KEY (circle_id, user_id)
+  );
+  CREATE INDEX circle_members_user ON circle_members(user_id);
+  CREATE TABLE circle_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    circle_id INTEGER NOT NULL REFERENCES circles(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    body TEXT NOT NULL,
+    anonymous INTEGER NOT NULL DEFAULT 0,
+    hidden INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX circle_posts_circle ON circle_posts(circle_id, id);
+  CREATE TABLE circle_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL REFERENCES circle_posts(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    anonymous INTEGER NOT NULL DEFAULT 0,
+    hidden INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX circle_comments_post ON circle_comments(post_id);
+  CREATE TABLE circle_flags (
+    target TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reason TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (target, target_id, user_id)
+  );
+  `,
+  // Partner network: counsellors, lawyers, NGOs and trainers who apply and are checked by
+  // HerSpace moderators before they're listed. Session requests are emailed to the partner.
+  `
+  CREATE TABLE partners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    city TEXT NOT NULL,
+    languages TEXT NOT NULL,
+    description TEXT NOT NULL,
+    credentials TEXT NOT NULL,
+    fees TEXT NOT NULL,
+    fee_note TEXT,
+    online INTEGER NOT NULL DEFAULT 0,
+    in_person INTEGER NOT NULL DEFAULT 0,
+    email TEXT NOT NULL,
+    phone TEXT,
+    website TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    review_note TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    verified_at TEXT
+  );
+  CREATE INDEX partners_status ON partners(status, kind);
+  CREATE TABLE partner_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partner_id INTEGER NOT NULL REFERENCES partners(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    contact_method TEXT NOT NULL,
+    contact_value TEXT NOT NULL,
+    preferred_time TEXT,
+    message TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX partner_requests_user ON partner_requests(user_id);
+  `,
 ];
 
 function migrate() {

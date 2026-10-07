@@ -1021,6 +1021,241 @@ describe('Corporate Connect', () => {
   });
 });
 
+describe('Safe Circles', () => {
+  const circleBody = { name: 'IIT Hostel Women', description: 'Safety updates and support for hostel residents.', kind: 'college' };
+
+  async function circle(extra: Record<string, unknown> = {}) {
+    const owner = await newUser('Oorja');
+    const created = await call('/circles', { token: owner.token, body: { ...circleBody, ...extra } });
+    assert.equal(created.status, 201);
+    const member = await newUser('Mira');
+    assert.equal((await call('/circles/join', { token: member.token, body: { code: created.data.joinCode } })).status, 201);
+    return { owner, member, id: created.data.id as number, code: created.data.joinCode as string };
+  }
+  const post = (token: string, id: number, extra: Record<string, unknown> = {}) =>
+    call(`/circles/${id}/posts`, { token, body: { kind: 'alert', body: 'Streetlights out on the back gate road tonight.', ...extra } });
+
+  test('members join with a code; only members can see inside', async () => {
+    const { owner, member, id } = await circle();
+    const outsider = await newUser('Usha');
+    assert.equal((await call(`/circles/${id}`, { token: outsider.token })).status, 404);
+    assert.equal((await post(outsider.token, id)).status, 404);
+    assert.equal((await call('/circles/join', { token: outsider.token, body: { code: 'NOTACODE' } })).status, 404);
+
+    assert.equal((await post(member.token, id)).status, 201);
+    // The owner sees a new post waiting; opening the circle marks it read.
+    assert.equal((await call('/circles', { token: owner.token })).data.circles[0].newPosts, 1);
+    const view = (await call(`/circles/${id}`, { token: owner.token })).data;
+    assert.equal(view.circle.members, 2);
+    assert.equal(view.circle.role, 'owner');
+    assert.equal(view.posts[0].author, 'Mira');
+    assert.equal(view.posts[0].mine, false);
+    assert.equal((await call('/circles', { token: owner.token })).data.circles[0].newPosts, 0);
+    const mine = (await call('/circles', { token: member.token })).data.circles[0];
+    assert.equal(mine.role, 'member');
+    assert.equal(mine.newPosts, 0, 'your own posts are not new to you');
+  });
+
+  test('anonymous posts and comments hide the author from everyone, moderators included', async () => {
+    const { owner, member, id } = await circle();
+    await post(member.token, id, { anonymous: true });
+    const view = (await call(`/circles/${id}`, { token: owner.token })).data;
+    const p = view.posts[0];
+    assert.equal(p.author, null);
+    assert.equal(JSON.stringify(view).includes('Mira'), false);
+    assert.equal((await call(`/circles/${id}`, { token: member.token })).data.posts[0].mine, true, 'the author still knows it is theirs');
+
+    await call(`/circles/${id}/posts/${p.id}/comments`, { token: member.token, body: { body: 'I saw it too.', anonymous: true } });
+    const comment = (await call(`/circles/${id}`, { token: owner.token })).data.posts[0].comments[0];
+    assert.equal(comment.author, null);
+
+    // Flagged, it reaches the moderation queue still anonymous.
+    const third = await newUser('Tara');
+    await call('/circles/join', { token: third.token, body: { code: (await call(`/circles/${id}/join-code`, { token: owner.token, method: 'POST' })).data.joinCode } });
+    await call(`/circles/${id}/flag`, { token: third.token, body: { target: 'post', id: p.id, reason: 'false' } });
+    const queue = (await call(`/circles/${id}/moderation`, { token: owner.token })).data;
+    assert.equal(queue.flagged[0].author, null);
+    assert.equal(JSON.stringify(queue.flagged).includes('Mira'), false);
+  });
+
+  test('three flags hide a post; a moderator can remove it and ban the anonymous author without learning who it is', async () => {
+    const { owner, member, id, code } = await circle();
+    const { data } = await post(member.token, id, { anonymous: true, body: 'Spreading a rumour about a named person.' });
+    assert.equal((await call(`/circles/${id}/flag`, { token: member.token, body: { target: 'post', id: data.id, reason: 'spam' } })).status, 400, 'not your own');
+    const flaggers = [owner];
+    for (const name of ['Fiza', 'Gita']) {
+      const u = await newUser(name);
+      await call('/circles/join', { token: u.token, body: { code } });
+      flaggers.push(u);
+    }
+    for (const u of flaggers) await call(`/circles/${id}/flag`, { token: u.token, body: { target: 'post', id: data.id, reason: 'personal_info' } });
+    assert.equal((await call(`/circles/${id}`, { token: flaggers[1].token })).data.posts.length, 0, 'hidden from members');
+    assert.equal((await call(`/circles/${id}`, { token: member.token })).data.posts[0].hidden, true, 'the author sees it is hidden');
+
+    const queue = (await call(`/circles/${id}/moderation`, { token: owner.token })).data;
+    assert.equal(queue.flagged[0].flags, 3);
+    assert.deepEqual(queue.flagged[0].reasons, ['personal_info']);
+    const removed = await call(`/circles/${id}/moderation/items`, { token: owner.token, body: { target: 'post', id: data.id, action: 'remove', ban: true } });
+    assert.equal(removed.status, 200);
+    assert.equal((await call(`/circles/${id}`, { token: member.token })).status, 404, 'the author is out');
+    assert.equal((await call('/circles/join', { token: member.token, body: { code } })).status, 403, 'and cannot rejoin');
+  });
+
+  test('listed circles can be found and asked to join; a domain limit keeps others out', async () => {
+    const owner = await newUser('Kavya');
+    // Test accounts are @example.com.
+    const created = await call('/circles', {
+      token: owner.token,
+      body: { ...circleBody, name: 'Example College Women', emailDomain: 'example.com', requireDomain: true, listed: true },
+    });
+    assert.equal(created.status, 201);
+    assert.equal((await call('/circles', { token: owner.token, body: { ...circleBody, emailDomain: 'iitd.ac.in' } })).status, 400, 'not your domain');
+
+    const student = await newUser('Sana');
+    const found = (await call('/circles/directory?q=Example%20College', { token: student.token })).data.circles;
+    assert.equal(found.length, 1);
+    assert.equal(found[0].requireDomain, true);
+    assert.equal((await call(`/circles/${created.data.id}/request`, { token: student.token, method: 'POST' })).status, 201);
+    assert.equal((await call(`/circles/${created.data.id}`, { token: student.token })).status, 404, 'not in until approved');
+    assert.equal((await call('/circles/directory?q=Example%20College', { token: student.token })).data.circles[0].requested, true);
+
+    const queue = (await call(`/circles/${created.data.id}/moderation`, { token: owner.token })).data;
+    assert.equal(queue.requests[0].name, 'Sana');
+    assert.equal(queue.requests[0].verified, true);
+    await call(`/circles/${created.data.id}/moderation/requests/${queue.requests[0].id}`, { token: owner.token, body: { approve: true } });
+    assert.equal((await call(`/circles/${created.data.id}`, { token: student.token })).status, 200);
+
+    // An unlisted circle never shows in the directory.
+    const hidden = await circle({ name: 'Unlisted Example Group' });
+    assert.equal((await call('/circles/directory?q=Unlisted', { token: student.token })).data.circles.length, 0);
+    assert.equal((await call(`/circles/${hidden.id}/request`, { token: student.token, method: 'POST' })).status, 404);
+  });
+
+  test('roles: the owner makes moderators; moderators cannot touch each other; the circle passes on when the owner leaves', async () => {
+    const { owner, member, id, code } = await circle();
+    const mod = await newUser('Neha');
+    await call('/circles/join', { token: mod.token, body: { code } });
+    const members = (await call(`/circles/${id}/moderation`, { token: owner.token })).data.members;
+    const modId = members.find((m: { name: string }) => m.name === 'Neha').id;
+    const memberId = members.find((m: { name: string }) => m.name === 'Mira').id;
+    const ownerId = members.find((m: { name: string }) => m.name === 'Oorja').id;
+    assert.equal((await call(`/circles/${id}/moderation`, { token: member.token })).status, 403);
+    assert.equal((await call(`/circles/${id}/moderation/members/${modId}`, { token: owner.token, body: { action: 'moderator' } })).status, 200);
+    assert.equal((await call(`/circles/${id}/moderation/members/${ownerId}`, { token: mod.token, body: { action: 'ban' } })).status, 403);
+    assert.equal((await call(`/circles/${id}/moderation/members/${memberId}`, { token: mod.token, body: { action: 'moderator' } })).status, 403, 'only the owner sets roles');
+
+    // Moderators remove anyone's posts; members only their own.
+    const { data } = await post(owner.token, id);
+    assert.equal((await call(`/circles/${id}/posts/${data.id}`, { token: member.token, method: 'DELETE' })).status, 404);
+    assert.equal((await call(`/circles/${id}/posts/${data.id}`, { token: mod.token, method: 'DELETE' })).status, 200);
+
+    await call(`/circles/${id}/leave`, { token: owner.token, method: 'POST' });
+    assert.equal((await call(`/circles/${id}`, { token: mod.token })).data.circle.role, 'owner', 'the moderator takes over');
+    await call(`/circles/${id}/leave`, { token: member.token, method: 'POST' });
+    await call(`/circles/${id}/leave`, { token: mod.token, method: 'POST' });
+    assert.equal((await call('/circles/join', { token: member.token, body: { code } })).status, 404, 'the last one out deletes it');
+  });
+
+  test("an owner deleting their account hands the circle on; their posts go with them and are in their export", async () => {
+    const { owner, member, id } = await circle();
+    await post(owner.token, id);
+    const exported = (await call('/account/export', { token: owner.token })).data;
+    assert.equal(exported.circles[0].name, 'IIT Hostel Women');
+    assert.equal(exported.circlePosts.length, 1);
+    await call('/account', { token: owner.token, method: 'DELETE', body: { password: 'password123' } });
+    const view = (await call(`/circles/${id}`, { token: member.token })).data;
+    assert.equal(view.circle.role, 'owner');
+    assert.equal(view.posts.length, 0);
+  });
+});
+
+describe('partner network', () => {
+  const application = {
+    name: 'Dr. Meena Rao, Counselling',
+    kind: 'counsellor',
+    city: 'Pune',
+    languages: ['en', 'mr', 'hi'],
+    description: 'Trauma-informed counselling for women, online and at my clinic in Kothrud. First session free.',
+    credentials: 'RCI registration CRR/12345, M.Phil Clinical Psychology',
+    fees: 'sliding',
+    feeNote: 'First session free',
+    online: true,
+    inPerson: true,
+    email: 'meena@example.com',
+    phone: '+91 98765 43210',
+    website: 'https://meena.example.com',
+  };
+
+  async function moderator() {
+    const mod = await newUser('Mod');
+    db.prepare("UPDATE users SET role = 'moderator' WHERE email = ?").run(mod.email);
+    return mod;
+  }
+
+  test('nobody is listed until a moderator checks them; contact details stay private', async () => {
+    const partner = await newUser('Meena');
+    assert.equal((await call('/partners/mine', { token: partner.token, method: 'PUT', body: { ...application, online: false, inPerson: false } })).status, 400);
+    assert.equal((await call('/partners/mine', { token: partner.token, method: 'PUT', body: { ...application, website: 'javascript:alert(1)' } })).status, 400);
+    const applied = await call('/partners/mine', { token: partner.token, method: 'PUT', body: application });
+    assert.equal(applied.status, 201);
+    assert.equal(applied.data.partner.status, 'pending');
+    const listed = () => call('/partners?city=Pune').then((r) => r.data.partners.filter((x: { name: string }) => x.name === application.name));
+    assert.equal((await listed()).length, 0, 'not listed while pending');
+
+    const mod = await moderator();
+    assert.equal((await call('/moderation/partners', { token: partner.token })).status, 403);
+    const queue = (await call('/moderation/partners', { token: mod.token })).data.partners;
+    const item = queue.find((x: { name: string }) => x.name === application.name);
+    assert.equal(item.credentials, application.credentials, 'moderators see the credentials to check');
+    assert.equal((await call(`/moderation/partners/${item.id}`, { token: mod.token, body: { action: 'reject' } })).status, 400, 'a rejection needs a reason');
+    assert.equal((await call(`/moderation/partners/${item.id}`, { token: mod.token, body: { action: 'approve' } })).status, 200);
+
+    const [shown] = await listed();
+    assert.ok(shown.verifiedAt);
+    assert.deepEqual(shown.languages, ['en', 'mr', 'hi']);
+    for (const secret of ['meena@example.com', '98765', 'CRR/12345']) assert.equal(JSON.stringify(shown).includes(secret), false, secret);
+    assert.equal((await call('/partners?lang=ta&city=Pune')).data.partners.some((x: { name: string }) => x.name === application.name), false);
+    assert.equal((await call('/partners?kind=lawyer')).data.partners.some((x: { name: string }) => x.name === application.name), false);
+
+    // Editing sends it back for checking.
+    await call('/partners/mine', { token: partner.token, method: 'PUT', body: { ...application, description: `${application.description} Evenings too.` } });
+    assert.equal((await listed()).length, 0);
+  });
+
+  test('session requests need an account, consent and a working email service', async () => {
+    const partner = await newUser('Ritu');
+    const { data } = await call('/partners/mine', { token: partner.token, method: 'PUT', body: { ...application, name: 'Ritu Legal Aid', kind: 'lawyer' } });
+    const mod = await moderator();
+    await call(`/moderation/partners/${data.partner.id}`, { token: mod.token, body: { action: 'approve' } });
+
+    const user = await newUser('Asha');
+    const request = { contactMethod: 'phone', contactValue: '+91 91234 56789', preferredTime: 'Weekday evenings', message: 'About a POSH complaint.', consent: true };
+    assert.equal((await call(`/partners/${data.partner.id}/request`, { body: request })).status, 401);
+    assert.equal((await call(`/partners/${data.partner.id}/request`, { token: user.token, body: { ...request, consent: false } })).status, 400);
+    assert.equal((await call(`/partners/${data.partner.id}/request`, { token: user.token, body: { ...request, contactValue: 'call me' } })).status, 400);
+    // The test server has no email service, so nothing is sent or stored.
+    assert.equal((await call(`/partners/${data.partner.id}/request`, { token: user.token, body: request })).status, 503);
+    assert.equal((await call('/partners/requests/mine', { token: user.token })).data.requests.length, 0);
+
+    // A hidden partner can't be reached.
+    await call(`/moderation/partners/${data.partner.id}`, { token: mod.token, body: { action: 'hide', note: 'Registration could not be confirmed.' } });
+    assert.equal((await call(`/partners/${data.partner.id}/request`, { token: user.token, body: request })).status, 404);
+    const own = (await call('/partners/mine', { token: partner.token })).data.partner;
+    assert.equal(own.status, 'hidden');
+    assert.equal(own.reviewNote, 'Registration could not be confirmed.');
+  });
+
+  test("a partner's listing is in their export and goes with their account", async () => {
+    const partner = await newUser('Lata');
+    await call('/partners/mine', { token: partner.token, method: 'PUT', body: { ...application, name: 'Lata Self-Defence' } });
+    assert.equal((await call('/account/export', { token: partner.token })).data.partnerListing.name, 'Lata Self-Defence');
+    await call('/account', { token: partner.token, method: 'DELETE', body: { password: 'password123' } });
+    const mod = await moderator();
+    const queue = (await call('/moderation/partners', { token: mod.token })).data.partners;
+    assert.equal(queue.some((x: { name: string }) => x.name === 'Lata Self-Defence'), false);
+  });
+});
+
 describe('security fixes', () => {
   test('SOS recordings must really be audio', async () => {
     const { token } = await userWithConfirmedContact('Gita');

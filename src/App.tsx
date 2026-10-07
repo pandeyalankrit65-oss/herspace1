@@ -18,6 +18,9 @@ const Report = lazy(() => import("./pages/Report"));
 const Support = lazy(() => import("./pages/Support"));
 const Map = lazy(() => import("./pages/Map"));
 const Circles = lazy(() => import("./pages/Circles"));
+const Circle = lazy(() => import("./pages/Circle"));
+const Partners = lazy(() => import("./pages/Partners"));
+const PartnerJoin = lazy(() => import("./pages/PartnerJoin"));
 const Corporate = lazy(() => import("./pages/Corporate"));
 const About = lazy(() => import("./pages/About"));
 const Contacts = lazy(() => import("./pages/Contacts"));
@@ -56,6 +59,9 @@ const App = () => (
                 <Route path="/support" element={<Support />} />
                 <Route path="/map" element={<Map />} />
                 <Route path="/circles" element={<Circles />} />
+                <Route path="/circles/:id" element={<Circle />} />
+                <Route path="/partners" element={<Partners />} />
+                <Route path="/partners/join" element={<PartnerJoin />} />
                 <Route path="/corporate" element={<Corporate />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contacts" element={<Contacts />} />

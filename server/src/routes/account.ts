@@ -9,6 +9,7 @@ import { codePhraseMessage, listContacts } from './contacts';
 import { perUser } from '../rateLimit';
 import crypto from 'crypto';
 import { deleteReports, reportPhotos } from './reports';
+import { handOverCircles } from './circles';
 
 // Account self-service: password change, data export and deletion (DPDP Act rights).
 export const accountRouter = Router();
@@ -207,7 +208,35 @@ accountRouter.get('/export', (req, res) => {
     ...r,
     messages: db.prepare('SELECT from_hr AS fromHr, body, created_at AS at FROM workplace_messages WHERE report_id = ? ORDER BY id').all(id),
   }));
-  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, checkIns, workplace, workplaceReports, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
+  const circles = db
+    .prepare(
+      `SELECT c.name, m.role, m.status, m.joined_at AS joinedAt FROM circle_members m JOIN circles c ON c.id = m.circle_id
+       WHERE m.user_id = ? AND m.status != 'banned'`
+    )
+    .all(userId);
+  const circlePosts = db
+    .prepare(
+      `SELECT c.name AS circle, p.kind, p.body, p.anonymous, p.created_at AS createdAt FROM circle_posts p JOIN circles c ON c.id = p.circle_id
+       WHERE p.user_id = ?`
+    )
+    .all(userId);
+  const circleComments = db
+    .prepare('SELECT body, anonymous, created_at AS createdAt FROM circle_comments WHERE user_id = ?')
+    .all(userId);
+  const partnerListing =
+    db
+      .prepare(
+        `SELECT name, kind, city, languages, description, credentials, fees, fee_note AS feeNote, online, in_person AS inPerson, email, phone,
+           website, status, created_at AS createdAt FROM partners WHERE user_id = ?`
+      )
+      .get(userId) ?? null;
+  const partnerRequests = db
+    .prepare(
+      `SELECT p.name AS partner, r.contact_method AS contactMethod, r.contact_value AS contactValue, r.preferred_time AS preferredTime,
+         r.message, r.created_at AS createdAt FROM partner_requests r JOIN partners p ON p.id = r.partner_id WHERE r.user_id = ?`
+    )
+    .all(userId);
+  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, checkIns, workplace, workplaceReports, circles, circlePosts, circleComments, partnerListing, partnerRequests, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
 });
 
 accountRouter.delete('/', passwordLimiter, (req, res) => {
@@ -220,6 +249,7 @@ accountRouter.delete('/', passwordLimiter, (req, res) => {
     // Personal data goes with the account. Anonymous reports were never linked to it.
     deleteReports('r.user_id = ?', userId);
     deleteSosEvents('user_id = ?', userId);
+    handOverCircles(userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId); // cascades to sessions, contacts, resets
     db.exec('COMMIT');
   } catch (err) {
