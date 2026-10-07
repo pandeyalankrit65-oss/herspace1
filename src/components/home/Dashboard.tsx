@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, CheckCircle2, ChevronRight, FileText, Footprints, LifeBuoy, Map, MessageCircle, Phone, Radio, Timer, TriangleAlert, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, FileText, Footprints, HeartPulse, LifeBuoy, Map, MessageCircle, Phone, Radio, Timer, TriangleAlert, UserPlus } from "lucide-react";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
@@ -31,6 +31,7 @@ const TOOL_GROUPS: Array<{ title: MessageKey; tools: Tool[] }> = [
       { to: "/report", icon: FileText, label: "nav.report", text: "dash.reportText" },
       { to: "/support", icon: MessageCircle, label: "nav.support", text: "dash.supportText" },
       { to: "/help", icon: LifeBuoy, label: "nav.help", text: "dash.helpText" },
+      { to: "/wellbeing", icon: HeartPulse, label: "nav.wellbeing", text: "dash.wellbeingText" },
     ],
   },
 ];

@@ -10,6 +10,7 @@ const PAGES: Array<[string, RegExp]> = [
   ["/circles", /Safe Circles/],
   ["/corporate", /Corporate Connect/],
   ["/partners", /Expert help/],
+  ["/wellbeing", /Take a moment/],
   ["/about", /About/],
   ["/contacts", /Emergency Contacts/],
   ["/login", /Log in/],

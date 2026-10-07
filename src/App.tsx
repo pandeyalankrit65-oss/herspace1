@@ -22,6 +22,7 @@ const Circle = lazy(() => import("./pages/Circle"));
 const Partners = lazy(() => import("./pages/Partners"));
 const PartnerJoin = lazy(() => import("./pages/PartnerJoin"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const Wellbeing = lazy(() => import("./pages/Wellbeing"));
 const Corporate = lazy(() => import("./pages/Corporate"));
 const About = lazy(() => import("./pages/About"));
 const Contacts = lazy(() => import("./pages/Contacts"));
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/partners" element={<Partners />} />
                 <Route path="/partners/join" element={<PartnerJoin />} />
                 <Route path="/verify-email/:token" element={<VerifyEmail />} />
+                <Route path="/wellbeing" element={<Wellbeing />} />
                 <Route path="/corporate" element={<Corporate />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contacts" element={<Contacts />} />

@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import { deleteJournal } from "@/lib/mood";
 import { clearOfflineData, offlineUser } from "@/lib/offline";
 
 export type User = {
@@ -36,7 +37,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Sets the signed-in user and keeps a copy on the device for offline SOS.
   const signedIn = useCallback((next: User) => {
     const previous = offlineUser.get<User>();
-    if (previous && previous.id !== next.id) clearOfflineData();
+    if (previous && previous.id !== next.id) {
+      clearOfflineData();
+      // Someone else signing in on this phone: the journal belonged to the previous person.
+      deleteJournal();
+    }
     offlineUser.set(next);
     setUser(next);
   }, []);
@@ -84,6 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+    // Only on a real logout: clearSession also runs for every signed-out visit, and must not
+    // erase a journal kept by someone who never signed in.
+    deleteJournal();
     clearSession();
   }, [clearSession]);
 
