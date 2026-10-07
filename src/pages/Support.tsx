@@ -15,6 +15,8 @@ import PageHeader from "@/components/PageHeader";
 import { useOnline } from "@/lib/offline";
 import Logo from "@/components/Logo";
 import type { MessageKey } from "@/i18n/en";
+import DistressBanner from "@/components/DistressBanner";
+import { detectDistress, type Distress } from "@/lib/distress";
 
 // Conversation starters shown before the first message.
 const STARTERS: MessageKey[] = ["support.starter1", "support.starter2", "support.starter3", "support.starter4"];
@@ -61,6 +63,8 @@ const Support = () => {
   // The greeting is rendered from the current language rather than stored, so it follows a
   // language switch; it's never sent to the API.
   const [messages, setMessages] = useState<Message[]>([]);
+  // Danger or self-harm spotted in what she wrote: offer SOS or a helpline straight away.
+  const [distress, setDistress] = useState<Distress | null>(null);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<"ai" | "fallback" | null>(null);
@@ -79,6 +83,9 @@ const Support = () => {
     if (!text.trim()) return;
 
     const userMessage: Message = { role: "user", content: text, ts: new Date().toISOString() };
+    const spotted = detectDistress(text);
+    // Self-harm outranks danger: once shown, a later "danger" message doesn't replace it.
+    if (spotted) setDistress((prev) => (prev === "self_harm" ? prev : spotted));
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsTyping(true);
@@ -127,6 +134,7 @@ const Support = () => {
             {/* Chat Interface */}
             <Card className="lg:col-span-2">
               <CardContent className="space-y-3 p-3 sm:space-y-4 sm:p-6">
+                {distress && <DistressBanner kind={distress} onDismiss={() => setDistress(null)} />}
                 {/* Messages */}
                 <ScrollArea className="h-[calc(100dvh-29rem)] min-h-[300px] pr-3 lg:h-[500px]">
                   <div className="space-y-4">

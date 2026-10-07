@@ -80,7 +80,7 @@ const chatSchema = z.object({
     .max(30)
     // Caps what one request can cost in AI tokens.
     .refine((messages) => messages.reduce((n, m) => n + m.content.length, 0) <= 16_000, 'Conversation is too long'),
-  lang: z.enum(['en', 'hi']).optional(),
+  lang: z.enum(['en', 'hi', 'ta', 'bn', 'mr']).optional(),
 });
 
 app.post('/api/chat', chatLimiter, async (req, res) => {

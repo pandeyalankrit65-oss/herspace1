@@ -18,6 +18,8 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | **Safe word** (SOS page) | Users choose their own word; saying it 3 times within 10 seconds while voice listening is on starts the (cancellable) SOS countdown, while once or twice in conversation does nothing. The built-in "help" words can be turned off so only the safe word triggers SOS. A "Test my safe word" button shows what the phone heard, to pick a word it recognises reliably. Stored only on the device (`src/lib/safe-word.ts`). |
 | **Voice commands** (mic in the top bar) | Say what you need on any page: "help me" (starts the SOS countdown), "call Mom" (matches contact names and family words like मम्मी / அம்மா / মা / आई against names and relations), "call police", "start a 30 minute timer", "fake call", "sound the alarm", "share my location", "I'm taking a cab", "open the map", "report", "my rights". Works in all five languages (`src/lib/voice-commands.ts`). It shows what it heard and what it's about to do before acting, and suggests phrases when it doesn't understand. |
 | **Voice in the support chat** | A mic button speaks your message instead of typing, and "Read replies aloud" reads the AI's answers in the app's language. |
+| **Listen for screams** (SOS page) | Opt-in, while the SOS page is open: a long, loud scream starts the cancellable countdown. Sound is analysed on the phone in 50 ms frames (`src/lib/scream.ts`) and never recorded or sent: a frame counts if it's loud, its energy is mostly in the 0.7-4 kHz band and its spectral centre is above 900 Hz, and about 0.8 s of such frames within 1.5 s triggers (0.5 s and quieter on "More sensitive"), then it rests for 15 s. Noise suppression and automatic gain are turned off so they don't flatten a scream. A **Test it** mode shows a live meter and whether a sound would count, without starting SOS. |
+| **Distress-aware chat** (`/support`) | As soon as a message suggests danger ("he's following me", "bachao", "பின்தொடர்கிறான்"...) the chat shows **Send SOS now** (straight into the cancellable countdown) and a call button; signs of self-harm bring Tele-MANAS 14416, 112 and the breathing exercise. Detection is on the device, in all five languages and romanised Hindi (`src/lib/distress.ts`), so it works before any reply and offline; the server's scripted replies use the same lists (a unit test keeps them in step). The chat now also works with the app in Tamil, Bengali or Marathi (the server used to reject those languages) and has scripted replies in them. |
 | **Shake to start SOS** | An opt-in switch on the SOS page (touch screens only): shaking the phone hard 3 times within 1.5 seconds starts the cancellable countdown. Walking or a single jolt doesn't trigger it. Only while the page is open. |
 | **Hold to send** | An option on the SOS page: instead of tap-then-countdown, press and hold the SOS button for 3 seconds (a ring fills as you hold; letting go cancels). Easier to do by feel, e.g. in a pocket. Works with touch, mouse and keyboard. |
 | **Verified phone number** (`/account`) | Users can add their own number, proved with a 6-digit texted code (expires in 10 minutes, 5 tries, 5 codes an hour). Alerts and invites then read "Asha (+91…)", so contacts know who it is and can call back. |
@@ -49,13 +51,13 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 
 ## Not built yet
 
-- **Safe word and voice trigger in the background**: today they listen only while the SOS page is open with the screen on. Listening with the screen off or the app closed needs an Android foreground service with microphone access (a permanent notification, battery use, and Google Play's rules for background microphone use), ideally with on-device recognition so audio never leaves the phone.
+- **Safe word, voice trigger and scream detection in the background**: today they listen only while the SOS page is open with the screen on. Listening with the screen off or the app closed needs an Android foreground service with microphone access (a permanent notification, battery use, and Google Play's rules for background microphone use), ideally with on-device recognition so audio never leaves the phone.
 - Other triggers that work with the screen off or the app closed: shake, lock-screen widget, power-button presses (needs an accessibility service, which Play Store policy restricts), smartwatch or Bluetooth panic button.
 - A missed-call SOS number for phones without data (needs a telephony provider).
 - Disguised mode can't change the app's name or icon on the home screen (needs native Android work).
 - Audio or video attached to reports (audio is recorded during SOS already).
 - Native-speaker review of the Tamil, Bengali and Marathi translations (interface, complaint letters, Privacy Policy and Terms), and legal review of the translated legal pages and the Help & rights guide in all four languages.
-- AI or ML risk prediction and safe-route navigation.
+- Safe-route navigation, and risk prediction beyond the weighted count of reports on the heatmap (e.g. time of day, lighting, crowd data).
 - End-to-end encryption. Data is protected by access control on the server, not encrypted per user.
 - Corporate Connect: signing in with the company's own login (SSO), and a formal Internal Committee case workflow (hearings, deadlines, reports to the District Officer).
 
@@ -166,6 +168,8 @@ The **browser tests** (`e2e/`) build the app and drive it in Chromium, at deskto
 - contacts replying "I'm on my way", walk with me, help nearby on the map, the setup checklist
 - report photos (EXIF removed) and map moderation
 - voice (with a fake speech engine) and shake (with synthetic motion events) triggers
+- Scream detection: a stand-in microphone plays a scream-like tone; test mode never starts SOS, a short burst doesn't count, a sustained scream starts the countdown
+- Distress-aware chat: the danger and self-harm banners, Send SOS going straight into the countdown, and chat in Tamil
 - Heatmap: no reports nearby is never called safe, three reports give a weighted estimate, and the heatmap draws squares instead of points
 - Well-being: breathing cues change on time, grounding steps, and a low-mood check-in that offers Tele-MANAS and never leaves the phone
 - Verified reporting: confirming an email by its link, a copied report from a throwaway account held with its reason, "I saw this too", and a moderator pausing that account by code name

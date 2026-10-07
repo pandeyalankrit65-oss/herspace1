@@ -287,6 +287,18 @@ describe('chat', () => {
     assert.match(fallbackReply(say('someone is following me')), /SOS/);
     assert.match(fallbackReply(say('मुझे बहुत घबराहट हो रही है'), 'hi'), /ग्राउंडिंग/);
     assert.match(fallbackReply(say('कोई मेरा पीछा कर रहा है'), 'hi'), /SOS/);
+    // Tamil, Bengali and Marathi have their own replies, picked by the same distress lists as the app.
+    assert.match(fallbackReply(say('யாரோ என்னைப் பின்தொடர்கிறான்'), 'ta'), /SOS/);
+    assert.match(fallbackReply(say('আমি মরে যেতে চাই'), 'bn'), /14416/);
+    assert.match(fallbackReply(say('मला जगायचं नाही'), 'mr'), /14416/);
+    assert.match(fallbackReply(say('I want to die'), 'mr'), /14416/, 'the person may write in English with the app in Marathi');
+  });
+
+  test('answers in every app language (Tamil, Bengali and Marathi used to be rejected)', async () => {
+    for (const lang of ['en', 'hi', 'ta', 'bn', 'mr']) {
+      const res = await call('/chat', { body: { messages: [{ role: 'user', content: 'hello' }], lang } });
+      assert.equal(res.status, 200, lang);
+    }
   });
 
   test('validates input', async () => {

@@ -57,6 +57,7 @@ const PrivacyEn = () => (
           only on your device, never on our server; the app uses them to notice when you've arrived. All of this is removed
           when you log out.
           The well-being mood journal is kept only on your device too, and never sent to us; it's removed when you log out or delete it.
+          If you turn on listening for screams, sound is checked on your device while the SOS page is open and is never recorded or sent. The support chat's check for signs of danger also runs on your device.
         </li>
         <li>
           <strong>Corporate Connect (only if you join a workplace):</strong> which workplace you belong to, whether you're on its HR team, and the reports you send to your HR team with the conversation that follows. Each report is anonymous to HR unless you choose to share your name. If your HR team turns on Slack, Teams or email alerts, those alerts say only that a report or message arrived, never what it says or who sent it.

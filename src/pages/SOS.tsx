@@ -17,6 +17,8 @@ import PageHeader from "@/components/PageHeader";
 import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
+import { useScreamTrigger } from "@/hooks/use-scream-trigger";
+import ScreamSettings from "@/components/ScreamSettings";
 import { SAFE_WORD_REPEATS, useSafeWord } from "@/lib/safe-word";
 import SafeWordSettings from "@/components/SafeWordSettings";
 import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
@@ -209,6 +211,7 @@ const SOS = () => {
     if (startParam === "sos") startCountdown();
   }, [startParam, setParams, startCountdown]);
   const shake = useShakeTrigger(startCountdown);
+  const scream = useScreamTrigger(startCountdown);
   const sosMode = useSosMode();
   // Holding is already deliberate, so a completed hold sends straight away.
   const hold = useHoldToSend(sendSOS, HOLD_SECONDS * 1000);
@@ -476,6 +479,7 @@ const SOS = () => {
                   <Switch id="shake-toggle" checked={shake.enabled} onCheckedChange={shake.setEnabled} />
                 </div>
               )}
+              <ScreamSettings scream={scream} />
             </CardContent>
           </Card>
 

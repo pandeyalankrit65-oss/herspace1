@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { detectDistress } from './distress';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -17,9 +18,10 @@ How to respond:
 Safety:
 - If the person may be in immediate danger, tell them clearly to call emergency services (${EMERGENCY_NUMBER}) or use the SOS button in the app, before anything else.
 - If they mention thoughts of suicide or self-harm, respond with care, encourage them to contact a crisis line or emergency services now, and stay with them in the conversation.
-- The app has these pages you can point to: SOS (emergency alert to trusted contacts), Report (document an incident, optionally anonymously), Safe Map, and Emergency Contacts.`;
+- In India, Tele-MANAS (14416, free, 24x7) is the national mental health helpline; point to it for suicidal thoughts or overwhelming distress.
+- The app has these pages you can point to: SOS (emergency alert to trusted contacts), Report (document an incident, optionally anonymously), Safe Map, Emergency Contacts, Walk with me (share a journey live), Well-being (breathing and grounding exercises), Expert help (checked counsellors and lawyers), and Help & rights (helplines and legal guidance).`;
 
-export type Lang = 'en' | 'hi';
+export type Lang = 'en' | 'hi' | 'ta' | 'bn' | 'mr';
 
 const FALLBACK: Record<Lang, Record<'selfHarm' | 'danger' | 'panic' | 'default', string>> = {
   en: {
@@ -34,6 +36,24 @@ const FALLBACK: Record<Lang, Record<'selfHarm' | 'danger' | 'panic' | 'default',
     panic: 'मैं यहां हूं। चलिए एक छोटा ग्राउंडिंग अभ्यास करते हैं: 5 चीज़ें जो आप देख सकती हैं, 4 जिन्हें छू सकती हैं, 3 जो सुन सकती हैं, 2 जिनकी गंध ले सकती हैं और 1 जिसका स्वाद ले सकती हैं। क्या आप साथ में करना चाहेंगी?',
     default: 'मुझसे यह साझा करने के लिए धन्यवाद। आपकी भावनाएं जायज़ हैं। क्या आप बताना चाहेंगी कि क्या हुआ, या अभी संभलने के कुछ तरीके ज़्यादा मदद करेंगे?',
   },
+  ta: {
+    selfHarm: `நீங்கள் என்னிடம் சொன்னதில் எனக்கு மிகவும் மகிழ்ச்சி. தயவுசெய்து இப்போதே டெலி-மனஸ் 14416-ஐ அழையுங்கள் அல்லது ${EMERGENCY_NUMBER}-ஐ அழையுங்கள். இந்த நேரத்தில் ஒரு மனிதரின் துணை உங்களுக்குத் தேவை. நானும் உங்களுடன் இருக்கிறேன்.`,
+    danger: `உங்கள் பாதுகாப்பே முதன்மை. நீங்கள் உடனடி ஆபத்தில் இருந்தால், இப்போதே ${EMERGENCY_NUMBER}-ஐ அழையுங்கள் அல்லது SOS பொத்தானை அழுத்துங்கள். இப்போது பாதுகாப்பாக இருந்தால், அடுத்து என்ன செய்வது என்று யோசிக்க நான் உதவுகிறேன்.`,
+    panic: 'நான் இங்கே இருக்கிறேன். ஒரு சிறிய பயிற்சி செய்வோம்: நீங்கள் பார்க்கக்கூடிய 5, தொடக்கூடிய 4, கேட்கக்கூடிய 3, நுகரக்கூடிய 2, சுவைக்கக்கூடிய 1 பொருளைச் சொல்லுங்கள். சேர்ந்து செய்யலாமா?',
+    default: 'என்னிடம் பகிர்ந்ததற்கு நன்றி. உங்கள் உணர்வுகள் நியாயமானவை. என்ன நடந்தது என்று பேச விரும்புகிறீர்களா, அல்லது இப்போது சமாளிக்கச் சில வழிகள் உதவுமா?',
+  },
+  bn: {
+    selfHarm: `আপনি আমাকে বলেছেন বলে আমি সত্যিই খুশি। দয়া করে এখনই টেলি-মানস 14416-এ বা ${EMERGENCY_NUMBER}-এ কল করুন। এই মুহূর্তে একজন মানুষের সাহায্য আপনার প্রাপ্য। আমিও আপনার সঙ্গে আছি।`,
+    danger: `আপনার নিরাপত্তাই সবার আগে। আপনি এখনই বিপদে থাকলে ${EMERGENCY_NUMBER}-এ কল করুন বা SOS বোতাম টিপুন। এই মুহূর্তে নিরাপদ থাকলে, পরের পদক্ষেপ ভাবতে আমি সাহায্য করতে পারি।`,
+    panic: 'আমি এখানে আছি। চলুন একটা ছোট অনুশীলন করি: দেখতে পাচ্ছেন এমন 5টি, ছুঁতে পারেন এমন 4টি, শুনতে পাচ্ছেন এমন 3টি, গন্ধ পাচ্ছেন এমন 2টি আর স্বাদ পাচ্ছেন এমন 1টি জিনিসের নাম বলুন। একসঙ্গে করবেন?',
+    default: 'আমার সঙ্গে শেয়ার করার জন্য ধন্যবাদ। আপনার অনুভূতি স্বাভাবিক। কী হয়েছিল বলতে চান, নাকি এখন সামলানোর কিছু উপায় বেশি কাজে আসবে?',
+  },
+  mr: {
+    selfHarm: `तुम्ही मला सांगितलंत याचा मला खरंच आनंद आहे. कृपया आत्ताच टेली-मानस 14416 वर किंवा ${EMERGENCY_NUMBER} वर कॉल करा. या क्षणी एखाद्या माणसाची साथ तुम्हाला मिळायला हवी. मीही तुमच्यासोबत आहे.`,
+    danger: `तुमची सुरक्षा सर्वात आधी. तुम्ही आत्ता धोक्यात असाल तर ${EMERGENCY_NUMBER} वर कॉल करा किंवा SOS बटण दाबा. आत्ता सुरक्षित असाल तर पुढे काय करायचे याचा विचार करायला मी मदत करू शकते.`,
+    panic: 'मी इथे आहे. एक छोटा सराव करूया: दिसणाऱ्या 5, स्पर्श करता येणाऱ्या 4, ऐकू येणाऱ्या 3, वास घेता येणाऱ्या 2 आणि चव घेता येणाऱ्या 1 गोष्टीचे नाव घ्या. एकत्र करूया?',
+    default: 'माझ्याशी हे शेअर केल्याबद्दल धन्यवाद. तुमच्या भावना योग्य आहेत. काय झालं ते सांगायला आवडेल का, की आत्ता सावरण्याचे काही मार्ग जास्त उपयोगी पडतील?',
+  },
 };
 
 // Used when no Anthropic credentials are configured or the API call fails.
@@ -41,9 +61,10 @@ const FALLBACK: Record<Lang, Record<'selfHarm' | 'danger' | 'panic' | 'default',
 export function fallbackReply(messages: ChatMessage[], lang: Lang = 'en'): string {
   const text = ([...messages].reverse().find((m) => m.role === 'user')?.content || '').toLowerCase();
   const replies = FALLBACK[lang];
-  if (/suicid|self.?harm|end my life|kill myself|want to die|आत्महत्या|खुद को नुकसान|मरना चाहती|जीना नहीं/.test(text)) return replies.selfHarm;
-  if (/unsafe|danger|follow|attack|hurt me|kill|खतरा|खतरे|पीछा|हमला|बचाओ|डर लग/.test(text)) return replies.danger;
-  if (/panic|anxi|घबराहट|चिंता|बेचैन/.test(text)) return replies.panic;
+  const distress = detectDistress(text);
+  if (distress === 'self_harm') return replies.selfHarm;
+  if (distress === 'danger' || /danger|attack|kill|खतरा|हमला/.test(text)) return replies.danger;
+  if (/panic|anxi|घबराहट|चिंता|बेचैन|பதற்ற|பயம்|আতঙ্ক|উদ্বেগ|घबराट|चिंता/.test(text)) return replies.panic;
   return replies.default;
 }
 
