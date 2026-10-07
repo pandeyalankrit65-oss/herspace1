@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { cells, estimate, levelFor, pointWeight, withinPeriod, type RiskPoint } from "./risk";
+import { cells, estimate, levelFor, pointWeight, timeOfDay, warningAt, withinPeriod, type RiskPoint } from "./risk";
 
 const now = new Date("2026-10-08T12:00:00");
 const p = (extra: Partial<RiskPoint> = {}): RiskPoint => ({
@@ -51,5 +51,20 @@ describe("risk estimate", () => {
     expect(withinPeriod(p({ date: "2026-08-01" }), "3m", now)).toBe(true);
     expect(withinPeriod(p({ date: "2026-05-01" }), "3m", now)).toBe(false);
     expect(withinPeriod(p({ date: "2020-01-01" }), "all", now)).toBe(true);
+  });
+
+  test("time of day: mostly after dark, in the day, or mixed, from at least 3 timed reports", () => {
+    expect(timeOfDay([p({ hour: 22 }), p({ hour: 23 })])).toBeNull();
+    expect(timeOfDay([p({ hour: 22 }), p({ hour: 2 }), p({ hour: 19 }), p({ hour: null })])).toBe("night");
+    expect(timeOfDay([p({ hour: 9 }), p({ hour: 13 }), p({ hour: 16 })])).toBe("day");
+    expect(timeOfDay([p({ hour: 9 }), p({ hour: 21 }), p({ hour: 16 }), p({ hour: 23 })])).toBe("mixed");
+  });
+
+  test("journey warnings: only near a square with several reports, with what is known about it", () => {
+    const busy = [p({ hour: 21 }), p({ hour: 22, incidentType: "stalking" }), p({ hour: 23, incidentType: "stalking" })];
+    expect(warningAt([p()], { lat: 18.52, lng: 73.85 }, now), "one report is not a warning").toBeNull();
+    const w = warningAt(busy, { lat: 18.523, lng: 73.851 }, now)!;
+    expect(w).toMatchObject({ key: "18.52:73.85", level: 2, count: 3, topType: "stalking", timeOfDay: "night" });
+    expect(warningAt(busy, { lat: 18.56, lng: 73.85 }, now), "4 km away").toBeNull();
   });
 });

@@ -382,6 +382,11 @@ const migrations: string[] = [
     PRIMARY KEY (report_id, user_id)
   );
   `,
+  // The time of day an incident happened (HH:MM, optional): the map shares only the hour, so
+  // people can see when a place's reports cluster, e.g. after dark.
+  `
+  ALTER TABLE reports ADD COLUMN incident_time TEXT;
+  `,
 ];
 
 function migrate() {

@@ -1491,6 +1491,22 @@ const messages: Partial<Record<MessageKey, string>> = {
   "scream.counting": "ही किंकाळी मोजली जात आहे...",
   "scream.wouldTrigger": "यामुळे SOS सुरू झाले असते.",
   "scream.stopTest": "चाचणी थांबवा",
+  // Prevention: time of day and journey warnings
+  "report.time": "वेळ (ऐच्छिक)",
+  "report.timeHint": "अंदाजे सांगितले तरी चालेल. नकाशा फक्त तास दाखवतो, म्हणजे अंधार पडल्यावर एखादे ठिकाण जास्त वाईट आहे का हे इतरांना दिसेल.",
+  "risk.time.night": "इथे वेळ असलेले बहुतेक रिपोर्ट अंधार पडल्यानंतरचे होते (संध्याकाळी 6 ते सकाळी 6).",
+  "risk.time.day": "इथे वेळ असलेले बहुतेक रिपोर्ट दिवसाचे होते.",
+  "risk.time.mixed": "इथे रिपोर्ट दिवसाही आणि अंधार पडल्यावरही झाले.",
+  "areaWarn.titleSeveral": "लक्ष द्या: आजूबाजूला अलीकडचे {count} रिपोर्ट",
+  "areaWarn.titleMany": "काळजी घ्या: आजूबाजूला अलीकडचे {count} रिपोर्ट",
+  "areaWarn.mostly": "बहुतेक {type}.",
+  "areaWarn.night": "बहुतेक अंधार पडल्यानंतर.",
+  "areaWarn.day": "बहुतेक दिवसा.",
+  "areaWarn.tips": "गर्दीच्या, उजेड असलेल्या रस्त्यांवर राहा आणि फोन हातात ठेवा. तुम्ही कुठे आहात ते तुमचे संपर्क पाहू शकतात.",
+  "areaWarn.fakeCall": "बनावट कॉल",
+  "areaWarn.dismiss": "ही सूचना लपवा",
+  "areaWarn.notifyTitle": "वाटेत लक्ष द्या",
+  "areaWarn.notifyBody": "आजूबाजूला अलीकडचे {count} रिपोर्ट. गर्दीच्या, उजेड असलेल्या रस्त्यांवर राहा.",
 };
 
 export default messages;

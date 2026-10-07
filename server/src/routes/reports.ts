@@ -47,6 +47,12 @@ const reportSchema = z.object({
     }, 'Enter a real date.')
     .optional()
     .or(z.literal('')),
+  // A real time of day, HH:MM (24-hour).
+  time: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Enter a time like 21:30.')
+    .optional()
+    .or(z.literal('')),
   coords: coordsSchema.optional(),
   anonymous: z.boolean().default(false),
 });
@@ -63,8 +69,8 @@ reportsRouter.post('/', reportLimiter, (req, res) => {
   const result = db
     .prepare(
       `INSERT INTO reports (user_id, incident_type, description, location_text, lat, lng, incident_date, created_at, upload_token_hash, upload_expires_at,
-         reporter_trust, hold_reasons, map_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         reporter_trust, hold_reasons, map_status, incident_time)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       userId,
@@ -79,7 +85,8 @@ reportsRouter.post('/', reportLimiter, (req, res) => {
       new Date(Date.now() + UPLOAD_WINDOW_MS).toISOString(),
       reporterTrust(userId),
       reasons.length ? reasons.join(',') : null,
-      reasons.length ? 'held' : 'visible'
+      reasons.length ? 'held' : 'visible',
+      body.time || null
     );
   res.status(201).json({
     success: true,
@@ -114,8 +121,8 @@ reportsRouter.post('/:id/photos', photoLimiter, express.raw({ type: 'image/jpeg'
 reportsRouter.get('/', requireAuth, (req, res) => {
   const reports = db
     .prepare(
-      `SELECT id, incident_type AS incidentType, description, location_text AS location, incident_date AS date, created_at AS createdAt
-       FROM reports WHERE user_id = ? ORDER BY id DESC`
+      `SELECT id, incident_type AS incidentType, description, location_text AS location, incident_date AS date, incident_time AS time,
+         created_at AS createdAt FROM reports WHERE user_id = ? ORDER BY id DESC`
     )
     .all(req.user!.id) as Array<{ id: number }>;
   res.json({ reports: reports.map((r) => ({ ...r, photos: reportPhotos(r.id).map((p) => p.id) })) });
@@ -129,7 +136,7 @@ reportsRouter.get('/:id/evidence', requireAuth, (req, res) => {
   const user = req.user!;
   const report = db
     .prepare(
-      `SELECT id, incident_type AS incidentType, description, location_text AS location, lat, lng, incident_date AS date,
+      `SELECT id, incident_type AS incidentType, description, location_text AS location, lat, lng, incident_date AS date, incident_time AS time,
               created_at AS createdAt FROM reports WHERE id = ? AND user_id = ?`
     )
     .get(Number(req.params.id), user.id) as { id: number; date: string | null; createdAt: string } | undefined;
@@ -195,6 +202,7 @@ reportsRouter.get('/map', (req, res) => {
     .prepare(
       `SELECT r.id, r.incident_type AS incidentType, ROUND(r.lat, 2) AS lat, ROUND(r.lng, 2) AS lng,
               COALESCE(r.incident_date, substr(r.created_at, 1, 10)) AS date, r.reporter_trust AS trust,
+              CAST(substr(r.incident_time, 1, 2) AS INTEGER) AS hour,
               (SELECT COUNT(*) FROM report_confirmations c WHERE c.report_id = r.id) AS confirmations,
               EXISTS (SELECT 1 FROM report_confirmations c WHERE c.report_id = r.id AND c.user_id = ?) AS confirmedByMe,
               (r.user_id IS NOT NULL AND r.user_id = ?) AS mine

@@ -1580,6 +1580,23 @@ const en = {
   "scream.wouldTrigger": "That would have started SOS.",
   "scream.stopTest": "Stop testing",
 
+  // Prevention: time of day and journey warnings
+  "report.time": "Time (optional)",
+  "report.timeHint": "Roughly is fine. The map shows only the hour, so others can see if a place is worse after dark.",
+  "risk.time.night": "Most reports here with a time were after dark (6 pm to 6 am).",
+  "risk.time.day": "Most reports here with a time were during the day.",
+  "risk.time.mixed": "Reports here happened both during the day and after dark.",
+  "areaWarn.titleSeveral": "Heads up: {count} recent reports around here",
+  "areaWarn.titleMany": "Take care: {count} recent reports around here",
+  "areaWarn.mostly": "Mostly {type}.",
+  "areaWarn.night": "Mostly after dark.",
+  "areaWarn.day": "Mostly during the day.",
+  "areaWarn.tips": "Stay on busy, well-lit roads and keep your phone in your hand. Your contacts can see where you are.",
+  "areaWarn.fakeCall": "Fake call",
+  "areaWarn.dismiss": "Hide this warning",
+  "areaWarn.notifyTitle": "Heads up on your way",
+  "areaWarn.notifyBody": "{count} recent reports around here. Stay on busy, well-lit roads.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

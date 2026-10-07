@@ -25,3 +25,16 @@ export async function cancelTimerWarning(id: number) {
   if (!isNative) return;
   await LocalNotifications.cancel({ notifications: [{ id }] }).catch(() => {});
 }
+
+// A notification straight away (Android app only), e.g. a warning while walking with the
+// screen off. In the browser the page shows the warning instead.
+export async function notifyNow(id: number, title: string, body: string, path: string) {
+  if (!isNative) return;
+  try {
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== "granted" && (await LocalNotifications.requestPermissions()).display !== "granted") return;
+    await LocalNotifications.schedule({ notifications: [{ id, title, body, schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true }, extra: { path } }] });
+  } catch (err) {
+    console.warn("Couldn't show the notification:", err);
+  }
+}

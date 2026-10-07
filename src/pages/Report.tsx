@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, MapPin, Calendar, LocateFixed, ImagePlus, X } from "lucide-react";
+import { FileText, MapPin, Calendar, Clock, LocateFixed, ImagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ const Report = () => {
     incidentType: "",
     location: "",
     date: "",
+    time: "",
     description: "",
     anonymous: false,
     includeCoords: false,
@@ -86,6 +87,7 @@ const Report = () => {
         description: formData.description,
         location: formData.location,
         date: formData.date,
+        time: formData.time,
         anonymous: formData.anonymous || !user,
         coords,
       };
@@ -179,19 +181,29 @@ const Report = () => {
                   />
                 </div>
 
-                {/* Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="date" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {t("report.date")}
-                  </Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    max={new Date().toLocaleDateString("en-CA")}
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  />
+                {/* Date and time */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="date" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {t("report.date")}
+                    </Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      max={new Date().toLocaleDateString("en-CA")}
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="time" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      {t("report.time")}
+                    </Label>
+                    <Input id="time" type="time" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} />
+                    <p className="text-xs text-muted-foreground">{t("report.timeHint")}</p>
+                  </div>
                 </div>
 
                 {/* Description */}

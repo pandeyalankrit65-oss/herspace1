@@ -8,6 +8,11 @@ import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
 import { readBattery } from "@/lib/battery";
 import { isAt, journeyDestination, metresBetween } from "@/lib/places";
+import AreaWarning from "@/components/AreaWarning";
+import { savedData } from "@/lib/offline";
+import { vibrate } from "@/lib/disguise";
+import { notifyNow } from "@/lib/timerNotifications";
+import { warningAt, withinPeriod, type AreaWarning as Warning, type RiskPoint } from "@/lib/risk";
 
 export type ShareAck = { name: string | null; at: string };
 export type LiveShare = {
@@ -52,6 +57,18 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
   const keepSharingRef = useRef(false);
   const stoppingRef = useRef(false);
   const [arrivingAt, setArrivingAt] = useState<number | null>(null);
+  // Journeys only: warn once per square on entering one with several recent reports.
+  const [warning, setWarning] = useState<Warning | null>(null);
+  const reportsRef = useRef<RiskPoint[]>([]);
+  const warnedRef = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (!walk) return;
+    const keep = (points: RiskPoint[]) => (reportsRef.current = points.filter((p) => withinPeriod(p, "12m")));
+    api<{ points: RiskPoint[] }>("/api/reports/map")
+      .then((res) => keep(res.points))
+      .catch(() => keep(savedData.get<RiskPoint[]>("map")?.data ?? []));
+  }, [walk]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +88,15 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         if (place && !keepSharingRef.current) {
           nearRef.current = isAt(pos, place) ? nearRef.current + 1 : 0;
           if (nearRef.current >= ARRIVAL_FIXES) setArrivingAt((at) => at ?? Date.now() + ARRIVAL_COUNTDOWN_MS);
+        }
+        if (walk) {
+          const w = warningAt(reportsRef.current, pos);
+          if (w && !warnedRef.current.has(w.key)) {
+            warnedRef.current.add(w.key);
+            setWarning(w);
+            vibrate([200, 100, 200]);
+            void notifyNow(9000, t("areaWarn.notifyTitle"), t("areaWarn.notifyBody", { count: w.count }), "/walk");
+          }
         }
         const last = lastRef.current;
         const due = !last || Date.now() - last.at >= SEND_EVERY_MS || metresBetween(last.coords, pos) >= SEND_IF_MOVED_M;
@@ -100,7 +126,7 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
     };
     // t is only used for the notification text when the watch starts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [share.id, onEnded, place]);
+  }, [share.id, onEnded, place, walk]);
 
   // Responses can arrive while the phone is standing still (no location updates), so poll too.
   useEffect(() => {
@@ -171,6 +197,7 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {warning && <AreaWarning warning={warning} onDismiss={() => setWarning(null)} />}
         {place && arrivingAt === null && (
           <p className="flex items-center gap-2 text-sm font-medium">
             <MapPin className="h-4 w-4 shrink-0 text-primary" /> {t("places.headingTo", { place: place.label })}

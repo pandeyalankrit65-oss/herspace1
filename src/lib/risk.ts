@@ -9,7 +9,20 @@ export type RiskPoint = {
   incidentType: string;
   trust?: "anonymous" | "account" | "verified";
   confirmations?: number;
+  // Hour of day (0-23) if the reporter gave a time.
+  hour?: number | null;
 };
+
+export type TimeOfDay = "night" | "day" | "mixed";
+
+// When a place's reports happened, from those with a time: mostly after dark (6 pm to 6 am),
+// mostly in the day, or both. Needs at least 3 timed reports to say anything.
+export function timeOfDay(points: RiskPoint[]): TimeOfDay | null {
+  const hours = points.map((p) => p.hour).filter((h): h is number => typeof h === "number" && h >= 0 && h <= 23);
+  if (hours.length < 3) return null;
+  const night = hours.filter((h) => h >= 18 || h < 6).length / hours.length;
+  return night >= 0.6 ? "night" : night <= 0.4 ? "day" : "mixed";
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A report counts half as much after 90 days, a quarter after 180.
@@ -64,6 +77,7 @@ export type Estimate = {
   verified: number;
   // Fewer than this many reports can't say much either way.
   enoughData: boolean;
+  timeOfDay: TimeOfDay | null;
 };
 
 export const RADIUS_KM = 1.5;
@@ -88,6 +102,7 @@ export function estimate(points: RiskPoint[], at: { lat: number; lng: number }, 
     topType,
     verified: near.filter((p) => p.trust === "verified" || (p.confirmations ?? 0) >= 2).length,
     enoughData: near.length >= ENOUGH,
+    timeOfDay: timeOfDay(near),
   };
 }
 
@@ -96,3 +111,30 @@ export type Period = keyof typeof PERIODS;
 
 export const withinPeriod = (p: RiskPoint, period: Period, now = new Date()) =>
   (now.getTime() - new Date(`${p.date.slice(0, 10)}T12:00:00`).getTime()) / DAY_MS <= PERIODS[period];
+
+// For warnings during a journey: the busiest square (level 2 or more) the position is in or
+// within `marginKm` of, with what's known about it.
+export type AreaWarning = { key: string; level: Level; count: number; topType: string | null; timeOfDay: TimeOfDay | null };
+
+export function warningAt(points: RiskPoint[], at: { lat: number; lng: number }, now = new Date(), marginKm = 0.25): AreaWarning | null {
+  const margin = marginKm / 111; // degrees of latitude; close enough for longitude in India too
+  let best: AreaWarning | null = null;
+  for (const c of cells(points, now)) {
+    if (c.level < 2) continue;
+    if (Math.abs(at.lat - c.lat) > 0.005 + margin || Math.abs(at.lng - c.lng) > 0.005 + margin) continue;
+    if (best && c.level <= best.level) continue;
+    const inCell = points.filter(
+      (p) => Math.round(p.lat / 0.01) === Math.round(c.lat / 0.01) && Math.round(p.lng / 0.01) === Math.round(c.lng / 0.01),
+    );
+    const types = new Map<string, number>();
+    for (const p of inCell) types.set(p.incidentType, (types.get(p.incidentType) ?? 0) + 1);
+    best = {
+      key: `${c.lat.toFixed(2)}:${c.lng.toFixed(2)}`,
+      level: c.level,
+      count: c.count,
+      topType: [...types.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
+      timeOfDay: timeOfDay(inCell),
+    };
+  }
+  return best;
+}

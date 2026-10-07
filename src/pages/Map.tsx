@@ -31,6 +31,7 @@ type Point = {
   confirmations?: number;
   confirmedByMe?: boolean;
   mine?: boolean;
+  hour?: number | null;
 };
 
 const TRUST_LABEL: Record<Trust, MessageKey> = { verified: "map.trust.verified", account: "map.trust.account", anonymous: "map.trust.anonymous" };
@@ -368,6 +369,7 @@ const Map = () => {
                     {t("risk.nearVerified", { count: near.verified })}
                   </p>
                 )}
+                {near.timeOfDay && <p className="text-sm font-medium">{t(`risk.time.${near.timeOfDay}` as MessageKey)}</p>}
                 {near.enoughData && near.level >= 2 && (
                   <p className="text-sm">
                     {t("risk.nearTip")}{" "}

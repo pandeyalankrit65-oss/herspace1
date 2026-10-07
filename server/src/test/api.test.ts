@@ -1400,6 +1400,21 @@ describe('verified community reporting', () => {
   });
 });
 
+describe('time of day on reports', () => {
+  test('the reporter keeps the exact time; the public map shows only the hour', async () => {
+    const user = await newUser('Tanvi');
+    const body = { incidentType: 'stalking', description: `Followed from the bus stop at night ${Date.now()}`, coords: { lat: 12.97, lng: 77.59 } };
+    assert.equal((await call('/reports', { token: user.token, body: { ...body, time: '25:10' } })).status, 400);
+    const { data } = await call('/reports', { token: user.token, body: { ...body, time: '21:47' } });
+    assert.equal((await call('/reports', { token: user.token })).data.reports.find((r: { id: number }) => r.id === data.id).time, '21:47');
+    const point = (await call('/reports/map')).data.points.find((p: { id: number }) => p.id === data.id);
+    assert.equal(point.hour, 21);
+    assert.equal('time' in point, false, 'no exact time on the public map');
+    const noTime = await call('/reports', { body: { ...body, description: `${body.description} again`, anonymous: true } });
+    assert.equal((await call('/reports/map')).data.points.find((p: { id: number }) => p.id === noTime.data.id).hour, null);
+  });
+});
+
 describe('security fixes', () => {
   test('SOS recordings must really be audio', async () => {
     const { token } = await userWithConfirmedContact('Gita');

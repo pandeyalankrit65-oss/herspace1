@@ -1581,6 +1581,23 @@ const hi: Record<MessageKey, string> = {
   "scream.wouldTrigger": "इससे SOS शुरू हो जाता।",
   "scream.stopTest": "जाँच बंद करें",
 
+  // Prevention: time of day and journey warnings
+  "report.time": "समय (वैकल्पिक)",
+  "report.timeHint": "अंदाज़ा भी ठीक है। नक्शा केवल घंटा दिखाता है, ताकि दूसरे देख सकें कि कोई जगह अंधेरे के बाद ज़्यादा खराब है या नहीं।",
+  "risk.time.night": "यहाँ समय वाली ज़्यादातर रिपोर्ट अंधेरे के बाद की थीं (शाम 6 से सुबह 6)।",
+  "risk.time.day": "यहाँ समय वाली ज़्यादातर रिपोर्ट दिन की थीं।",
+  "risk.time.mixed": "यहाँ रिपोर्ट दिन में भी और अंधेरे के बाद भी हुईं।",
+  "areaWarn.titleSeveral": "ध्यान दें: आसपास हाल की {count} रिपोर्ट",
+  "areaWarn.titleMany": "सावधान रहें: आसपास हाल की {count} रिपोर्ट",
+  "areaWarn.mostly": "ज़्यादातर {type}।",
+  "areaWarn.night": "ज़्यादातर अंधेरे के बाद।",
+  "areaWarn.day": "ज़्यादातर दिन में।",
+  "areaWarn.tips": "भीड़ वाली, रोशन सड़कों पर रहें और फ़ोन हाथ में रखें। आपके संपर्क देख सकते हैं कि आप कहाँ हैं।",
+  "areaWarn.fakeCall": "नकली कॉल",
+  "areaWarn.dismiss": "यह चेतावनी छिपाएँ",
+  "areaWarn.notifyTitle": "रास्ते में ध्यान दें",
+  "areaWarn.notifyBody": "आसपास हाल की {count} रिपोर्ट। भीड़ वाली, रोशन सड़कों पर रहें।",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

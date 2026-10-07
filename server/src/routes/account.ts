@@ -173,7 +173,7 @@ accountRouter.get('/export', (req, res) => {
   const reports = db
     .prepare(
       `SELECT id, incident_type AS incidentType, description, location_text AS location, lat, lng,
-              incident_date AS date, created_at AS createdAt FROM reports WHERE user_id = ?`
+              incident_date AS date, incident_time AS time, created_at AS createdAt FROM reports WHERE user_id = ?`
     )
     .all(userId)
     .map((r) => {
