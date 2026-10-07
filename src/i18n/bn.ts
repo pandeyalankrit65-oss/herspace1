@@ -1507,6 +1507,28 @@ const messages: Partial<Record<MessageKey, string>> = {
   "areaWarn.dismiss": "এই সতর্কতা লুকান",
   "areaWarn.notifyTitle": "পথে খেয়াল রাখুন",
   "areaWarn.notifyBody": "আশেপাশে সাম্প্রতিক {count}টি রিপোর্ট। ভিড়ের, আলোকিত রাস্তায় থাকুন।",
+  // Prevention: check the way
+  "trip.search": "জায়গা খুঁজুন",
+  "trip.searchPlaceholder": "অথবা খুঁজুন: বাজার, স্টেশন, ঠিকানা...",
+  "trip.searchUnavailable": "এখন জায়গা খোঁজা যাচ্ছে না। একটি সেভ করা জায়গা বেছে নিন।",
+  "trip.noResults": "কিছু পাওয়া যায়নি। অন্য নাম দিয়ে চেষ্টা করুন।",
+  "trip.title": "{place} পর্যন্ত পথ যাচাই করুন",
+  "trip.check": "পথ যাচাই করুন",
+  "trip.checking": "যাচাই হচ্ছে...",
+  "trip.again": "আবার যাচাই করুন",
+  "trip.noPosition": "আপনার অবস্থান পাওয়া যাচ্ছে না, তাই শুধু গন্তব্য যাচাই হয়েছে।",
+  "trip.distance": "সরলরেখায় প্রায় {km} km।",
+  "trip.wayClear": "পথে সাম্প্রতিক রিপোর্টের কোনো এলাকা নেই।",
+  "trip.wayAreas_one": "পথে সাম্প্রতিক রিপোর্টের {count}টি এলাকা:",
+  "trip.wayAreas_other": "পথে সাম্প্রতিক রিপোর্টের {count}টি এলাকা:",
+  "trip.wayStep": "পথের {percent}%: {level} ({count})",
+  "trip.thereNone": "আপনার গন্তব্যের আশেপাশে সাম্প্রতিক কোনো রিপোর্ট নেই।",
+  "trip.there_one": "আপনার গন্তব্যের আশেপাশে সাম্প্রতিক {count}টি রিপোর্ট।",
+  "trip.there_other": "আপনার গন্তব্যের আশেপাশে সাম্প্রতিক {count}টি রিপোর্ট।",
+  "trip.police": "সেখানে সবচেয়ে কাছের পুলিশ: {name}, {distance} দূরে।",
+  "trip.policeUnnamed": "একটি থানা",
+  "trip.advice": "হাঁটার বদলে গাড়ি নিন, অন্ধকার হওয়ার আগে যান, বা কাউকে ফোনে রাখুন। যাত্রা শেয়ার করলে আপনার পরিচিতরা সঙ্গে নজর রাখতে পারেন।",
+  "trip.disclaimer": "এটি এখান থেকে সেখানে সরলরেখা যাচাই করে, আপনার আসল পথ নয়, এবং শুধু HerSpace ব্যবহারকারীদের রিপোর্ট। রিপোর্ট না থাকা মানে নিরাপদ নয়।",
 };
 
 export default messages;

@@ -57,6 +57,33 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
   }
 }
 
+export type FoundPlace = { label: string; lat: number; lng: number };
+
+const searchCache = cache<FoundPlace[] | null>(500, 24 * 60 * 60 * 1000);
+
+// Finds places by name for "Check the way", within India. Only the search text is sent (from
+// the server, so the user's device and identity stay out of it). Null when unavailable.
+export async function searchPlaces(query: string): Promise<FoundPlace[] | null> {
+  const base = nominatimBase();
+  if (base === 'off') return null;
+  const key = query.trim().toLowerCase();
+  const cached = searchCache.get(key);
+  if (cached !== undefined) return cached;
+  try {
+    const url = `${base}/search?format=jsonv2&limit=5&countrycodes=in&accept-language=en&q=${encodeURIComponent(query.trim())}`;
+    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Array<{ display_name?: string; lat?: string; lon?: string }>;
+    const found = data
+      .map((d) => ({ label: (d.display_name ?? '').split(', ').slice(0, 3).join(', '), lat: Number(d.lat), lng: Number(d.lon) }))
+      .filter((p) => p.label && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    searchCache.set(key, found);
+    return found;
+  } catch {
+    return null;
+  }
+}
+
 export type NearbyPlace = {
   id: string;
   type: 'police' | 'hospital' | 'pharmacy';

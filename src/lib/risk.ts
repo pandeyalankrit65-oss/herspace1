@@ -138,3 +138,35 @@ export function warningAt(points: RiskPoint[], at: { lat: number; lng: number },
   }
   return best;
 }
+
+// "Check the way": squares with reports within `corridorKm` of the straight line between two
+// points, in order from the start. A straight line, not the real route, and the page says so.
+export type AlongTheWay = { lat: number; lng: number; level: Level; count: number; at: number; timeOfDay: TimeOfDay | null };
+
+export function alongTheWay(
+  points: RiskPoint[],
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+  now = new Date(),
+  corridorKm = 0.5,
+): AlongTheWay[] {
+  // A flat projection around the start is accurate enough over a city journey.
+  const kx = 111.32 * Math.cos((from.lat * Math.PI) / 180);
+  const ky = 110.57;
+  const proj = (p: { lat: number; lng: number }) => ({ x: (p.lng - from.lng) * kx, y: (p.lat - from.lat) * ky });
+  const b = proj(to);
+  const len2 = b.x * b.x + b.y * b.y;
+  return cells(points, now)
+    .map((c) => {
+      const p = proj(c);
+      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, (p.x * b.x + p.y * b.y) / len2));
+      const dist = Math.hypot(p.x - t * b.x, p.y - t * b.y);
+      const inCell = points.filter(
+        (q) => Math.round(q.lat / 0.01) === Math.round(c.lat / 0.01) && Math.round(q.lng / 0.01) === Math.round(c.lng / 0.01),
+      );
+      return { lat: c.lat, lng: c.lng, level: c.level, count: c.count, at: t, dist, timeOfDay: timeOfDay(inCell) };
+    })
+    .filter((c) => c.dist <= corridorKm + 0.5) // the cell's centre can be up to ~0.5 km from its edge
+    .sort((a, z) => a.at - z.at)
+    .map(({ dist: _dist, ...c }) => c);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { cells, estimate, levelFor, pointWeight, timeOfDay, warningAt, withinPeriod, type RiskPoint } from "./risk";
+import { alongTheWay, cells, estimate, levelFor, pointWeight, timeOfDay, warningAt, withinPeriod, type RiskPoint } from "./risk";
 
 const now = new Date("2026-10-08T12:00:00");
 const p = (extra: Partial<RiskPoint> = {}): RiskPoint => ({
@@ -66,5 +66,14 @@ describe("risk estimate", () => {
     const w = warningAt(busy, { lat: 18.523, lng: 73.851 }, now)!;
     expect(w).toMatchObject({ key: "18.52:73.85", level: 2, count: 3, topType: "stalking", timeOfDay: "night" });
     expect(warningAt(busy, { lat: 18.56, lng: 73.85 }, now), "4 km away").toBeNull();
+  });
+
+  test("along the way: squares near the straight line, in order from the start", () => {
+    const from = { lat: 18.5, lng: 73.8 };
+    const to = { lat: 18.6, lng: 73.8 }; // 11 km north
+    const pts = [p({ lat: 18.58, lng: 73.8 }), p({ lat: 18.52, lng: 73.8 }), p({ lat: 18.55, lng: 73.86 }), p({ lat: 18.7, lng: 73.8 })];
+    const way = alongTheWay(pts, from, to, now);
+    expect(way.map((c) => c.lat.toFixed(2))).toEqual(["18.52", "18.58"]);
+    expect(way[0].at).toBeCloseTo(0.2, 1);
   });
 });

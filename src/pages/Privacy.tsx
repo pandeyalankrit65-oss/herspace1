@@ -114,6 +114,7 @@ const PrivacyEn = () => (
           an area name such as "Near Connaught Place" to SOS texts, we send your location rounded to about 10 m; to show police
           stations, hospitals and pharmacies near you on the map, we send it rounded to about 1 km. Neither request includes
           your name or account, and we cache the answers so the same area isn't looked up twice.
+          When you search for a place to check the way, we send only what you typed, not your location or account.
         </li>
       </ul>
       <p>

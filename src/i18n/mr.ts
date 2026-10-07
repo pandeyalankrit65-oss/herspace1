@@ -1507,6 +1507,28 @@ const messages: Partial<Record<MessageKey, string>> = {
   "areaWarn.dismiss": "ही सूचना लपवा",
   "areaWarn.notifyTitle": "वाटेत लक्ष द्या",
   "areaWarn.notifyBody": "आजूबाजूला अलीकडचे {count} रिपोर्ट. गर्दीच्या, उजेड असलेल्या रस्त्यांवर राहा.",
+  // Prevention: check the way
+  "trip.search": "ठिकाण शोधा",
+  "trip.searchPlaceholder": "किंवा शोधा: बाजार, स्टेशन, पत्ता...",
+  "trip.searchUnavailable": "आत्ता ठिकाण शोध उपलब्ध नाही. सेव्ह केलेले ठिकाण निवडा.",
+  "trip.noResults": "काहीही सापडले नाही. दुसरे नाव वापरून पाहा.",
+  "trip.title": "{place} पर्यंतचा रस्ता तपासा",
+  "trip.check": "रस्ता तपासा",
+  "trip.checking": "तपासत आहे...",
+  "trip.again": "पुन्हा तपासा",
+  "trip.noPosition": "तुमचे ठिकाण उपलब्ध नाही, म्हणून फक्त पोहोचण्याचे ठिकाण तपासले.",
+  "trip.distance": "सरळ रेषेत सुमारे {km} km.",
+  "trip.wayClear": "वाटेत अलीकडच्या रिपोर्टचा कोणताही परिसर नाही.",
+  "trip.wayAreas_one": "वाटेत अलीकडच्या रिपोर्टचा {count} परिसर:",
+  "trip.wayAreas_other": "वाटेत अलीकडच्या रिपोर्टचे {count} परिसर:",
+  "trip.wayStep": "रस्त्याचा {percent}%: {level} ({count})",
+  "trip.thereNone": "पोहोचण्याच्या ठिकाणाभोवती अलीकडचे कोणतेही रिपोर्ट नाहीत.",
+  "trip.there_one": "पोहोचण्याच्या ठिकाणाभोवती अलीकडचा {count} रिपोर्ट.",
+  "trip.there_other": "पोहोचण्याच्या ठिकाणाभोवती अलीकडचे {count} रिपोर्ट.",
+  "trip.police": "तिथे सर्वात जवळचे पोलीस: {name}, {distance} अंतरावर.",
+  "trip.policeUnnamed": "एक पोलीस स्टेशन",
+  "trip.advice": "चालण्याऐवजी वाहन घ्या, अंधार पडण्यापूर्वी जा, किंवा कोणाला तरी फोनवर ठेवा. प्रवास शेअर केल्यास तुमचे संपर्क सोबत लक्ष ठेवू शकतात.",
+  "trip.disclaimer": "हे इथून तिथपर्यंत सरळ रेषा तपासते, तुमचा खरा रस्ता नाही, आणि फक्त HerSpace वापरकर्त्यांचे रिपोर्ट. रिपोर्ट नसणे म्हणजे सुरक्षित नाही.",
 };
 
 export default messages;

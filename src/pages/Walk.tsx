@@ -18,6 +18,8 @@ import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { currentPosition } from "@/lib/location";
 import { journeyDestination, usePlaces, type SavedPlace } from "@/lib/places";
+import DestinationSearch from "@/components/trip/DestinationSearch";
+import TripCheck from "@/components/trip/TripCheck";
 import type { Contact } from "./Contacts";
 
 const DURATIONS = [30, 60, 120, 240];
@@ -254,6 +256,23 @@ const Walk = () => {
               <legend className="mb-1 flex items-center gap-2 text-sm font-semibold">
                 <MapPin className="h-4 w-4 text-primary" /> {t("places.goingTo")}
               </legend>
+              <div className="flex flex-wrap gap-1.5">
+                <Button type="button" size="sm" variant={!destination ? "hero" : "outline"} aria-pressed={!destination} onClick={() => setDestination(null)}>
+                  {t("places.nowhere")}
+                </Button>
+                {places.map((p) => (
+                  <Button key={p.id} type="button" size="sm" variant={destination?.id === p.id ? "hero" : "outline"} aria-pressed={destination?.id === p.id} onClick={() => setDestination(p)}>
+                    {p.label}
+                  </Button>
+                ))}
+                {/* A place found by search shows as its own chosen chip. */}
+                {destination && !places.some((p) => p.id === destination.id) && (
+                  <Button type="button" size="sm" variant="hero" aria-pressed>
+                    {destination.label}
+                  </Button>
+                )}
+              </div>
+              <DestinationSearch onPick={setDestination} />
               {places.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   {t("places.noneYet")}{" "}
@@ -262,20 +281,9 @@ const Walk = () => {
                   </Link>
                 </p>
               ) : (
-                <>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button type="button" size="sm" variant={!destination ? "hero" : "outline"} aria-pressed={!destination} onClick={() => setDestination(null)}>
-                      {t("places.nowhere")}
-                    </Button>
-                    {places.map((p) => (
-                      <Button key={p.id} type="button" size="sm" variant={destination?.id === p.id ? "hero" : "outline"} aria-pressed={destination?.id === p.id} onClick={() => setDestination(p)}>
-                        {p.label}
-                      </Button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t("places.arriveHint")}</p>
-                </>
+                <p className="text-xs text-muted-foreground">{t("places.arriveHint")}</p>
               )}
+              {destination && <TripCheck key={destination.id} to={destination} />}
             </fieldset>
           )}
 

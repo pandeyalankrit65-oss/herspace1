@@ -1400,6 +1400,15 @@ describe('verified community reporting', () => {
   });
 });
 
+describe('place search', () => {
+  test('needs 3 letters, and says when the map service is unavailable instead of failing', async () => {
+    assert.equal((await call('/places/search?q=ab')).status, 400);
+    const res = await call('/places/search?q=Park%20Street');
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.data, { available: false, places: [] }, 'tests turn the public service off');
+  });
+});
+
 describe('time of day on reports', () => {
   test('the reporter keeps the exact time; the public map shows only the hour', async () => {
     const user = await newUser('Tanvi');

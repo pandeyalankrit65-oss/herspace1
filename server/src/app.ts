@@ -6,7 +6,7 @@ import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
 import { supportReply } from './chat';
 import { rateLimit } from './rateLimit';
 import { parse } from './util';
-import { nearbyPlaces, NEARBY_RADIUS_M } from './geo';
+import { NEARBY_RADIUS_M, nearbyPlaces, searchPlaces } from './geo';
 import { authRouter } from './routes/auth';
 import { contactInvitesRouter, contactsRouter } from './routes/contacts';
 import { sosRouter, twilioRouter } from './routes/sos';
@@ -70,6 +70,15 @@ app.get('/api/nearby', nearbyLimiter, async (req, res) => {
   if (!q.success) return res.status(400).json({ error: 'lat and lng are required' });
   const places = await nearbyPlaces(q.data.lat, q.data.lng);
   res.json({ available: places !== null, radius: NEARBY_RADIUS_M, places: places ?? [] });
+});
+
+// Place search for "Check the way". Public OSM services ask for low rates: limited per address.
+const searchLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
+app.get('/api/places/search', searchLimiter, async (req, res) => {
+  const q = z.object({ q: z.string().trim().min(3).max(100) }).safeParse(req.query);
+  if (!q.success) return res.status(400).json({ error: 'Type at least 3 letters.' });
+  const found = await searchPlaces(q.data.q);
+  res.json({ available: found !== null, places: found ?? [] });
 });
 
 const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 15 });

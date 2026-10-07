@@ -18,6 +18,13 @@ http
       res.end(JSON.stringify(body));
     };
     if (url.pathname === "/health") return json({ ok: true });
+    // Place search: two known places, one for each test project, used by the "check the way" test.
+    if (url.pathname === "/search") {
+      return json([
+        { display_name: "Underpass Market, Park Street, Kolkata, West Bengal, India", lat: "22.57", lon: "88.36" },
+        { display_name: "Underpass Market North, Shyambazar, Kolkata, West Bengal, India", lat: "22.62", lon: "88.36" },
+      ]);
+    }
     if (url.pathname === "/reverse") {
       return json({ address: { road: "Janpath", suburb: "Connaught Place", city: "New Delhi", country: "India" } });
     }
