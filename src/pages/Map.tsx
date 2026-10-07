@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, Rectangle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { BadgeCheck, LocateFixed, Info, MapPin } from "lucide-react";
+import { BadgeCheck, Footprints, LocateFixed, Info, MapPin, Radar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +17,7 @@ import type { MessageKey } from "@/i18n/en";
 import PageHeader from "@/components/PageHeader";
 import { NearbyFilters, NearbyMarkers, NearestHelp } from "@/components/NearbyHelp";
 import { useNearby, type PlaceType } from "@/hooks/use-nearby";
+import { cells, estimate, RADIUS_KM, withinPeriod, type Level, type Period } from "@/lib/risk";
 
 // Points saved offline by an older version may lack the trust fields.
 type Trust = "anonymous" | "account" | "verified";
@@ -35,6 +36,15 @@ type Point = {
 const TRUST_LABEL: Record<Trust, MessageKey> = { verified: "map.trust.verified", account: "map.trust.account", anonymous: "map.trust.anonymous" };
 // Shown by "verified only": from a verified reporter, or confirmed by at least two people.
 const isTrusted = (p: Point) => p.trust === "verified" || (p.confirmations ?? 0) >= 2;
+
+// Heatmap shades, faint to strong: they show how many weighted reports a ~1 km square has.
+const HEAT: Record<Exclude<Level, 0>, { color: string; opacity: number; label: MessageKey }> = {
+  1: { color: "#f59e0b", opacity: 0.28, label: "risk.level1" },
+  2: { color: "#f97316", opacity: 0.4, label: "risk.level2" },
+  3: { color: "#dc2626", opacity: 0.52, label: "risk.level3" },
+};
+const PERIOD_LABEL: Record<Period, MessageKey> = { "3m": "risk.period3m", "12m": "risk.period12m", all: "risk.periodAll" };
+const HALF_CELL = 0.005;
 
 const TYPE_STYLES: Record<string, { label: MessageKey; color: string }> = {
   harassment: { label: "report.types.harassment", color: "#e11d48" },
@@ -64,6 +74,8 @@ const Map = () => {
   const [locateError, setLocateError] = useState("");
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
   const [trustedOnly, setTrustedOnly] = useState(false);
+  const [view, setView] = useState<"points" | "heat">("points");
+  const [period, setPeriod] = useState<Period>("all");
   const { user } = useAuth();
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const nearby = useNearby(me);
@@ -128,7 +140,9 @@ const Map = () => {
   };
 
   const center = useMemo<[number, number]>(() => (points.length ? [points[0].lat, points[0].lng] : DEFAULT_CENTER), [points]);
-  const shown = trustedOnly ? points.filter(isTrusted) : points;
+  const shown = useMemo(() => points.filter((p) => (!trustedOnly || isTrusted(p)) && withinPeriod(p, period)), [points, trustedOnly, period]);
+  const heat = useMemo(() => (view === "heat" ? cells(shown) : []), [view, shown]);
+  const near = me ? estimate(shown, { lat: me[0], lng: me[1] }) : null;
 
   return (
     <div className="min-h-screen">
@@ -174,7 +188,28 @@ const Map = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     crossOrigin="anonymous"
                   />
-                  {shown.map((p) => {
+                  {heat.map((c) => {
+                    const h = HEAT[c.level as 1 | 2 | 3];
+                    return (
+                      <Rectangle
+                        key={`${c.lat}:${c.lng}`}
+                        bounds={[
+                          [c.lat - HALF_CELL, c.lng - HALF_CELL],
+                          [c.lat + HALF_CELL, c.lng + HALF_CELL],
+                        ]}
+                        pathOptions={{ color: h.color, fillColor: h.color, fillOpacity: h.opacity, weight: 1 }}
+                      >
+                        <Popup>
+                          <strong>{t(h.label)}</strong>
+                          <br />
+                          {tn("risk.cellReports", c.count)}
+                          <br />
+                          <span style={{ fontSize: 11, opacity: 0.7 }}>{t("risk.cellNote")}</span>
+                        </Popup>
+                      </Rectangle>
+                    );
+                  })}
+                  {(view === "points" ? shown : []).map((p) => {
                     const style = TYPE_STYLES[p.incidentType] ?? TYPE_STYLES.other;
                     const trusted = isTrusted(p);
                     return (
@@ -247,14 +282,55 @@ const Map = () => {
                 </MapContainer>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t px-4 py-3">
-                <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t("map.legend")}>
-                  {Object.entries(TYPE_STYLES).map(([key, { label, color }]) => (
-                    <li key={key} className="flex items-center gap-1.5">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                      {t(label)}
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex w-full flex-wrap items-center gap-3">
+                  <div className="inline-flex rounded-full bg-muted p-1" role="group" aria-label={t("risk.view")}>
+                    {(["points", "heat"] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        aria-pressed={view === v}
+                        onClick={() => setView(v)}
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${view === v ? "bg-card shadow-sm" : "text-muted-foreground"}`}
+                      >
+                        {v === "points" ? t("risk.points") : t("risk.heatmap")}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-semibold">
+                    {t("risk.period")}
+                    <select
+                      value={period}
+                      onChange={(e) => setPeriod(e.target.value as Period)}
+                      className="h-8 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {(Object.keys(PERIOD_LABEL) as Period[]).map((p) => (
+                        <option key={p} value={p}>
+                          {t(PERIOD_LABEL[p])}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {view === "points" ? (
+                  <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t("map.legend")}>
+                    {Object.entries(TYPE_STYLES).map(([key, { label, color }]) => (
+                      <li key={key} className="flex items-center gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                        {t(label)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t("map.legend")}>
+                    {([1, 2, 3] as const).map((l) => (
+                      <li key={l} className="flex items-center gap-1.5">
+                        <span className="inline-block h-3 w-4 rounded-sm" style={{ backgroundColor: HEAT[l].color, opacity: 0.4 + l * 0.15 }} />
+                        {t(HEAT[l].label)}
+                      </li>
+                    ))}
+                    <li className="text-muted-foreground">{t("risk.heatNote")}</li>
+                  </ul>
+                )}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <label className="flex items-center gap-2 text-xs font-semibold">
                     <Switch checked={trustedOnly} onCheckedChange={setTrustedOnly} aria-describedby="trusted-hint" />
@@ -268,6 +344,42 @@ const Map = () => {
               </div>
             </CardContent>
           </Card>
+
+          <section aria-labelledby="near-title" className="mb-6 space-y-3 rounded-3xl bg-card p-5 shadow-card ring-1 ring-border sm:p-6">
+            <h2 id="near-title" className="flex items-center gap-2 text-lg font-bold">
+              <Radar className="h-5 w-5 text-primary" /> {t("risk.nearTitle", { km: RADIUS_KM })}
+            </h2>
+            {!near ? (
+              <p className="text-sm text-muted-foreground">{t("risk.nearNeedsLocation")}</p>
+            ) : (
+              <div className="space-y-2" aria-live="polite">
+                <p className="font-semibold">
+                  {near.count === 0
+                    ? t("risk.nearNone")
+                    : !near.enoughData
+                      ? tn("risk.nearFew", near.count)
+                      : t(near.level === 3 ? "risk.nearMany" : near.level === 2 ? "risk.nearSeveral" : "risk.nearSome", { count: near.count })}
+                </p>
+                {near.count > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("risk.nearLatest", { date: new Date(`${near.latest}T12:00:00`).toLocaleDateString() })}
+                    {near.topType && <> · {t("risk.nearTop", { type: t(TYPE_STYLES[near.topType]?.label ?? "report.types.other") })}</>}
+                    {" · "}
+                    {t("risk.nearVerified", { count: near.verified })}
+                  </p>
+                )}
+                {near.enoughData && near.level >= 2 && (
+                  <p className="text-sm">
+                    {t("risk.nearTip")}{" "}
+                    <Link to="/walk" className="inline-flex items-center gap-1 font-semibold text-primary underline underline-offset-2">
+                      <Footprints className="h-4 w-4" /> {t("nav.walk")}
+                    </Link>
+                  </p>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">{t("risk.disclaimer")}</p>
+          </section>
 
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
