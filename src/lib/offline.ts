@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { JOURNEY_KEY, PLACES_KEY } from "./places";
+import { clearRoutines } from "./routines";
 
 // Last-known copies of the signed-in user and their contacts, kept on this device so the
 // SOS page can still offer "text / call" buttons when there's no connection to the server.
@@ -39,6 +40,7 @@ export function clearOfflineData() {
     localStorage.removeItem(CONTACTS_KEY);
     localStorage.removeItem(PLACES_KEY);
     localStorage.removeItem(JOURNEY_KEY);
+    clearRoutines();
   } catch {
     // ignore
   }

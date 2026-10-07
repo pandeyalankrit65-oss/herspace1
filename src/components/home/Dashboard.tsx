@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, CheckCircle2, ChevronRight, FileText, Footprints, HeartPulse, LifeBuoy, Map, MessageCircle, Phone, Radio, Timer, TriangleAlert, UserPlus } from "lucide-react";
 import SetupChecklist from "@/components/SetupChecklist";
+import RoutineReminder from "@/components/routines/RoutineReminder";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -141,6 +142,8 @@ const Dashboard = () => {
             )}
           </div>
         )}
+
+        <RoutineReminder />
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
           {/* SOS */}
