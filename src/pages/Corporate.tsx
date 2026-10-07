@@ -1,164 +1,134 @@
-import { Building2, ShieldCheck, UserCheck, FileText, MessageCircle, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BadgeCheck, BarChart3, Bell, Building2, EyeOff, MessagesSquare } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
+import { api } from "@/lib/api";
+import EmployeeView from "@/components/workplace/EmployeeView";
+import HrView, { NewCode } from "@/components/workplace/HrView";
+import JoinOrSetup from "@/components/workplace/JoinOrSetup";
+import type { Org } from "@/components/workplace/types";
 
-const FEATURES: Array<{ icon: typeof Lock; title: MessageKey; text: MessageKey }> = [
-  { icon: ShieldCheck, title: "corporate.feature1Title", text: "corporate.feature1Text" },
-  { icon: UserCheck, title: "corporate.feature2Title", text: "corporate.feature2Text" },
-  { icon: FileText, title: "corporate.feature3Title", text: "corporate.feature3Text" },
-  { icon: Lock, title: "corporate.feature4Title", text: "corporate.feature4Text" },
+const POINTS: Array<{
+  icon: typeof EyeOff;
+  title: MessageKey;
+  text: MessageKey;
+}> = [
+  { icon: EyeOff, title: "work.point1Title", text: "work.point1Text" },
+  { icon: MessagesSquare, title: "work.point2Title", text: "work.point2Text" },
+  { icon: BarChart3, title: "work.point3Title", text: "work.point3Text" },
+  { icon: Bell, title: "work.point4Title", text: "work.point4Text" },
 ];
 
-const STEPS: Array<{ step: string; title: MessageKey; text: MessageKey }> = [
-  { step: "01", title: "corporate.step1Title", text: "corporate.step1Text" },
-  { step: "02", title: "corporate.step2Title", text: "corporate.step2Text" },
-  { step: "03", title: "corporate.step3Title", text: "corporate.step3Text" },
-];
-
-const gradientText = "text-primary";
-
+// Corporate Connect: confidential workplace reporting to HR, and HR's dashboard.
 const Corporate = () => {
-  const { t, tr } = useI18n();
+  const { t } = useI18n();
+  const { user, loading } = useAuth();
+  const [org, setOrg] = useState<Org | null | undefined>(undefined);
+  const [newCode, setNewCode] = useState<string | null>(null);
 
-  return (
-    <div className="min-h-screen">
-      <Navbar />
+  useEffect(() => {
+    if (!user) return;
+    api<{ org: Org | null }>("/api/workplace")
+      .then((r) => setOrg(r.org))
+      .catch(() => setOrg(null));
+  }, [user]);
 
-      <main className="pt-24 pb-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16 space-y-6 animate-fade-in">
-            <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-brand/20 mb-4">
-              <Building2 className="h-16 w-16 text-primary" />
-            </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold">
-              <span className="bg-gradient-to-r from-primary via-brand to-cyan bg-clip-text text-transparent">
-                {t("nav.corporate")}
-              </span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">{t("corporate.intro")}</p>
-            <p className="text-sm rounded-md border border-primary/40 bg-primary/10 px-4 py-2 max-w-2xl mx-auto">
-              {t("corporate.notYet")}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/report">
-                <Button variant="hero" size="xl" className="gap-2">
-                  <FileText className="h-5 w-5" />
-                  {t("corporate.reportButton")}
+  const left = () => {
+    setOrg(null);
+    setNewCode(null);
+  };
+
+  const body = () => {
+    if (!loading && !user) {
+      return (
+        <div className="space-y-10">
+          <div className="grid gap-5 sm:grid-cols-2">
+            {POINTS.map(({ icon: Icon, title, text }) => (
+              <div key={title} className="rounded-3xl bg-card p-6 shadow-card ring-1 ring-border">
+                <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-brand text-white shadow-raised">
+                  <Icon className="h-6 w-6" />
+                </span>
+                <h2 className="mb-1 text-lg font-bold">{t(title)}</h2>
+                <p className="text-muted-foreground">{t(text)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <p className="text-muted-foreground">{t("work.loginText")}</p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/login?next=/corporate">
+                <Button variant="hero" size="lg" className="w-full sm:w-auto">
+                  {t("common.logIn")}
                 </Button>
               </Link>
-              <Link to="/support">
-                <Button variant="glass" size="xl" className="gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  {t("corporate.supportButton")}
+              <Link to="/signup?next=/corporate">
+                <Button variant="glass" size="lg" className="w-full sm:w-auto">
+                  {t("common.signUp")}
                 </Button>
               </Link>
             </div>
           </div>
+        </div>
+      );
+    }
+    if (org === undefined) return <div className="h-64 animate-pulse rounded-[2rem] bg-muted" />;
+    if (org === null) {
+      return (
+        <JoinOrSetup
+          onJoined={setOrg}
+          onCreated={(o, code) => {
+            setOrg(o);
+            setNewCode(code);
+          }}
+        />
+      );
+    }
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-wrap items-center gap-3 rounded-[2rem] bg-card p-5 shadow-card ring-1 ring-border">
+          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Building2 className="h-6 w-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xl font-extrabold">{org.name}</p>
+            <p className="text-sm text-muted-foreground">{org.role === "hr" ? t("work.youAreHr") : t("work.youAreMember")}</p>
+          </div>
+          {org.verified && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1.5 text-sm font-semibold ring-1 ring-success/30">
+              <BadgeCheck className="h-4 w-4 text-success" /> {t("work.verified", { domain: org.emailDomain ?? "" })}
+            </span>
+          )}
+        </div>
+        {newCode && <NewCode code={newCode} />}
+        {org.role === "hr" ? <HrView onLeave={left} /> : <EmployeeView onLeave={left} />}
+      </div>
+    );
+  };
 
-          <section className="mb-16">
-            <Card className="bg-primary/5 border-primary/20">
-              <CardHeader className="text-center">
-                <CardTitle className="text-3xl">{t("corporate.whyTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-center max-w-3xl mx-auto">
-                <p className="text-lg text-muted-foreground leading-relaxed">{t("corporate.why1")}</p>
-                <p className="text-lg text-muted-foreground leading-relaxed">{t("corporate.why2")}</p>
-              </CardContent>
-            </Card>
-          </section>
-
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              {tr("corporate.supportTitle", {
-                highlight: <span className={gradientText}>{t("corporate.supportHighlight")}</span>,
-              })}
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {FEATURES.map(({ icon: Icon, title, text }) => (
-                <Card key={title} className="group hover:border-primary/50 transition-all duration-300">
-                  <CardHeader>
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-brand/20 w-fit mb-4 group- transition-all">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <CardTitle className="text-xl">{t(title)}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base">{t(text)}</CardDescription>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-center mb-12">{t("corporate.howTitle")}</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              {STEPS.map(({ step, title, text }) => (
-                <div key={step} className="text-center space-y-4">
-                  <div className={`text-5xl font-bold ${gradientText}`}>{step}</div>
-                  <h3 className="text-xl font-semibold">{t(title)}</h3>
-                  <p className="text-muted-foreground">{t(text)}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-16">
-            <Card>
-              <CardHeader className="text-center">
-                <Building2 className="h-12 w-12 mx-auto mb-4 text-primary" />
-                <CardTitle className="text-2xl">{t("corporate.partnersTitle")}</CardTitle>
-                <CardDescription>{t("corporate.partnersText")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center gap-2">
-                      <ShieldCheck className="h-5 w-5 text-primary" />
-                      {t("corporate.partner1Title")}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">{t("corporate.partner1Text")}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold flex items-center gap-2">
-                      <UserCheck className="h-5 w-5 text-primary" />
-                      {t("corporate.partner2Title")}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">{t("corporate.partner2Text")}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          <Card className="bg-destructive/5 border-destructive/25">
-            <CardHeader>
-              <CardTitle>{t("corporate.helpTitle")}</CardTitle>
-              <CardDescription>{t("corporate.helpText")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/sos" className="flex-1">
-                  <Button variant="emergency" size="lg" className="w-full">
-                    {t("common.emergencySos")}
-                  </Button>
-                </Link>
-                <Link to="/support" className="flex-1">
-                  <Button variant="hero" size="lg" className="w-full">
-                    {t("support.title")}
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="px-4 pb-24 pt-28 md:pt-36">
+        <div className="container mx-auto max-w-6xl space-y-12">
+          <header className="mx-auto max-w-3xl space-y-5 text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">{t("work.kicker")}</p>
+            <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">{t("nav.corporate")}</h1>
+            <p className="text-lg leading-relaxed text-muted-foreground md:text-xl">{t("work.intro")}</p>
+          </header>
+          {body()}
+          <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground">
+            {t("work.emergency")}{" "}
+            <Link to="/sos" className="font-semibold text-destructive underline underline-offset-2">
+              {t("common.emergencySos")}
+            </Link>
+          </p>
         </div>
       </main>
-
       <Footer />
     </div>
   );

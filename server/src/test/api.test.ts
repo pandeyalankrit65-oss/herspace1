@@ -888,6 +888,139 @@ describe('security review 2', () => {
   });
 });
 
+describe('Corporate Connect', () => {
+  const report = (token: string, extra: Record<string, unknown> = {}) =>
+    call('/workplace/reports', { token, body: { category: 'harassment', description: 'My manager keeps commenting on how I dress.', ...extra } });
+
+  async function workplace() {
+    const hr = await newUser('Hema');
+    // Test accounts are userN@example.com, so example.com is HR's own domain.
+    const created = await call('/workplace/orgs', { token: hr.token, body: { name: 'Acme', emailDomain: 'example.com' } });
+    assert.equal(created.status, 201);
+    const employee = await newUser('Esha');
+    const typed = created.data.joinCode.toLowerCase().replace(/(.{4})/, '$1 ');
+    assert.equal((await call('/workplace/join', { token: employee.token, body: { code: typed } })).status, 201);
+    return { hr, employee, code: created.data.joinCode as string };
+  }
+
+  test('HR sets up a workplace; employees join with its code and are verified by email domain', async () => {
+    const someone = await newUser('Sona');
+    const bad = await call('/workplace/orgs', { token: someone.token, body: { name: 'Fake Corp', emailDomain: 'acme-real.com' } });
+    assert.equal(bad.status, 400, 'cannot claim a domain that is not your own email domain');
+
+    const { hr, employee, code } = await workplace();
+    assert.match(code, /^[A-HJ-NP-Z2-9]{8}$/);
+    assert.equal((await call('/workplace/orgs', { token: hr.token, body: { name: 'Second' } })).status, 409, 'one workplace per account');
+    const mine = await call('/workplace', { token: employee.token });
+    assert.deepEqual(mine.data.org, { id: mine.data.org.id, name: 'Acme', emailDomain: 'example.com', role: 'member', verified: true });
+    assert.equal((await call('/workplace/join', { token: someone.token, body: { code: 'WRONGCODE' } })).status, 404);
+    assert.equal((await call('/workplace/reports', { token: someone.token, body: {} })).status, 403, 'not a member');
+  });
+
+  test('reports are anonymous to HR unless the employee shares who they are', async () => {
+    const { hr, employee } = await workplace();
+    assert.equal((await report(employee.token, { category: 'gossip' })).status, 400);
+    assert.equal((await report(employee.token)).status, 201);
+    assert.equal((await report(employee.token, { category: 'bullying', shareIdentity: true })).status, 201);
+
+    const list = (await call('/workplace/hr/reports', { token: hr.token })).data.reports;
+    assert.equal(list.length, 2);
+    const anonymous = list.find((r: { category: string }) => r.category === 'harassment');
+    const named = list.find((r: { category: string }) => r.category === 'bullying');
+    assert.equal(anonymous.reporter, null);
+    assert.equal(JSON.stringify(anonymous).includes('Esha'), false, 'nothing identifying anywhere in it');
+    assert.equal(named.reporter.name, 'Esha');
+    assert.equal((await call('/workplace/hr/reports', { token: employee.token })).status, 403, 'employees are not HR');
+  });
+
+  test('HR and the reporter talk through the report; nobody else can', async () => {
+    const { hr, employee } = await workplace();
+    const { data } = await report(employee.token);
+    const reply = await call(`/workplace/reports/${data.id}/messages`, { token: hr.token, body: { body: 'Thank you for telling us. Can you say which meeting?' } });
+    assert.equal(reply.status, 201);
+    await call(`/workplace/reports/${data.id}/messages`, { token: employee.token, body: { body: 'The Monday stand-up.' } });
+
+    const mine = (await call('/workplace/reports/mine', { token: employee.token })).data.reports[0];
+    assert.equal(mine.status, 'reviewing', 'a reply moves it to reviewing');
+    assert.deepEqual(
+      mine.messages.map((m: { fromHr: boolean; body: string }) => [m.fromHr, m.body]),
+      [
+        [true, 'Thank you for telling us. Can you say which meeting?'],
+        [false, 'The Monday stand-up.'],
+      ]
+    );
+
+    // HR of another workplace can't read or change it.
+    const other = await newUser('Olga');
+    await call('/workplace/orgs', { token: other.token, body: { name: 'Other Ltd' } });
+    assert.equal((await call(`/workplace/reports/${data.id}/messages`, { token: other.token, body: { body: 'hi' } })).status, 404);
+    assert.equal((await call(`/workplace/hr/reports/${data.id}`, { token: other.token, method: 'PATCH', body: { status: 'closed' } })).status, 404);
+    assert.equal((await call('/workplace/hr/reports', { token: other.token })).data.reports.length, 0);
+
+    assert.equal((await call(`/workplace/hr/reports/${data.id}`, { token: hr.token, method: 'PATCH', body: { status: 'done' } })).status, 400);
+    assert.equal((await call(`/workplace/hr/reports/${data.id}`, { token: hr.token, method: 'PATCH', body: { status: 'resolved' } })).status, 200);
+    assert.equal((await call('/workplace/reports/mine', { token: employee.token })).data.reports[0].status, 'resolved');
+  });
+
+  test('insights hide small groups that could point to a person', async () => {
+    const { hr, employee } = await workplace();
+    await report(employee.token);
+    await report(employee.token);
+    let insights = (await call('/workplace/hr/insights', { token: hr.token })).data;
+    assert.equal(insights.total, 2);
+    assert.equal(insights.byCategory, null, 'fewer than 3 reports: no breakdown');
+    assert.equal(insights.members, 2);
+    assert.equal(insights.verifiedMembers, 2);
+    await report(employee.token);
+    await report(employee.token, { category: 'discrimination' });
+    insights = (await call('/workplace/hr/insights', { token: hr.token })).data;
+    assert.deepEqual(insights.byCategory, { harassment: 3, other: 1 }, 'the single discrimination report is folded into other');
+    assert.equal(insights.open, 4);
+    assert.equal(insights.months.length, 6);
+    assert.equal(insights.months.at(-1).count, 4);
+  });
+
+  test('settings only accept real Slack and Teams webhooks; a new join code replaces the old one', async () => {
+    const { hr, code } = await workplace();
+    for (const bad of ['http://hooks.slack.com/services/x', 'https://evil.example.com/hook', 'https://hooks.slack.com.evil.com/x', 'https://169.254.169.254/latest']) {
+      assert.equal((await call('/workplace/hr/settings', { token: hr.token, method: 'PUT', body: { slackWebhook: bad } })).status, 400, bad);
+    }
+    const ok = await call('/workplace/hr/settings', {
+      token: hr.token,
+      method: 'PUT',
+      body: { slackWebhook: 'https://hooks.slack.com/services/T0/B0/x', teamsWebhook: 'https://acme.webhook.office.com/webhookb2/abc', notifyEmail: 'hr@example.com' },
+    });
+    assert.equal(ok.status, 200);
+    assert.equal((await call('/workplace/hr/settings', { token: hr.token })).data.slackWebhook, 'https://hooks.slack.com/services/T0/B0/x');
+
+    const fresh = await call('/workplace/hr/join-code', { token: hr.token, method: 'POST' });
+    const late = await newUser('Lata');
+    assert.equal((await call('/workplace/join', { token: late.token, body: { code } })).status, 404, 'old code no longer works');
+    assert.equal((await call('/workplace/join', { token: late.token, body: { code: fresh.data.joinCode } })).status, 201);
+  });
+
+  test('HR can add a colleague to the HR team; the last HR person cannot leave the team empty', async () => {
+    const { hr, employee } = await workplace();
+    assert.equal((await call('/workplace/leave', { token: hr.token, method: 'POST' })).status, 409);
+    const email = (await call('/auth/me', { token: employee.token })).data.user.email;
+    assert.equal((await call('/workplace/hr/team', { token: hr.token, body: { email: 'nobody@example.com' } })).status, 404);
+    assert.equal((await call('/workplace/hr/team', { token: hr.token, body: { email } })).status, 200);
+    assert.equal((await call('/workplace', { token: employee.token })).data.org.role, 'hr');
+    assert.equal((await call('/workplace/leave', { token: hr.token, method: 'POST' })).status, 200);
+    assert.equal((await call('/workplace', { token: hr.token })).data.org, null);
+  });
+
+  test('an employee report is in their data export and goes with their account', async () => {
+    const { hr, employee } = await workplace();
+    await report(employee.token);
+    const exported = (await call('/account/export', { token: employee.token })).data;
+    assert.equal(exported.workplace.name, 'Acme');
+    assert.equal(exported.workplaceReports.length, 1);
+    await call('/account', { token: employee.token, method: 'DELETE', body: { password: 'password123' } });
+    assert.equal((await call('/workplace/hr/reports', { token: hr.token })).data.reports.length, 0);
+  });
+});
+
 describe('security fixes', () => {
   test('SOS recordings must really be audio', async () => {
     const { token } = await userWithConfirmedContact('Gita');

@@ -15,6 +15,7 @@ import { accountRouter } from './routes/account';
 import { locationSharesRouter, trackRouter } from './routes/location';
 import { checkInsRouter } from './routes/checkins';
 import { moderationRouter } from './routes/moderation';
+import { workplaceRouter } from './routes/workplace';
 
 export const app = express();
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:8080').split(',').map((o) => o.trim());
@@ -88,6 +89,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 });
 
 app.use('/api/moderation', moderationRouter);
+app.use('/api/workplace', workplaceRouter);
 app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
 app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {

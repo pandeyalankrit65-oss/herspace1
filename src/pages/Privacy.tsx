@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import LegalPage, { ContactLine, Section, useLegalLang, type LegalLang } from "@/components/LegalPage";
 
 const PrivacyEn = () => (
-  <LegalPage title="Privacy Policy" updated="28 September 2026">
+  <LegalPage title="Privacy Policy" updated="7 October 2026">
     <p className="text-lg text-muted-foreground leading-relaxed">
       HerSpace exists to help keep you safe, so we collect only what the app needs to work, and we tell you plainly where it goes.
     </p>
@@ -58,6 +58,9 @@ const PrivacyEn = () => (
           when you log out.
         </li>
         <li>
+          <strong>Corporate Connect (only if you join a workplace):</strong> which workplace you belong to, whether you're on its HR team, and the reports you send to your HR team with the conversation that follows. Each report is anonymous to HR unless you choose to share your name. If your HR team turns on Slack, Teams or email alerts, those alerts say only that a report or message arrived, never what it says or who sent it.
+        </li>
+        <li>
           <strong>Support chat:</strong> messages are sent to our AI provider to generate a reply. HerSpace does not save them.
         </li>
       </ul>
@@ -79,6 +82,9 @@ const PrivacyEn = () => (
           type, description, date, rough area and photos, but not who sent it.
         </li>
         <li>
+          <strong>Your workplace's HR team</strong>, only for the reports you send them through Corporate Connect: what you wrote and the conversation that follows. They see your name and email only if you chose to share them with that report. If you're on an HR team, the rest of that team sees your name and email. Your employer never sees anything else you do in HerSpace.
+        </li>
+        <li>
           <strong>Service providers</strong> that run parts of the app for us: Twilio (text messages and calls), Resend
           (password-reset emails), Anthropic (the AI support chat) and OpenStreetMap (map images, which your browser loads
           directly). They receive only what they need for that task.
@@ -91,8 +97,7 @@ const PrivacyEn = () => (
         </li>
       </ul>
       <p>
-        We do not sell your data, show you ads, or pass your reports to the police or your employer. We would only disclose
-        information if the law requires it.
+        We do not sell your data or show you ads, and we never pass your reports to the police. Your employer sees only the workplace reports you send to your HR team yourself. We would only disclose information if the law requires it.
       </p>
     </Section>
 

@@ -103,3 +103,34 @@ export async function sendEmail(to: string, subject: string, text: string): Prom
     return { status: 'failed', error: err instanceof Error ? err.message : 'Network error' };
   }
 }
+
+// Slack and Microsoft Teams incoming webhooks, for workplace notifications. Only those hosts
+// are accepted, so a webhook setting can't make the server call anything else.
+const WEBHOOK_HOSTS = [/^hooks\.slack\.com$/, /^[a-z0-9-]+\.webhook\.office\.com$/, /^[a-z0-9-]+\.logic\.azure\.com$/];
+export function validWebhook(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && !u.port && WEBHOOK_HOSTS.some((h) => h.test(u.hostname));
+  } catch {
+    return false;
+  }
+}
+
+export async function postWebhook(url: string, text: string): Promise<SendResult> {
+  if (!validWebhook(url)) return { status: 'failed', error: 'Not an allowed webhook address' };
+  // Tests turn webhooks off so they never call Slack or Microsoft.
+  if (process.env.WEBHOOKS === 'off') return { status: 'not_configured' };
+  if (outboxPath) return toOutbox({ channel: 'webhook', to: url, body: text });
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(10000),
+      redirect: 'error',
+    });
+    return res.ok ? { status: 'sent' } : { status: 'failed', error: `Webhook returned ${res.status}` };
+  } catch (err) {
+    return { status: 'failed', error: err instanceof Error ? err.message : 'Network error' };
+  }
+}

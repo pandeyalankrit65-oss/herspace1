@@ -1,7 +1,7 @@
 import fs from "fs";
 import { expect, type Browser, type Page } from "@playwright/test";
 
-export type OutboxMessage = { channel: "sms" | "call" | "email"; to: string; body: string; subject?: string; sid: string; at: string };
+export type OutboxMessage = { channel: "sms" | "call" | "email" | "webhook"; to: string; body: string; subject?: string; sid: string; at: string };
 
 export function readOutbox(): OutboxMessage[] {
   const file = process.env.E2E_OUTBOX!;

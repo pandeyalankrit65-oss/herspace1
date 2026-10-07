@@ -38,12 +38,13 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | **Works offline, installable** | After the first visit, the service worker stores the whole app (every page, from a build-time file list), so any page opens with no connection, and keeps map tiles you've viewed (up to 600). Offline, SOS can't send alerts itself, but it shows your contacts with one-tap **Text** (location included) and **Call** buttons, which work over the phone network. The map shows the last incidents and nearby help seen, contacts show the copy kept on the device, and reports (with photos) are saved on the phone and sent automatically when back online. Features that need the server (timer, walk, chat, editing contacts) say so and point to SOS. A small "offline" pill shows on every page. It can be installed to the home screen, with an SOS shortcut. The Android app keeps all its pages on the phone. |
 | **Hindi** | A language toggle (always visible in the navbar) switches the whole app to Hindi, including the legal pages, help guide and complaint letters. The voice trigger listens for "बचाओ" in Hindi mode. Scripted chat replies come in Hindi; the AI replies in whatever language the user writes. Strings live in `src/i18n/en.ts` and `src/i18n/hi.ts`, and a missing Hindi key fails the build. The Privacy Policy and Terms have Hindi translations (`src/pages/legal/`), marked as a convenience translation that links to the binding English text; have them professionally reviewed before launch. |
 | **Tamil, Bengali, Marathi (beta)** | The whole interface is also available in தமிழ், বাংলা and मराठी (marked "beta" in the language menu). These were drafted with AI assistance and must be reviewed by native speakers before launch; any missing message falls back to English. The voice trigger listens for உதவி / காப்பாத்து, বাঁচাও / সাহায্য and वाचवा / मदत, and read-aloud and the fake call speak in the chosen language. The Privacy Policy, Terms, complaint letters and the Help & rights guide are translated too (the English legal text stays binding, and each translation links to it); a unit test keeps every translation of the guide in step with the English, down to its numbers. Each language is its own file, downloaded only by people who choose it, and Tamil and Bengali fonts are self-hosted and only downloaded when used. |
+| **Corporate Connect** (`/corporate`) | Confidential workplace reporting. An HR person sets up the workplace and gets an 8-character join code to share (only its keyed hash is stored; a new code replaces it). Setting a work email domain needs an account email on that domain, and employees whose email matches are shown as verified. Employees report harassment, discrimination, bullying or unsafe conditions to HR, **anonymous unless they choose to share their name**, and HR and the employee talk it through in a private thread without HR learning who it is. HR sets a status (new, being reviewed, resolved, closed) and sees insights: totals, open cases, typical time to first reply, reports per month, and a breakdown by type only from 3 reports up, with rare types folded into Other so they can't point to one person. Alerts go to a Slack or Teams webhook (only `hooks.slack.com`, `*.webhook.office.com` and `*.logic.azure.com` over https) or an email, and never carry what was written or who wrote it; the employee is emailed when HR replies, also without the reply. One workplace per account; the employer sees nothing else the employee does in HerSpace. |
 | **Privacy Policy & Terms** (`/privacy`, `/terms`) | Written to match exactly what the app collects and shares. |
 | **Accounts** (`/account`) | Email + password with password reset by email, password change (signs out other devices), download of all your data, and account deletion. Passwords are hashed with scrypt. Sessions live in an HttpOnly, SameSite cookie that page scripts can't read, and are stored hashed on the server. Changing requests must carry an `X-Requested-With` header, which blocks cross-site request forgery. Login, SOS, invites, reports and chat are rate-limited. SOS locations are deleted automatically after 90 days. |
 
 ## Not built yet
 
-- **Corporate Connect** and **Safe Circles**: the pages describe planned features and say so on the page.
+- **Safe Circles**: the page describes a planned feature and says so on the page.
 - **Safe word and voice trigger in the background**: today they listen only while the SOS page is open with the screen on. Listening with the screen off or the app closed needs an Android foreground service with microphone access (a permanent notification, battery use, and Google Play's rules for background microphone use), ideally with on-device recognition so audio never leaves the phone.
 - Other triggers that work with the screen off or the app closed: shake, lock-screen widget, power-button presses (needs an accessibility service, which Play Store policy restricts), smartwatch or Bluetooth panic button.
 - A missed-call SOS number for phones without data (needs a telephony provider).
@@ -52,7 +53,7 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 - Native-speaker review of the Tamil, Bengali and Marathi translations (interface, complaint letters, Privacy Policy and Terms), and legal review of the translated legal pages and the Help & rights guide in all four languages.
 - AI or ML risk prediction and safe-route navigation.
 - End-to-end encryption. Data is protected by access control on the server, not encrypted per user.
-- Admin or HR dashboards beyond map moderation.
+- Corporate Connect: signing in with the company's own login (SSO), and a formal Internal Committee case workflow (hearings, deadlines, reports to the District Officer).
 
 ## Running locally
 
@@ -161,12 +162,13 @@ The **browser tests** (`e2e/`) build the app and drive it in Chromium, at deskto
 - contacts replying "I'm on my way", walk with me, help nearby on the map, the setup checklist
 - report photos (EXIF removed) and map moderation
 - voice (with a fake speech engine) and shake (with synthetic motion events) triggers
+- Corporate Connect: an HR person and an employee in two browsers, from setting up the workplace to an anonymous report, Slack alert and replies
 - every page checked for console errors and phone-width overflow
 - every page checked with [axe](https://github.com/dequelabs/axe-core) for WCAG 2.1 A/AA problems, in light and dark mode
 
 OpenStreetMap lookups go to a local stub (`e2e/stub-osm.mjs`), never to the public services.
 
-They run against an isolated API server (its own port and database) in **outbox mode**. `MESSAGE_OUTBOX` makes the server write SMS, calls and emails to a file instead of sending them, and tests read invite, SOS and reset links from that file. The server refuses outbox mode when `NODE_ENV=production`. To run them locally without downloading Chromium, use your installed Chrome: `PW_CHANNEL=chrome npm run test:e2e`.
+They run against an isolated API server (its own port and database) in **outbox mode**. `MESSAGE_OUTBOX` makes the server write SMS, calls, emails and Slack/Teams webhooks to a file instead of sending them, and tests read invite, SOS and reset links from that file. The server refuses outbox mode when `NODE_ENV=production`. To run them locally without downloading Chromium, use your installed Chrome: `PW_CHANNEL=chrome npm run test:e2e`.
 
 Neither test suite reads `server/.env`, so they can't send real messages. GitHub Actions (`.github/workflows/ci.yml`) runs lint, type-check, build, the API tests and the browser tests on every push and pull request.
 
@@ -211,6 +213,10 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 | `POST /api/reports/:id/flag` | – | Flag a map point |
 | `GET /api/reports/map` | – | Public, coarsened points for the map |
 | `GET /api/moderation/reports?queue=review\|approved\|removed`, `POST /api/moderation/reports/:id` | Moderator | Review flagged map points: `approve`, `remove` or `reopen` |
+| `GET /api/workplace`, `POST /api/workplace/orgs`, `/join`, `/leave` | Session | Your workplace; set one up (you become HR), join with a code, leave |
+| `POST /api/workplace/reports`, `GET /api/workplace/reports/mine`, `POST /api/workplace/reports/:id/messages` | Session (member) | Report to HR (`shareIdentity` optional), your reports and their threads, reply |
+| `GET /api/workplace/hr/reports`, `PATCH /api/workplace/hr/reports/:id`, `GET /api/workplace/hr/insights` | Session (HR) | Reports (no reporter unless shared), status changes, aggregate insights |
+| `GET/PUT /api/workplace/hr/settings`, `POST /api/workplace/hr/join-code`, `POST /api/workplace/hr/team` | Session (HR) | Slack/Teams/email alerts, a new join code, add a member to the HR team |
 | `POST /api/chat` | – | Support chat reply (`mode: "ai"` or `"fallback"`) |
 
 ## Before a real launch

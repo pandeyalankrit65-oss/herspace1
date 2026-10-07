@@ -219,6 +219,53 @@ const migrations: string[] = [
   ALTER TABLE location_shares ADD COLUMN destination TEXT;
   ALTER TABLE location_shares ADD COLUMN arrived INTEGER NOT NULL DEFAULT 0;
   `,
+  `
+  -- Corporate Connect. An organisation is set up by someone in HR; employees join with its
+  -- code. join_code_hash is keyed, so the code itself isn't stored.
+  CREATE TABLE organizations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email_domain TEXT,
+    join_code_hash TEXT NOT NULL UNIQUE,
+    slack_webhook TEXT,
+    teams_webhook TEXT,
+    notify_email TEXT,
+    created_at TEXT NOT NULL
+  );
+  -- One workplace per account. verified: the account's email matches the workplace's domain.
+  CREATE TABLE org_members (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    org_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'member',
+    verified INTEGER NOT NULL DEFAULT 0,
+    joined_at TEXT NOT NULL
+  );
+  CREATE INDEX org_members_org ON org_members(org_id);
+  -- Reports to HR. HR never sees who filed one unless share_identity is set. They go with the
+  -- reporter's account, like every other personal report.
+  CREATE TABLE workplace_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    description TEXT NOT NULL,
+    incident_date TEXT,
+    location TEXT,
+    share_identity INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'new',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    first_response_at TEXT
+  );
+  CREATE INDEX workplace_reports_org ON workplace_reports(org_id);
+  CREATE TABLE workplace_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL REFERENCES workplace_reports(id) ON DELETE CASCADE,
+    from_hr INTEGER NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  `,
 ];
 
 function migrate() {

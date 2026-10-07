@@ -193,7 +193,21 @@ accountRouter.get('/export', (req, res) => {
   const checkIns = db
     .prepare('SELECT note, status, created_at AS createdAt, due_at AS dueAt, alerted_at AS alertedAt FROM check_ins WHERE user_id = ?')
     .all(userId);
-  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, checkIns, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
+  const workplace = db
+    .prepare('SELECT o.name, m.role, m.verified, m.joined_at AS joinedAt FROM org_members m JOIN organizations o ON o.id = m.org_id WHERE m.user_id = ?')
+    .get(userId) ?? null;
+  const workplaceReports = (
+    db
+      .prepare(
+        `SELECT id, category, description, incident_date AS date, location, share_identity AS shareIdentity, status, created_at AS createdAt
+         FROM workplace_reports WHERE user_id = ?`
+      )
+      .all(userId) as Array<{ id: number }>
+  ).map(({ id, ...r }) => ({
+    ...r,
+    messages: db.prepare('SELECT from_hr AS fromHr, body, created_at AS at FROM workplace_messages WHERE report_id = ? ORDER BY id').all(id),
+  }));
+  res.json({ exportedAt: new Date().toISOString(), user, contacts, reports, sosEvents, locationShares, checkIns, workplace, workplaceReports, note: 'Anonymous reports are not linked to your account and cannot be exported.' });
 });
 
 accountRouter.delete('/', passwordLimiter, (req, res) => {

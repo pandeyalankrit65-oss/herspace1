@@ -10,6 +10,7 @@ process.env.DISABLE_IP_RATE_LIMIT = '1';
 // No calls to public OpenStreetMap services from tests.
 process.env.NOMINATIM_URL = 'off';
 process.env.OVERPASS_URL = 'off';
+process.env.WEBHOOKS = 'off';
 process.env.UPLOAD_DIR = path.join(os.tmpdir(), `herspace-test-uploads-${process.pid}`);
 process.env.ADMIN_EMAILS = 'moderator@example.com';
 process.on('exit', () => fs.rmSync(process.env.UPLOAD_DIR!, { recursive: true, force: true }));
