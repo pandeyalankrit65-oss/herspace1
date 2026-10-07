@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ExternalLink, FileSignature, LifeBuoy, Phone } from "lucide-react";
+import { ClipboardList, ExternalLink, FileSignature, LifeBuoy, Phone } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
@@ -56,6 +56,11 @@ const Help = () => {
                       <li key={p}>{p}</li>
                     ))}
                   </ul>
+                  {s.id === "domestic-violence" && (
+                    <Link to="/safety-plan" className="inline-flex items-center gap-2 font-semibold text-primary underline underline-offset-2">
+                      <ClipboardList className="h-4 w-4" /> {t("plan.linkTitle")}
+                    </Link>
+                  )}
                   {s.links && (
                     <p className="flex flex-wrap gap-3">
                       {s.links.map((link) => (

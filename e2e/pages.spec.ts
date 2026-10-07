@@ -11,6 +11,7 @@ const PAGES: Array<[string, RegExp]> = [
   ["/corporate", /Corporate Connect/],
   ["/partners", /Expert help/],
   ["/wellbeing", /Take a moment/],
+  ["/safety-plan", /My safety plan/],
   ["/about", /About/],
   ["/contacts", /Emergency Contacts/],
   ["/login", /Log in/],

@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { deleteJournal } from "@/lib/mood";
+import { deletePlan } from "@/lib/safetyPlan";
 import { syncRoutineNotifications } from "@/lib/routineNotifications";
 import { clearOfflineData, offlineUser } from "@/lib/offline";
 
@@ -40,8 +41,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const previous = offlineUser.get<User>();
     if (previous && previous.id !== next.id) {
       clearOfflineData();
-      // Someone else signing in on this phone: the journal belonged to the previous person.
+      // Someone else signing in on this phone: the journal and plan belonged to the previous person.
       deleteJournal();
+      deletePlan();
     }
     offlineUser.set(next);
     setUser(next);
@@ -93,6 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Only on a real logout: clearSession also runs for every signed-out visit, and must not
     // erase a journal kept by someone who never signed in.
     deleteJournal();
+    deletePlan();
     // Routines go with the other on-device data; their phone reminders go too.
     void syncRoutineNotifications([], () => ({ title: "", body: "" }));
     clearSession();

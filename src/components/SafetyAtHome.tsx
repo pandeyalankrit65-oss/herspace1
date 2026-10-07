@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Calculator, House, KeyRound, LogOut, MessageSquareLock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Calculator, ClipboardList, House, KeyRound, LogOut, MessageSquareLock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,7 @@ const SafetyAtHome = () => {
   };
 
   return (
-    <Card>
+    <Card id="safety-at-home" className="scroll-mt-24">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <House className="h-5 w-5 text-primary" /> {t("safe.title")}
@@ -74,6 +75,13 @@ const SafetyAtHome = () => {
         <CardDescription>{t("safe.desc")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Link to="/safety-plan" className="flex items-start gap-3 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/20 hover:bg-primary/10">
+          <ClipboardList className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <span>
+            <span className="block font-semibold">{t("plan.linkTitle")}</span>
+            <span className="block text-sm text-muted-foreground">{t("plan.linkText")}</span>
+          </span>
+        </Link>
         {/* Disguised mode */}
         <section className="space-y-3">
           <h3 className="flex items-center gap-2 font-semibold">
