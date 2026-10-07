@@ -2,7 +2,7 @@ import { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { db } from '../db';
-import { requireAuth } from '../auth';
+import { requireAuth, type User } from '../auth';
 import { perUser, rateLimit } from '../rateLimit';
 import { keyedHash, now, parse } from '../util';
 
@@ -192,6 +192,7 @@ circlesRouter.post('/', createLimiter, (req, res) => {
   if (domain && emailDomain(user.email) !== domain) {
     return res.status(400).json({ error: `Your account's email must end in @${domain} to use it as the circle's domain.` });
   }
+  if (domain && !user.emailVerified) return res.status(403).json({ error: 'Confirm your email address first: use the link we emailed you, or send a new one from your account page.' });
   if (body.requireDomain && !domain) return res.status(400).json({ error: 'Add an email domain to limit the circle to it.' });
   const code = newJoinCode();
   const stamp = now();
@@ -217,19 +218,22 @@ circlesRouter.post('/', createLimiter, (req, res) => {
 });
 
 // Checks shared by joining with a code and asking to join: returns an error message or null.
-function cannotJoin(circle: Circle, userId: number, email: string): string | null {
+function cannotJoin(circle: Circle, user: User): string | null {
+  const userId = user.id;
   const m = membershipOf(circle.id, userId);
   if (m?.status === 'active') return "You're already in this circle.";
   if (m?.status === 'banned') return "You can't join this circle.";
   if (activeCount(userId) >= MAX_CIRCLES) return `You can be in up to ${MAX_CIRCLES} circles.`;
-  if (circle.require_domain && emailDomain(email) !== circle.email_domain) {
+  if (circle.require_domain && emailDomain(user.email) !== circle.email_domain) {
     return `This circle is only for people with an @${circle.email_domain} email address on their account.`;
   }
+  if (circle.require_domain && !user.emailVerified) return 'Confirm your email address first: use the link we emailed you, or send a new one from your account page.';
   return null;
 }
 
-function addMember(circle: Circle, userId: number, email: string, status: 'active' | 'pending') {
-  const verified = circle.email_domain && emailDomain(email) === circle.email_domain ? 1 : 0;
+function addMember(circle: Circle, user: User, status: 'active' | 'pending') {
+  const userId = user.id;
+  const verified = circle.email_domain && emailDomain(user.email) === circle.email_domain && user.emailVerified ? 1 : 0;
   db.prepare(
     `INSERT INTO circle_members (circle_id, user_id, role, status, verified, joined_at) VALUES (?, ?, 'member', ?, ?, ?)
      ON CONFLICT (circle_id, user_id) DO UPDATE SET status = excluded.status, joined_at = excluded.joined_at`
@@ -242,19 +246,19 @@ circlesRouter.post('/join', joinLimiter, (req, res) => {
   const row = db.prepare('SELECT id FROM circles WHERE join_code_hash = ?').get(codeHash(body.code)) as { id: number } | undefined;
   const circle = row && circleById(row.id);
   if (!circle) return res.status(404).json({ error: "That code isn't right. Check it with whoever invited you." });
-  const problem = cannotJoin(circle, req.user!.id, req.user!.email);
+  const problem = cannotJoin(circle, req.user!);
   if (problem) return res.status(403).json({ error: problem });
-  addMember(circle, req.user!.id, req.user!.email, 'active');
+  addMember(circle, req.user!, 'active');
   res.status(201).json({ id: circle.id });
 });
 
 circlesRouter.post('/:id/request', joinLimiter, (req, res) => {
   const circle = circleById(Number(req.params.id));
   if (!circle || !circle.listed) return res.status(404).json({ error: 'Circle not found.' });
-  const problem = cannotJoin(circle, req.user!.id, req.user!.email);
+  const problem = cannotJoin(circle, req.user!);
   if (problem) return res.status(403).json({ error: problem });
   if (membershipOf(circle.id, req.user!.id)?.status === 'pending') return res.json({ success: true });
-  addMember(circle, req.user!.id, req.user!.email, 'pending');
+  addMember(circle, req.user!, 'pending');
   res.status(201).json({ success: true });
 });
 

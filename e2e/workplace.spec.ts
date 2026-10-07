@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { signUp, waitForMessage } from "./helpers";
+import { signUp, verifyEmail, waitForMessage } from "./helpers";
 
 test("Corporate Connect: an employee reports to HR anonymously and they talk it through", async ({ page, browser }) => {
   // HR sets up the workplace; test accounts are @example.com, so that's HR's own domain.
-  await signUp(page, "Hema");
+  const hema = await signUp(page, "Hema");
+  // A workplace domain needs an email the person has proved is theirs.
+  await verifyEmail(page, hema.email);
   await page.goto("/corporate");
   await page.getByLabel("Organisation name").fill("Acme Textiles");
   await page.getByLabel("Work email domain (optional)").fill("example.com");
@@ -22,6 +24,7 @@ test("Corporate Connect: an employee reports to HR anonymously and they talk it 
   const employeeContext = await browser.newContext();
   const employee = await employeeContext.newPage();
   const esha = await signUp(employee, "Esha");
+  await verifyEmail(employee, esha.email);
   await employee.goto("/corporate");
   await employee.getByLabel("Workplace code").fill(code.toLowerCase());
   await employee.getByRole("button", { name: "Join", exact: true }).click();

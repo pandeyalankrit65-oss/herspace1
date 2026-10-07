@@ -2,7 +2,16 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useState 
 import { api, ApiError } from "@/lib/api";
 import { clearOfflineData, offlineUser } from "@/lib/offline";
 
-export type User = { id: number; name: string; email: string; moderator?: boolean; phone?: string | null };
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  moderator?: boolean;
+  phone?: string | null;
+  emailVerified?: boolean;
+  // Paused from the Safe Map by a moderator; SOS and everything else still work.
+  mapSuspended?: boolean;
+};
 
 type AuthResponse = { user: User };
 

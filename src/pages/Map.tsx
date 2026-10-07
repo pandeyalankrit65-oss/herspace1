@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { LocateFixed, Info, MapPin } from "lucide-react";
+import { BadgeCheck, LocateFixed, Info, MapPin } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { api } from "@/lib/api";
@@ -16,7 +18,23 @@ import PageHeader from "@/components/PageHeader";
 import { NearbyFilters, NearbyMarkers, NearestHelp } from "@/components/NearbyHelp";
 import { useNearby, type PlaceType } from "@/hooks/use-nearby";
 
-type Point = { id: number; incidentType: string; lat: number; lng: number; date: string };
+// Points saved offline by an older version may lack the trust fields.
+type Trust = "anonymous" | "account" | "verified";
+type Point = {
+  id: number;
+  incidentType: string;
+  lat: number;
+  lng: number;
+  date: string;
+  trust?: Trust;
+  confirmations?: number;
+  confirmedByMe?: boolean;
+  mine?: boolean;
+};
+
+const TRUST_LABEL: Record<Trust, MessageKey> = { verified: "map.trust.verified", account: "map.trust.account", anonymous: "map.trust.anonymous" };
+// Shown by "verified only": from a verified reporter, or confirmed by at least two people.
+const isTrusted = (p: Point) => p.trust === "verified" || (p.confirmations ?? 0) >= 2;
 
 const TYPE_STYLES: Record<string, { label: MessageKey; color: string }> = {
   harassment: { label: "report.types.harassment", color: "#e11d48" },
@@ -45,6 +63,8 @@ const Map = () => {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
+  const [trustedOnly, setTrustedOnly] = useState(false);
+  const { user } = useAuth();
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const nearby = useNearby(me);
   const [visible, setVisible] = useState<Record<PlaceType, boolean>>({ police: true, hospital: true, pharmacy: true });
@@ -58,6 +78,16 @@ const Map = () => {
       toast({ title: t("map.flagToastTitle"), description: t("map.flagToastDesc") });
     } catch (err) {
       toast({ title: t("map.flagFailed"), description: (err as Error).message, variant: "destructive" });
+    }
+  };
+
+  const confirm = async (id: number) => {
+    try {
+      const res = await api<{ confirmations: number }>(`/api/reports/${id}/confirm`, { method: "POST" });
+      setPoints((prev) => prev.map((p) => (p.id === id ? { ...p, confirmations: res.confirmations, confirmedByMe: true } : p)));
+      toast({ title: t("map.confirmedToast") });
+    } catch (err) {
+      toast({ title: t("map.confirmFailed"), description: (err as Error).message, variant: "destructive" });
     }
   };
 
@@ -98,6 +128,7 @@ const Map = () => {
   };
 
   const center = useMemo<[number, number]>(() => (points.length ? [points[0].lat, points[0].lng] : DEFAULT_CENTER), [points]);
+  const shown = trustedOnly ? points.filter(isTrusted) : points;
 
   return (
     <div className="min-h-screen">
@@ -143,14 +174,22 @@ const Map = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     crossOrigin="anonymous"
                   />
-                  {points.map((p) => {
+                  {shown.map((p) => {
                     const style = TYPE_STYLES[p.incidentType] ?? TYPE_STYLES.other;
+                    const trusted = isTrusted(p);
                     return (
                       <CircleMarker
                         key={p.id}
                         center={[p.lat, p.lng]}
-                        radius={9}
-                        pathOptions={{ color: style.color, fillColor: style.color, fillOpacity: 0.45, weight: 2 }}
+                        radius={trusted ? 10 : 9}
+                        // Trusted points are solid with a thick edge; anonymous ones have a dashed edge.
+                        pathOptions={{
+                          color: style.color,
+                          fillColor: style.color,
+                          fillOpacity: trusted ? 0.6 : 0.4,
+                          weight: trusted ? 4 : 2,
+                          dashArray: p.trust === "anonymous" ? "4 3" : undefined,
+                        }}
                       >
                         <Popup>
                           <strong>{t(style.label)}</strong>
@@ -158,6 +197,26 @@ const Map = () => {
                           {new Date(p.date).toLocaleDateString()}
                           <br />
                           <span style={{ fontSize: 11, opacity: 0.7 }}>{t("map.approx")}</span>
+                          <br />
+                          {p.trust && <span style={{ fontSize: 12 }}>{t(TRUST_LABEL[p.trust])}</span>}
+                          {(p.confirmations ?? 0) > 0 && (
+                            <>
+                              <br />
+                              <span style={{ fontSize: 12, fontWeight: 600 }}>{tn("map.confirmations", p.confirmations ?? 0)}</span>
+                            </>
+                          )}
+                          {user && !p.mine && p.trust && (
+                            <>
+                              <br />
+                              {p.confirmedByMe ? (
+                                <span style={{ fontSize: 11 }}>{t("map.youConfirmed")}</span>
+                              ) : (
+                                <button type="button" onClick={() => confirm(p.id)} style={{ fontSize: 12, fontWeight: 600, textDecoration: "underline", marginTop: 4 }}>
+                                  {t("map.confirm")}
+                                </button>
+                              )}
+                            </>
+                          )}
                           <br />
                           {flagged.has(p.id) ? (
                             <span style={{ fontSize: 11 }}>{t("map.flagged")}</span>
@@ -196,7 +255,16 @@ const Map = () => {
                     </li>
                   ))}
                 </ul>
-                <p className="text-xs text-muted-foreground">{tn("map.count", points.length)}</p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold">
+                    <Switch checked={trustedOnly} onCheckedChange={setTrustedOnly} aria-describedby="trusted-hint" />
+                    <BadgeCheck className="h-4 w-4 text-success" /> {t("map.trustedOnly")}
+                  </label>
+                  <p className="text-xs text-muted-foreground">{tn("map.count", shown.length)}</p>
+                </div>
+                <p id="trusted-hint" className="w-full text-xs text-muted-foreground">
+                  {t("map.trustedHint")}
+                </p>
               </div>
             </CardContent>
           </Card>

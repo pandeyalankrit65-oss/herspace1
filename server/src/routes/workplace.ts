@@ -89,12 +89,13 @@ workplaceRouter.post('/orgs', createLimiter, (req, res) => {
   if (!body) return;
   const user = req.user!;
   if (membership(user.id)) return res.status(409).json({ error: "You're already part of a workplace." });
-  // Setting a domain only works for someone whose own email is on it, so a stranger can't
-  // set up "Acme" and mark themselves a verified Acme employee.
+  // Setting a domain only works for someone whose own, confirmed email is on it, so a stranger
+  // can't set up "Acme" and mark themselves a verified Acme employee.
   const domain = body.emailDomain || null;
   if (domain && emailDomain(user.email) !== domain) {
     return res.status(400).json({ error: `Your account's email must end in @${domain} to use it as the workplace domain.` });
   }
+  if (domain && !user.emailVerified) return res.status(403).json({ error: 'Confirm your email address first: use the link we emailed you, or send a new one from your account page.' });
   const code = newJoinCode();
   const stamp = now();
   db.exec('BEGIN');
@@ -125,7 +126,8 @@ workplaceRouter.post('/join', joinLimiter, (req, res) => {
     | Pick<Org, 'id' | 'name' | 'email_domain'>
     | undefined;
   if (!org) return res.status(404).json({ error: 'That code is not right. Check it with your HR team.' });
-  const verified = Boolean(org.email_domain && emailDomain(user.email) === org.email_domain);
+  // Verified means the email is on the workplace's domain and they've proved it's theirs.
+  const verified = Boolean(org.email_domain && emailDomain(user.email) === org.email_domain && user.emailVerified);
   db.prepare("INSERT INTO org_members (user_id, org_id, role, verified, joined_at) VALUES (?, ?, 'member', ?, ?)").run(user.id, org.id, verified ? 1 : 0, now());
   res.status(201).json({ org: { id: org.id, name: org.name, emailDomain: org.email_domain, role: 'member', verified } });
 });

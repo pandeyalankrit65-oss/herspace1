@@ -15,8 +15,9 @@ import type { MessageKey } from "@/i18n/en";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import PartnerReview from "@/components/partners/PartnerReview";
+import AccountReview from "@/components/AccountReview";
 
-type Queue = "review" | "approved" | "removed";
+type Queue = "held" | "review" | "approved" | "removed";
 type Action = "approve" | "remove" | "reopen";
 type ModReport = {
   id: number;
@@ -29,15 +30,23 @@ type ModReport = {
   flags: number;
   hidden: boolean;
   photos: number[];
+  trust?: "anonymous" | "account" | "verified";
+  holdReasons?: string[];
+  confirmations?: number;
 };
 
 const QUEUES: Array<{ id: Queue; label: MessageKey }> = [
+  { id: "held", label: "mod.queue.held" },
   { id: "review", label: "mod.queue.review" },
   { id: "approved", label: "mod.queue.approved" },
   { id: "removed", label: "mod.queue.removed" },
 ];
 
 const ACTIONS: Record<Queue, Array<{ action: Action; label: MessageKey; variant: "hero" | "outline" | "destructive" }>> = {
+  held: [
+    { action: "approve", label: "mod.publish", variant: "outline" },
+    { action: "remove", label: "mod.remove", variant: "destructive" },
+  ],
   review: [
     { action: "approve", label: "mod.approve", variant: "outline" },
     { action: "remove", label: "mod.remove", variant: "destructive" },
@@ -150,6 +159,17 @@ const Moderation = () => {
                 <p className="text-xs text-muted-foreground">
                   {new Date(r.date).toLocaleDateString()} · {t("mod.area", { lat: r.lat, lng: r.lng })}
                 </p>
+                {(r.trust || (r.holdReasons?.length ?? 0) > 0) && (
+                  <p className="text-xs">
+                    {r.trust && <span className="font-semibold">{t(`map.trust.${r.trust}` as MessageKey)}</span>}
+                    {(r.confirmations ?? 0) > 0 && <> · {tn("map.confirmations", r.confirmations ?? 0)}</>}
+                    {(r.holdReasons?.length ?? 0) > 0 && (
+                      <span className="mt-1 block rounded-md bg-warning/15 px-2 py-1 font-medium">
+                        {t("mod.heldBecause")} {r.holdReasons!.map((h) => t(`mod.hold.${h}` as MessageKey)).join("; ")}
+                      </span>
+                    )}
+                  </p>
+                )}
                 <p className="whitespace-pre-wrap text-sm">{r.description}</p>
                 <ReportPhotos reportId={r.id} photos={r.photos} />
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -174,6 +194,7 @@ const Moderation = () => {
         <div className="container mx-auto max-w-3xl space-y-4">
           <PageHeader icon={ShieldCheck} title={t("mod.title")} subtitle={t("mod.intro")} />
           {body()}
+          {user?.moderator && <AccountReview />}
           {user?.moderator && <PartnerReview />}
         </div>
       </main>

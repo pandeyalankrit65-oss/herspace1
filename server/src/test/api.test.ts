@@ -1,4 +1,5 @@
 import './setup';
+import crypto from 'crypto';
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -43,6 +44,9 @@ async function call(
 }
 
 let counter = 0;
+// Stands in for clicking the emailed link (the test server sends no email).
+const verifyEmail = (email: string) => db.prepare('UPDATE users SET email_verified_at = ? WHERE email = ?').run(new Date().toISOString(), email);
+
 async function newUser(name = 'Asha') {
   const email = `user${++counter}@example.com`;
   const res = await call('/auth/signup', { body: { name, email, password: 'password123' } });
@@ -894,10 +898,12 @@ describe('Corporate Connect', () => {
 
   async function workplace() {
     const hr = await newUser('Hema');
+    verifyEmail(hr.email);
     // Test accounts are userN@example.com, so example.com is HR's own domain.
     const created = await call('/workplace/orgs', { token: hr.token, body: { name: 'Acme', emailDomain: 'example.com' } });
     assert.equal(created.status, 201);
     const employee = await newUser('Esha');
+    verifyEmail(employee.email);
     const typed = created.data.joinCode.toLowerCase().replace(/(.{4})/, '$1 ');
     assert.equal((await call('/workplace/join', { token: employee.token, body: { code: typed } })).status, 201);
     return { hr, employee, code: created.data.joinCode as string };
@@ -1103,6 +1109,7 @@ describe('Safe Circles', () => {
 
   test('listed circles can be found and asked to join; a domain limit keeps others out', async () => {
     const owner = await newUser('Kavya');
+    verifyEmail(owner.email);
     // Test accounts are @example.com.
     const created = await call('/circles', {
       token: owner.token,
@@ -1112,6 +1119,7 @@ describe('Safe Circles', () => {
     assert.equal((await call('/circles', { token: owner.token, body: { ...circleBody, emailDomain: 'iitd.ac.in' } })).status, 400, 'not your domain');
 
     const student = await newUser('Sana');
+    verifyEmail(student.email);
     const found = (await call('/circles/directory?q=Example%20College', { token: student.token })).data.circles;
     assert.equal(found.length, 1);
     assert.equal(found[0].requireDomain, true);
@@ -1253,6 +1261,130 @@ describe('partner network', () => {
     const mod = await moderator();
     const queue = (await call('/moderation/partners', { token: mod.token })).data.partners;
     assert.equal(queue.some((x: { name: string }) => x.name === 'Lata Self-Defence'), false);
+  });
+});
+
+describe('verified community reporting', () => {
+  const at = { lat: 18.52, lng: 73.85 };
+  const mapReport = (token: string | undefined, extra: Record<string, unknown> = {}) =>
+    call('/reports', { token, body: { incidentType: 'harassment', description: `Men following women near the bus stop ${Math.random()}`, coords: at, ...extra } });
+  const onMap = async (id: number, token?: string) => (await call('/reports/map', { token })).data.points.find((p: { id: number }) => p.id === id);
+
+  test('email verification: a link proves the address, and makes domain memberships verified', async () => {
+    const user = await newUser('Vani');
+    assert.equal((await call('/auth/me', { token: user.token })).data.user.emailVerified, false);
+    // Without a confirmed email, a domain can't be claimed and the member isn't verified.
+    assert.equal((await call('/workplace/orgs', { token: user.token, body: { name: 'Vani Co', emailDomain: 'example.com' } })).status, 403);
+    const hr = await newUser('Hira');
+    verifyEmail(hr.email);
+    const { data } = await call('/workplace/orgs', { token: hr.token, body: { name: 'Hira Co', emailDomain: 'example.com' } });
+    await call('/workplace/join', { token: user.token, body: { code: data.joinCode } });
+    assert.equal((await call('/workplace', { token: user.token })).data.org.verified, false);
+
+    assert.equal((await call('/auth/verify-email', { body: { token: 'not-a-real-token-at-all' } })).status, 400);
+    const token = 'a-known-test-token-123456';
+    const userId = (db.prepare('SELECT id FROM users WHERE email = ?').get(user.email) as { id: number }).id;
+    db.prepare('INSERT INTO email_verifications (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(
+      crypto.createHash('sha256').update(token).digest('hex'),
+      userId,
+      new Date(Date.now() + 60_000).toISOString()
+    );
+    assert.equal((await call('/auth/verify-email', { body: { token } })).status, 200);
+    assert.equal((await call('/auth/verify-email', { body: { token } })).status, 400, 'used once');
+    assert.equal((await call('/auth/me', { token: user.token })).data.user.emailVerified, true);
+    assert.equal((await call('/workplace', { token: user.token })).data.org.verified, true, 'membership upgraded on verification');
+  });
+
+  test('map points say who they came from; confirmations need a confirmed email and are one per person', async () => {
+    const anon = await mapReport(undefined, { anonymous: true });
+    assert.equal((await onMap(anon.data.id)).trust, 'anonymous');
+
+    const reporter = await newUser('Rekha');
+    const fromAccount = await mapReport(reporter.token);
+    assert.equal((await onMap(fromAccount.data.id)).trust, 'account');
+    assert.equal((await onMap(fromAccount.data.id, reporter.token)).mine, true, 'your own point is marked as yours');
+    assert.equal((await onMap(fromAccount.data.id)).mine, false);
+    verifyEmail(reporter.email);
+    db.prepare("UPDATE users SET phone = '+919800000001' WHERE email = ?").run(reporter.email);
+    const verified = await mapReport(reporter.token);
+    assert.equal((await onMap(verified.data.id)).trust, 'verified');
+
+    assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: reporter.token, method: 'POST' })).status, 400, 'not your own');
+    const witness = await newUser('Wafa');
+    assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: witness.token, method: 'POST' })).status, 403, 'email not confirmed');
+    verifyEmail(witness.email);
+    assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: witness.token, method: 'POST' })).data.confirmations, 1);
+    assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: witness.token, method: 'POST' })).data.confirmations, 1, 'once each');
+    const point = await onMap(verified.data.id, witness.token);
+    assert.equal(point.confirmations, 1);
+    assert.equal(point.confirmedByMe, true);
+  });
+
+  test('copied text, bursts and impossible distances are held for a moderator, with the reasons', async () => {
+    const text = 'A man on a bike snatched a phone near the metro gate at 9 pm.';
+    const first = await mapReport(undefined, { anonymous: true, description: text });
+    assert.equal(first.data.held, false);
+    const copy = await mapReport(undefined, { anonymous: true, description: `${text.toUpperCase()}!!` });
+    assert.equal(copy.data.held, true, 'same text, different case and punctuation');
+    assert.equal(await onMap(copy.data.id), undefined, 'not on the map');
+
+    const fast = await newUser('Farah');
+    await mapReport(fast.token, { coords: { lat: 28.61, lng: 77.2 } });
+    const far = await mapReport(fast.token, { coords: { lat: 19.07, lng: 72.87 } });
+    assert.equal(far.data.held, true, 'Delhi then Mumbai within the hour');
+
+    const burst = await newUser('Bina');
+    verifyEmail(burst.email);
+    const results = [];
+    for (let i = 0; i < 5; i++) results.push((await mapReport(burst.token)).data.held);
+    assert.deepEqual(results, [false, false, false, false, true], 'the fifth in an hour is held');
+
+    const mod = await newUser('Mod');
+    db.prepare("UPDATE users SET role = 'moderator' WHERE email = ?").run(mod.email);
+    const held = (await call('/moderation/reports?queue=held', { token: mod.token })).data.reports;
+    assert.deepEqual(held.find((r: { id: number }) => r.id === copy.data.id).holdReasons, ['duplicate']);
+    assert.ok(held.find((r: { id: number }) => r.id === far.data.id).holdReasons.includes('far_apart'));
+    await call(`/moderation/reports/${far.data.id}`, { token: mod.token, body: { action: 'approve' } });
+    assert.ok(await onMap(far.data.id), 'approved: on the map');
+  });
+
+  test('a new unverified throwaway account is held; moderators review accounts by pseudonym and can pause them from the map only', async () => {
+    const res = await call('/auth/signup', { body: { name: 'Temp', email: `fake${Date.now()}@mailinator.com`, password: 'password123' } });
+    const throwaway = res.token as string;
+    const held = await mapReport(throwaway);
+    assert.equal(held.data.held, true);
+
+    const mod = await newUser('Mod');
+    db.prepare("UPDATE users SET role = 'moderator' WHERE email = ?").run(mod.email);
+    const queue = (await call('/moderation/accounts', { token: mod.token })).data.accounts;
+    const entry = queue.find((a: { signals: string[]; stats: { held: number } }) => a.signals.includes('disposable_email') && a.stats.held === 1);
+    assert.ok(entry);
+    assert.match(entry.name, /^#[0-9A-F]{6}$/);
+    assert.equal(JSON.stringify(queue).includes('mailinator'), false, 'no email shown');
+    assert.equal(JSON.stringify(queue).includes('Temp'), false, 'no name shown');
+
+    assert.equal((await call(`/moderation/accounts/${entry.id}`, { token: mod.token, body: { action: 'suspend' } })).status, 400, 'needs a reason');
+    await call(`/moderation/accounts/${entry.id}`, { token: mod.token, body: { action: 'suspend', reason: 'Posting copied reports.' } });
+    assert.equal((await mapReport(throwaway)).status, 403);
+    assert.equal((await call(`/reports/${held.data.id}/flag`, { token: throwaway, method: 'POST' })).status, 403);
+    // Everything else still works: SOS is never paused.
+    assert.equal((await call('/auth/me', { token: throwaway })).data.user.mapSuspended, true);
+    assert.notEqual((await call('/sos', { token: throwaway, body: { coords: at } })).status, 403);
+    const suspended = (await call('/moderation/accounts?view=suspended', { token: mod.token })).data.accounts;
+    assert.equal(suspended.find((a: { id: number }) => a.id === entry.id).suspendedReason, 'Posting copied reports.');
+    await call(`/moderation/accounts/${entry.id}`, { token: mod.token, body: { action: 'unsuspend' } });
+    assert.equal((await mapReport(throwaway)).status, 201);
+
+    assert.equal((await call('/moderation/accounts', { token: throwaway })).status, 403, 'moderators only');
+  });
+
+  test("a suspended account's points leave the map", async () => {
+    const user = await newUser('Sima');
+    verifyEmail(user.email);
+    const { data } = await mapReport(user.token);
+    assert.ok(await onMap(data.id));
+    db.prepare('UPDATE users SET suspended_at = ? WHERE email = ?').run(new Date().toISOString(), user.email);
+    assert.equal(await onMap(data.id), undefined);
   });
 });
 

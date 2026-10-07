@@ -4,12 +4,14 @@ import { signUp } from "./helpers";
 // A location no other test uses, so the marker is unambiguous.
 test.use({ permissions: ["geolocation"], geolocation: { latitude: 26.9124, longitude: 75.7873 } });
 
-test("a report with location appears on the map, coarsened, and can be flagged", async ({ page }) => {
+test("a report with location appears on the map, coarsened, and can be flagged", async ({ page }, testInfo) => {
+  // Unique per project: the same text twice would be held for review as a copy.
+  const description = `Followed from the bus stop (${testInfo.project.name})`;
   await signUp(page, "Kavya");
   await page.goto("/report");
   await page.getByRole("combobox").click();
   await page.getByRole("option", { name: "Stalking" }).click();
-  await page.getByLabel("Incident Description *").fill("Followed from the bus stop");
+  await page.getByLabel("Incident Description *").fill(description);
   await page.getByLabel(/Add my current location/).check();
   await page.getByRole("button", { name: "Submit Report" }).click();
   await expect(page.getByText("Report Submitted", { exact: true })).toBeVisible();
@@ -25,7 +27,7 @@ test("a report with location appears on the map, coarsened, and can be flagged",
 
   // The report is visible on the account page (not anonymous).
   await page.goto("/account");
-  await expect(page.getByText("Followed from the bus stop")).toBeVisible();
+  await expect(page.getByText(description)).toBeVisible();
 });
 
 test("the map shows police, hospitals and pharmacies near the user", async ({ page }) => {

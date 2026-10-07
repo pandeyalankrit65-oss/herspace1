@@ -67,6 +67,9 @@ const PrivacyEn = () => (
           <strong>Expert help:</strong> when you request a session, which partner you asked and the contact detail, preferred time and message you entered. If you apply to be a partner, your listing, your credentials and the email and phone you give for requests.
         </li>
         <li>
+          <strong>Safe Map checks:</strong> when you confirmed your email, the reports you confirm with "I saw this too", and, if a moderator pauses your account from the Safe Map, when and why. To catch fake and copied reports, each new report's text is compared with the last week's reports, and a report from an account is compared with that account's reports in the last hour; unusual ones wait for a moderator. Nothing extra is kept about anonymous reports.
+        </li>
+        <li>
           <strong>Support chat:</strong> messages are sent to our AI provider to generate a reply. HerSpace does not save them.
         </li>
       </ul>
@@ -95,6 +98,9 @@ const PrivacyEn = () => (
         </li>
         <li>
           <strong>A partner you request a session from</strong> is emailed your name, the phone number or email you chose, your preferred time and your message, and only after you agree. Partners' credentials, email and phone are seen only by HerSpace moderators, who check them before listing anyone.
+        </li>
+        <li>
+          <strong>Everyone using the Safe Map</strong> also sees whether a point came from a verified reporter, an account or anonymously, and how many people confirmed it, never who. <strong>HerSpace moderators</strong> reviewing accounts see a code name, when the account was made, whether its email and phone are confirmed, and counts of its reports, never its name or email.
         </li>
         <li>
           <strong>Service providers</strong> that run parts of the app for us: Twilio (text messages and calls), Resend

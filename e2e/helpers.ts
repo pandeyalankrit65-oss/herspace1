@@ -43,6 +43,13 @@ export async function signUp(page: Page, name = "Asha", email = uniqueEmail("use
   return { name, email };
 }
 
+// Opens the link from the "Confirm your email" message, as the person would.
+export async function verifyEmail(page: Page, email: string) {
+  const message = await waitForMessage((m) => m.channel === "email" && m.to === email && m.subject === "Confirm your email for HerSpace");
+  await page.goto(linkIn(message.body, "/verify-email/"));
+  await expect(page.getByRole("heading", { name: "Email confirmed" })).toBeVisible();
+}
+
 // Adds a contact and accepts the invite as that contact in a separate, logged-out browser.
 export async function addConfirmedContact(page: Page, browser: Browser, name = "Mom") {
   const phone = uniquePhone();

@@ -6,11 +6,20 @@ import { randomToken, sha256 } from './util';
 const SESSION_DAYS = 30;
 
 // phone: the user's own number, only once verified.
-export type User = { id: number; name: string; email: string; moderator: boolean; phone?: string | null };
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  moderator: boolean;
+  phone?: string | null;
+  emailVerified: boolean;
+  // Suspended from the Safe Map by a moderator. SOS and everything else still work.
+  mapSuspended: boolean;
+};
 
 // Moderators review flagged Safe Map reports. In production the role is granted only in the
-// database (`npm run moderator -- add <email>` in server/): sign-up doesn't verify email
-// addresses, so anyone could register an address listed in ADMIN_EMAILS before its owner.
+// database (`npm run moderator -- add <email>` in server/): an address listed in ADMIN_EMAILS could
+// be registered by someone else before its owner, before it's verified.
 // ADMIN_EMAILS is a convenience for development and tests only.
 const adminEmails = () =>
   process.env.NODE_ENV === 'production'
@@ -20,14 +29,24 @@ const isModerator = (email: string, role: string) => role === 'moderator' || adm
 
 // The user object sent to the browser.
 export function publicUser(id: number): User {
-  const row = db.prepare('SELECT id, name, email, role, phone FROM users WHERE id = ?').get(id) as {
+  const row = db.prepare('SELECT id, name, email, role, phone, email_verified_at, suspended_at FROM users WHERE id = ?').get(id) as {
     id: number;
     name: string;
     email: string;
     role: string;
     phone: string | null;
+    email_verified_at: string | null;
+    suspended_at: string | null;
   };
-  return { id: row.id, name: row.name, email: row.email, moderator: isModerator(row.email, row.role), phone: row.phone };
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    moderator: isModerator(row.email, row.role),
+    phone: row.phone,
+    emailVerified: Boolean(row.email_verified_at),
+    mapSuspended: Boolean(row.suspended_at),
+  };
 }
 
 declare global {
@@ -111,12 +130,31 @@ export function loadUser(req: Request, _res: Response, next: NextFunction) {
   if (token) {
     const row = db
       .prepare(
-        `SELECT u.id, u.name, u.email, u.role, u.phone, s.expires_at FROM sessions s
+        `SELECT u.id, u.name, u.email, u.role, u.phone, u.email_verified_at, u.suspended_at, s.expires_at FROM sessions s
          JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`
       )
-      .get(sha256(token)) as { id: number; name: string; email: string; role: string; phone: string | null; expires_at: string } | undefined;
+      .get(sha256(token)) as
+      | {
+          id: number;
+          name: string;
+          email: string;
+          role: string;
+          phone: string | null;
+          email_verified_at: string | null;
+          suspended_at: string | null;
+          expires_at: string;
+        }
+      | undefined;
     if (row && new Date(row.expires_at) > new Date()) {
-      req.user = { id: row.id, name: row.name, email: row.email, moderator: isModerator(row.email, row.role), phone: row.phone };
+      req.user = {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        moderator: isModerator(row.email, row.role),
+        phone: row.phone,
+        emailVerified: Boolean(row.email_verified_at),
+        mapSuspended: Boolean(row.suspended_at),
+      };
     }
   }
   next();

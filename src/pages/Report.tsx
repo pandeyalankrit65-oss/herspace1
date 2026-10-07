@@ -89,9 +89,9 @@ const Report = () => {
         anonymous: formData.anonymous || !user,
         coords,
       };
-      let created: { id: number; uploadToken: string };
+      let created: { id: number; uploadToken: string; held?: boolean };
       try {
-        created = await api<{ id: number; uploadToken: string }>("/api/reports", { body });
+        created = await api<{ id: number; uploadToken: string; held?: boolean }>("/api/reports", { body });
       } catch (err) {
         if (!(err instanceof ApiError) || err.status !== 0) throw err;
         // No connection: keep it on this phone and send it when back online.
@@ -108,7 +108,7 @@ const Report = () => {
       }
       toast({
         title: t("report.submittedTitle"),
-        description: failedUploads ? tn("report.photosNotUploaded", failedUploads) : t("report.submittedDesc"),
+        description: failedUploads ? tn("report.photosNotUploaded", failedUploads) : created.held ? t("report.heldDesc") : t("report.submittedDesc"),
         variant: failedUploads ? "destructive" : undefined,
       });
       setFormData(emptyForm);
@@ -282,6 +282,20 @@ const Report = () => {
                     </span>
                   </Label>
                 </div>
+
+                {user?.mapSuspended && (
+                  <p role="status" className="rounded-xl bg-warning/10 p-3 text-sm">
+                    {t("report.suspended")}
+                  </p>
+                )}
+                {user && !user.mapSuspended && !(formData.anonymous || !user) && (!user.emailVerified || !user.phone) && (
+                  <p className="rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground">
+                    {t("report.verifyHint")}{" "}
+                    <Link to="/account" className="font-semibold text-primary underline underline-offset-2">
+                      {t("report.verifyLink")}
+                    </Link>
+                  </p>
+                )}
 
                 {/* Submit Button */}
                 <div className="flex gap-4">

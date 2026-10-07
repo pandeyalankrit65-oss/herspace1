@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '../db';
 import { deleteAllSessions, endSession, hashPassword, publicUser, requireAuth, startSession, verifyPassword } from '../auth';
 import { emailConfigured, sendEmail } from '../messaging';
-import { rateLimit } from '../rateLimit';
+import { perUser, rateLimit } from '../rateLimit';
 import { appUrl, now, parse, passwordSchema, randomToken, sha256 } from '../util';
 
 export const authRouter = Router();
@@ -31,6 +31,44 @@ const resetAccountLimiter = rateLimit({
 // and response times don't reveal who has an account.
 const DUMMY_HASH = hashPassword('not-a-real-password');
 const RESET_TOKEN_MINUTES = 60;
+const VERIFY_TOKEN_HOURS = 48;
+
+// Emails a link that proves the address is theirs. Verified addresses are what make someone
+// "verified" in a workplace or circle on that email domain, and a verified reporter on the map.
+async function sendVerification(userId: number) {
+  const user = db.prepare('SELECT name, email, email_verified_at FROM users WHERE id = ?').get(userId) as
+    | { name: string; email: string; email_verified_at: string | null }
+    | undefined;
+  if (!user || user.email_verified_at) return;
+  const token = randomToken();
+  db.prepare('DELETE FROM email_verifications WHERE user_id = ?').run(userId);
+  db.prepare('INSERT INTO email_verifications (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(
+    sha256(token),
+    userId,
+    new Date(Date.now() + VERIFY_TOKEN_HOURS * 60 * 60 * 1000).toISOString()
+  );
+  const link = `${appUrl()}/verify-email/${token}`;
+  if (!emailConfigured()) {
+    if (process.env.NODE_ENV !== 'production') console.log(`[auth] Email not configured. Verification link for ${user.email}: ${link}`);
+    return;
+  }
+  const result = await sendEmail(
+    user.email,
+    'Confirm your email for HerSpace',
+    `Hi ${user.name},\n\nPlease confirm this is your email address:\n${link}\n\nThe link works for ${VERIFY_TOKEN_HOURS} hours. If you didn't sign up for HerSpace, you can ignore this email.`
+  );
+  if (result.status === 'failed') console.error('[auth] Verification email failed:', result.error);
+}
+
+// Marks the email as theirs, and with it any workplace or circle membership on its domain.
+export function markEmailVerified(userId: number) {
+  const user = db.prepare('SELECT email FROM users WHERE id = ?').get(userId) as { email: string };
+  const domain = user.email.split('@')[1]?.toLowerCase() ?? '';
+  db.prepare('UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?').run(now(), userId);
+  db.prepare('DELETE FROM email_verifications WHERE user_id = ?').run(userId);
+  db.prepare('UPDATE org_members SET verified = 1 WHERE user_id = ? AND org_id IN (SELECT id FROM organizations WHERE email_domain = ?)').run(userId, domain);
+  db.prepare('UPDATE circle_members SET verified = 1 WHERE user_id = ? AND circle_id IN (SELECT id FROM circles WHERE email_domain = ?)').run(userId, domain);
+}
 
 const emailSchema = z.string().trim().toLowerCase().email();
 
@@ -51,6 +89,7 @@ authRouter.post('/signup', authLimiter, (req, res) => {
     .run(body.name, body.email, hashPassword(body.password), now());
   const id = Number(result.lastInsertRowid);
   startSession(res, id);
+  void sendVerification(id);
   res.status(201).json({ user: publicUser(id) });
 });
 
@@ -117,7 +156,32 @@ authRouter.post('/reset', authLimiter, (req, res) => {
   }
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(body.password), row.user_id);
   db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(row.user_id);
+  // The reset link arrived by email, so the address is theirs.
+  markEmailVerified(row.user_id);
   deleteAllSessions(row.user_id);
   startSession(res, row.user_id);
   res.json({ user: publicUser(row.user_id) });
+});
+
+const verifyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, key: perUser, message: 'A link was sent recently. Please check your inbox and spam folder.' });
+
+authRouter.post('/verify-email/send', requireAuth, verifyLimiter, async (req, res) => {
+  if (req.user!.emailVerified) return res.json({ success: true, alreadyVerified: true });
+  if (!emailConfigured() && process.env.NODE_ENV === 'production') return res.status(503).json({ error: "Emails can't be sent right now." });
+  await sendVerification(req.user!.id);
+  res.json({ success: true });
+});
+
+// Works without being logged in: the link may be opened on another device.
+authRouter.post('/verify-email', authLimiter, (req, res) => {
+  const body = parse(z.object({ token: z.string().min(10).max(200) }), req, res);
+  if (!body) return;
+  const row = db.prepare('SELECT user_id, expires_at FROM email_verifications WHERE token_hash = ?').get(sha256(body.token)) as
+    | { user_id: number; expires_at: string }
+    | undefined;
+  if (!row || new Date(row.expires_at) < new Date()) {
+    return res.status(400).json({ error: 'This link is invalid or has expired. Send a new one from your account page.' });
+  }
+  markEmailVerified(row.user_id);
+  res.json({ success: true });
 });

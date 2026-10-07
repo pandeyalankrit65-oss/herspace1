@@ -5,6 +5,7 @@ import { requireAuth } from '../auth';
 import { deletePhotoFiles, MAX_PHOTO_BYTES, MAX_PHOTOS_PER_REPORT, photoPath, savePhoto, stripJpegMetadata } from '../photos';
 import { rateLimit } from '../rateLimit';
 import { coordsSchema, keyedHash, now, parse, randomToken, sha256 } from '../util';
+import { holdReasons, reporterTrust } from '../trust';
 
 export const reportsRouter = Router();
 
@@ -53,13 +54,17 @@ const reportSchema = z.object({
 reportsRouter.post('/', reportLimiter, (req, res) => {
   const body = parse(reportSchema, req, res);
   if (!body) return;
+  if (req.user?.mapSuspended) return res.status(403).json({ error: 'A moderator has paused your account from adding to the Safe Map. SOS, contacts and everything else still work.' });
   // Anonymous reports never store who submitted them, even when logged in.
   const userId = body.anonymous ? null : req.user?.id ?? null;
+  // Unusual reports wait for a moderator before they're on the map; they're never rejected.
+  const reasons = holdReasons({ userId, description: body.description, lat: body.coords?.lat, lng: body.coords?.lng });
   const uploadToken = randomToken();
   const result = db
     .prepare(
-      `INSERT INTO reports (user_id, incident_type, description, location_text, lat, lng, incident_date, created_at, upload_token_hash, upload_expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO reports (user_id, incident_type, description, location_text, lat, lng, incident_date, created_at, upload_token_hash, upload_expires_at,
+         reporter_trust, hold_reasons, map_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       userId,
@@ -71,9 +76,19 @@ reportsRouter.post('/', reportLimiter, (req, res) => {
       body.date || null,
       now(),
       sha256(uploadToken),
-      new Date(Date.now() + UPLOAD_WINDOW_MS).toISOString()
+      new Date(Date.now() + UPLOAD_WINDOW_MS).toISOString(),
+      reporterTrust(userId),
+      reasons.length ? reasons.join(',') : null,
+      reasons.length ? 'held' : 'visible'
     );
-  res.status(201).json({ success: true, id: Number(result.lastInsertRowid), linkedToAccount: userId !== null, uploadToken });
+  res.status(201).json({
+    success: true,
+    id: Number(result.lastInsertRowid),
+    linkedToAccount: userId !== null,
+    uploadToken,
+    // Only matters for reports with a location: the rest never go on the map.
+    held: reasons.length > 0 && body.coords !== undefined,
+  });
 });
 
 reportsRouter.post('/:id/photos', photoLimiter, express.raw({ type: 'image/jpeg', limit: MAX_PHOTO_BYTES }), (req, res) => {
@@ -172,25 +187,49 @@ reportsRouter.delete('/:id', requireAuth, (req, res) => {
   res.json({ success: true });
 });
 
-// Public map data: type, coarse location (~1 km) and date only. No descriptions or identities.
-reportsRouter.get('/map', (_req, res) => {
+// Public map data: type, coarse location (~1 km), date, and how much it can be trusted (who
+// reported it, how many people confirmed it). No descriptions or identities.
+reportsRouter.get('/map', (req, res) => {
+  const me = req.user?.id ?? 0;
   const points = db
     .prepare(
       `SELECT r.id, r.incident_type AS incidentType, ROUND(r.lat, 2) AS lat, ROUND(r.lng, 2) AS lng,
-              COALESCE(r.incident_date, substr(r.created_at, 1, 10)) AS date
+              COALESCE(r.incident_date, substr(r.created_at, 1, 10)) AS date, r.reporter_trust AS trust,
+              (SELECT COUNT(*) FROM report_confirmations c WHERE c.report_id = r.id) AS confirmations,
+              EXISTS (SELECT 1 FROM report_confirmations c WHERE c.report_id = r.id AND c.user_id = ?) AS confirmedByMe,
+              (r.user_id IS NOT NULL AND r.user_id = ?) AS mine
        FROM reports r
-       WHERE r.lat IS NOT NULL AND r.lng IS NOT NULL AND r.map_status != 'removed'
+       WHERE r.lat IS NOT NULL AND r.lng IS NOT NULL AND r.map_status NOT IN ('removed', 'held')
          AND (r.map_status = 'approved' OR (SELECT COUNT(*) FROM report_flags f WHERE f.report_id = r.id) < ?)
+         AND (r.user_id IS NULL OR r.user_id NOT IN (SELECT id FROM users WHERE suspended_at IS NOT NULL))
        ORDER BY r.id DESC LIMIT 1000`
     )
-    .all(FLAG_THRESHOLD);
-  res.json({ points });
+    .all(me, me, FLAG_THRESHOLD) as Array<{ confirmedByMe: number; mine: number }>;
+  res.json({ points: points.map((p) => ({ ...p, confirmedByMe: Boolean(p.confirmedByMe), mine: Boolean(p.mine) })) });
+});
+
+const confirmLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30 });
+
+// "I saw this too": a signed-in person with a confirmed email backs up someone else's report.
+reportsRouter.post('/:id/confirm', requireAuth, confirmLimiter, (req, res) => {
+  const user = req.user!;
+  if (user.mapSuspended) return res.status(403).json({ error: 'A moderator has paused your account from adding to the Safe Map. SOS, contacts and everything else still work.' });
+  if (!user.emailVerified) return res.status(403).json({ error: 'Confirm your email address first, so each confirmation is from a real person.' });
+  const report = db
+    .prepare("SELECT user_id FROM reports WHERE id = ? AND lat IS NOT NULL AND map_status NOT IN ('removed', 'held')")
+    .get(Number(req.params.id)) as { user_id: number | null } | undefined;
+  if (!report) return res.status(404).json({ error: 'Report not found.' });
+  if (report.user_id === user.id) return res.status(400).json({ error: "You can't confirm your own report." });
+  db.prepare('INSERT OR IGNORE INTO report_confirmations (report_id, user_id, created_at) VALUES (?, ?, ?)').run(Number(req.params.id), user.id, now());
+  const count = (db.prepare('SELECT COUNT(*) AS n FROM report_confirmations WHERE report_id = ?').get(Number(req.params.id)) as { n: number }).n;
+  res.json({ success: true, confirmations: count });
 });
 
 // Anyone can flag a map point as false or abusive; each person/IP counts once per report.
 reportsRouter.post('/:id/flag', flagLimiter, (req, res) => {
+  if (req.user?.mapSuspended) return res.status(403).json({ error: 'A moderator has paused your account from adding to the Safe Map. SOS, contacts and everything else still work.' });
   const id = Number(req.params.id);
-  const exists = db.prepare("SELECT 1 FROM reports WHERE id = ? AND lat IS NOT NULL AND map_status != 'removed'").get(id);
+  const exists = db.prepare("SELECT 1 FROM reports WHERE id = ? AND lat IS NOT NULL AND map_status NOT IN ('removed', 'held')").get(id);
   if (!exists) return res.status(404).json({ error: 'Report not found.' });
   const flagger = req.user ? `user:${req.user.id}` : `ip:${keyedHash(req.ip || 'unknown')}`;
   db.prepare('INSERT OR IGNORE INTO report_flags (report_id, flagger, created_at) VALUES (?, ?, ?)').run(id, flagger, now());

@@ -14,6 +14,7 @@ import LoadingRows from "@/components/LoadingRows";
 import { ShieldCheck, Users } from "lucide-react";
 import ReportPhotos from "@/components/ReportPhotos";
 import PhoneVerification from "@/components/PhoneVerification";
+import EmailVerification from "@/components/EmailVerification";
 import SafetyAtHome from "@/components/SafetyAtHome";
 import SosRecordings from "@/components/SosRecordings";
 import EmergencyInfoSettings from "@/components/EmergencyInfoSettings";
@@ -148,6 +149,8 @@ const Account = () => {
               )}
             </div>
           </section>
+
+          <EmailVerification />
 
           <PhoneVerification />
 

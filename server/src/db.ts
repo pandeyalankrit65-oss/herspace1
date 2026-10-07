@@ -359,6 +359,29 @@ const migrations: string[] = [
   );
   CREATE INDEX partner_requests_user ON partner_requests(user_id);
   `,
+  // Verified community reporting: confirmed email addresses, how much each map report can be
+  // trusted, reports held for review, "I saw this too" confirmations, and account suspension
+  // from the Safe Map (never from SOS).
+  `
+  ALTER TABLE users ADD COLUMN email_verified_at TEXT;
+  ALTER TABLE users ADD COLUMN suspended_at TEXT;
+  ALTER TABLE users ADD COLUMN suspended_reason TEXT;
+  ALTER TABLE users ADD COLUMN reviewed_at TEXT;
+  CREATE TABLE email_verifications (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL
+  );
+  ALTER TABLE reports ADD COLUMN reporter_trust TEXT NOT NULL DEFAULT 'anonymous';
+  ALTER TABLE reports ADD COLUMN hold_reasons TEXT;
+  UPDATE reports SET reporter_trust = 'account' WHERE user_id IS NOT NULL;
+  CREATE TABLE report_confirmations (
+    report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (report_id, user_id)
+  );
+  `,
 ];
 
 function migrate() {
