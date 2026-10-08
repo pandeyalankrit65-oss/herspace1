@@ -48,7 +48,7 @@ const LiveLocation = ({
 }: {
   share: LiveShare;
   onEnded: () => void;
-  // Journeys: each position, with the area warning there if any (for "Are you okay?" checks).
+  // Each position, with the area warning there on journeys (for "Are you okay?" checks and guidance).
   onFix?: (pos: Position, warning: Warning | null) => void;
 }) => {
   const { toast } = useToast();
@@ -101,9 +101,9 @@ const LiveLocation = ({
           nearRef.current = isAt(pos, place) ? nearRef.current + 1 : 0;
           if (nearRef.current >= ARRIVAL_FIXES) setArrivingAt((at) => at ?? Date.now() + ARRIVAL_COUNTDOWN_MS);
         }
+        const w = walk ? warningAt(reportsRef.current, pos) : null;
+        onFixRef.current?.(pos, w);
         if (walk) {
-          const w = warningAt(reportsRef.current, pos);
-          onFixRef.current?.(pos, w);
           if (w && !warnedRef.current.has(w.key)) {
             warnedRef.current.add(w.key);
             setWarning(w);

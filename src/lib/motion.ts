@@ -19,7 +19,7 @@ export function motionBetween(prev: { coords: Fix; at: number }, next: Fix, at: 
   return { speed: Math.round(speed * 10) / 10, heading: Math.round(bearing(prev.coords, next)) % 360 };
 }
 
-function bearing(a: Fix, b: Fix) {
+export function bearing(a: Fix, b: Fix) {
   const rad = Math.PI / 180;
   const y = Math.sin((b.lng - a.lng) * rad) * Math.cos(b.lat * rad);
   const x = Math.cos(a.lat * rad) * Math.sin(b.lat * rad) - Math.sin(a.lat * rad) * Math.cos(b.lat * rad) * Math.cos((b.lng - a.lng) * rad);

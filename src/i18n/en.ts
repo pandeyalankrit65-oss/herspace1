@@ -1797,6 +1797,28 @@ const en = {
   "sos.voiceCodePhrase": "Saying your code phrase (\"{phrase}\") sends a silent SOS straight away, with no countdown.",
   "safe.phraseSpoken": "Said aloud while voice listening is on (SOS page), a phrase of 3 or more words also sends a silent SOS straight away, and your contacts are told you may not be able to talk. What you say is recognised by Google's speech service in Chrome, or by your phone's speech recognizer in the Android app, which may also use an online service.",
 
+  // Guide me to safety (spoken directions after an SOS)
+  "guide.title": "Guide me to safety",
+  "guide.desc": "Finds the nearest police station, hospital or pharmacy and tells you out loud which way to go, again as you get closer.",
+  "guide.start": "Guide me",
+  "guide.stop": "Stop guiding",
+  "guide.directions": "Walking directions",
+  "guide.finding": "Finding a safe place near you...",
+  "guide.none": "No police station, hospital or pharmacy found within 3 km. Head for a busy, well-lit street or an open shop.",
+  "guide.unavailable": "Couldn't look up places near you. Head for a busy, well-lit street or an open shop.",
+  "guide.noLocation": "Your location isn't known yet, so HerSpace can't guide you.",
+  "guide.type.police": "A police station",
+  "guide.type.hospital": "A hospital",
+  "guide.type.pharmacy": "A pharmacy",
+  "guide.side.ahead": "{metres} metres ahead",
+  "guide.side.right": "{metres} metres to your right",
+  "guide.side.behind": "{metres} metres behind you",
+  "guide.side.left": "{metres} metres to your left",
+  "guide.compass": "{metres} metres {dir}",
+  "guide.say": "{place} is {where}. Walk there now, on busy, lit roads.",
+  "guide.told": "{names} can see where you are.",
+  "guide.arrived": "You've arrived. Go inside and ask for help.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

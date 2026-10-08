@@ -116,6 +116,7 @@ const PrivacyEn = () => (
         </li>
         <li>
           <strong>Speech recognition</strong>, only while you use voice listening (the voice trigger, safe word or code phrase on the SOS page, voice commands, or the chat's mic button). In Chrome and Edge, what you say is sent by your browser to its speech service (Google's in Chrome) to turn it into text; in the Android app, your phone's speech recognizer does this, which may also use an online service. HerSpace never receives or keeps the sound, only acts on the words.
+          Reading aloud (replies, the SOS page, guidance to a safe place) uses your device's voices; in Chrome some of them (named "Google ...") are online, so the text being read goes to Google.
         </li>
         <li>
           <strong>OpenStreetMap's Nominatim and Overpass services</strong>, contacted by our server, not your device. To add
@@ -123,6 +124,7 @@ const PrivacyEn = () => (
           stations, hospitals and pharmacies near you on the map, we send it rounded to about 1 km. Neither request includes
           your name or account, and we cache the answers so the same area isn't looked up twice.
           When you search for a place to check the way, we send only what you typed, not your location or account.
+          Guiding you to a safe place after an SOS uses the same lookup, rounded the same way.
         </li>
       </ul>
       <p>

@@ -10,6 +10,7 @@ import { api, EMERGENCY_NUMBER } from "@/lib/api";
 import { isNative } from "@/lib/native";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
+import GuideToSafety from "@/components/GuideToSafety";
 import FakeCall from "@/components/FakeCall";
 import type { Contact } from "./Contacts";
 import { useI18n } from "@/i18n";
@@ -129,6 +130,8 @@ const SOS = () => {
 
   // Resume live sharing after a reload, so "I'm safe" is always reachable.
   const [liveShare, setLiveShare] = useState<LiveShare | null>(null);
+  // Where she is now, for guiding her to a safe place after an alert.
+  const [here, setHere] = useState<{ lat: number; lng: number; accuracy?: number | null } | null>(null);
   useEffect(() => {
     if (!user) return setLiveShare(null);
     api<{ share: LiveShare | null }>("/api/location-shares/active")
@@ -150,6 +153,7 @@ const SOS = () => {
     setSending(true);
     setResult(null);
     const coords = await getLocation();
+    if (coords) setHere(coords);
     const trigger = triggerRef.current;
     triggerRef.current = "button";
     try {
@@ -536,7 +540,13 @@ const SOS = () => {
             </CardContent>
           </Card>
 
-          {liveShare && <LiveLocation share={liveShare} onEnded={endLiveShare} />}
+          {liveShare && <LiveLocation share={liveShare} onEnded={endLiveShare} onFix={setHere} />}
+          {result && (
+            <GuideToSafety
+              position={here}
+              told={[...new Set(result.deliveries.filter((d) => d.channel === "sms" && ["sent", "delivered", "ok"].includes(d.status)).map((d) => d.name))]}
+            />
+          )}
 
           {/* Setup help comes after the button: in an emergency the button must be on screen first. */}
           {!liveShare && !result && <SetupChecklist className="mb-8" />}

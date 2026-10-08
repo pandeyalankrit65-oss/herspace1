@@ -1698,6 +1698,27 @@ const messages: Partial<Record<MessageKey, string>> = {
   // The code phrase said aloud
   "sos.voiceCodePhrase": "নিজের কোড বাক্য (\"{phrase}\") বললে কাউন্টডাউন ছাড়াই সঙ্গে সঙ্গে নীরব SOS চলে যায়।",
   "safe.phraseSpoken": "গলার আওয়াজ শোনা চালু থাকলে (SOS পেজ), 3 বা তার বেশি শব্দের বাক্য জোরে বললেও সঙ্গে সঙ্গে নীরব SOS চলে যায়, আর আপনার পরিচিতদের জানানো হয় যে আপনি হয়তো কথা বলতে পারছেন না। আপনি যা বলেন তা Chrome-এ Google-এর স্পিচ পরিষেবা, বা Android অ্যাপে আপনার ফোনের স্পিচ রিকগনাইজার চেনে, যা কোনো অনলাইন পরিষেবাও ব্যবহার করতে পারে।",
+  // Guide me to safety (spoken directions after an SOS)
+  "guide.title": "নিরাপদ জায়গায় পথ দেখাও",
+  "guide.desc": "সবচেয়ে কাছের থানা, হাসপাতাল বা ওষুধের দোকান খুঁজে জোরে বলে দেয় কোন দিকে যেতে হবে, আর কাছে পৌঁছানোর সময় আবার বলে।",
+  "guide.start": "পথ দেখাও",
+  "guide.stop": "পথ দেখানো বন্ধ করো",
+  "guide.directions": "হাঁটার পথ",
+  "guide.finding": "আপনার কাছে নিরাপদ জায়গা খোঁজা হচ্ছে...",
+  "guide.none": "3 কিমির মধ্যে কোনো থানা, হাসপাতাল বা ওষুধের দোকান পাওয়া যায়নি। ভিড়ওয়ালা, আলো থাকা রাস্তা বা খোলা দোকানের দিকে যান।",
+  "guide.unavailable": "আপনার কাছের জায়গাগুলো খোঁজা গেল না। ভিড়ওয়ালা, আলো থাকা রাস্তা বা খোলা দোকানের দিকে যান।",
+  "guide.noLocation": "আপনার লোকেশন এখনও জানা নেই, তাই HerSpace পথ দেখাতে পারছে না।",
+  "guide.type.police": "একটা থানা",
+  "guide.type.hospital": "একটা হাসপাতাল",
+  "guide.type.pharmacy": "একটা ওষুধের দোকান",
+  "guide.side.ahead": "{metres} মিটার সামনে",
+  "guide.side.right": "আপনার ডান দিকে {metres} মিটার দূরে",
+  "guide.side.behind": "আপনার পিছনে {metres} মিটার দূরে",
+  "guide.side.left": "আপনার বাঁ দিকে {metres} মিটার দূরে",
+  "guide.compass": "{dir} দিকে {metres} মিটার দূরে",
+  "guide.say": "{place} {where}। ভিড়ওয়ালা, আলো থাকা রাস্তা দিয়ে এখনই সেখানে যান।",
+  "guide.told": "{names} দেখতে পাচ্ছেন আপনি কোথায় আছেন।",
+  "guide.arrived": "আপনি পৌঁছে গেছেন। ভিতরে গিয়ে সাহায্য চান।",
 };
 
 export default messages;
