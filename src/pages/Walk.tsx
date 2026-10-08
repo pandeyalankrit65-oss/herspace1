@@ -23,6 +23,8 @@ import TripCheck from "@/components/trip/TripCheck";
 import RoutineReminder from "@/components/routines/RoutineReminder";
 import RoutinesManager from "@/components/routines/RoutinesManager";
 import { readRoutines } from "@/lib/routines";
+import { MicClues, SafetyCheckPrompt, SafetyCheckToggle } from "@/components/SafetyCheck";
+import { useSafetyCheck, useSafetyCheckSetting } from "@/hooks/use-safety-check";
 import type { Contact } from "./Contacts";
 
 const DURATIONS = [30, 60, 120, 240];
@@ -42,6 +44,8 @@ const Walk = () => {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const [share, setShare] = useState<LiveShare | null>(null);
+  const checkSetting = useSafetyCheckSetting();
+  const check = useSafetyCheck(Boolean(share) && checkSetting.on);
   const [loaded, setLoaded] = useState(false);
   const [confirmed, setConfirmed] = useState<number | null>(null);
   const [minutes, setMinutes] = useState(60);
@@ -141,7 +145,10 @@ const Walk = () => {
     if (share) {
       return (
         <>
-          <LiveLocation share={share} onEnded={ended} />
+          <LiveLocation share={share} onEnded={ended} onFix={check.onFix} />
+          <SafetyCheckToggle on={checkSetting.on} setOn={checkSetting.setOn} />
+          {checkSetting.on && <MicClues onClue={check.clue} />}
+          <SafetyCheckPrompt check={check} />
           {checkInDue && (
             <p className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
               <Timer className="h-4 w-4 shrink-0 text-primary" />
@@ -321,6 +328,7 @@ const Walk = () => {
                 </div>
               </fieldset>
             )}
+            <SafetyCheckToggle on={checkSetting.on} setOn={checkSetting.setOn} />
             <Button variant="hero" size="lg" className="w-full gap-2" onClick={start} disabled={busy || !online || confirmed === 0 || (kind === "ride" && !details.vehicle.trim()) || (kind === "meeting" && !details.person.trim())}>
               <Footprints className="h-5 w-5" /> {busy ? t("walk.starting") : t("walk.start")}
             </Button>

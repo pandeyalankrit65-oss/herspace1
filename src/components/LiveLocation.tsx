@@ -41,7 +41,16 @@ type WakeLockSentinel = { release: () => Promise<void> };
 // Streams the phone's position to the live share while this component is mounted, shows which
 // contacts have responded, and offers "I'm safe" (SOS) or "I've arrived" (walk) to stop. Browsers pause pages when the screen locks, so we ask for a
 // screen wake lock and tell the user to keep the page open.
-const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => void }) => {
+const LiveLocation = ({
+  share,
+  onEnded,
+  onFix,
+}: {
+  share: LiveShare;
+  onEnded: () => void;
+  // Journeys: each position, with the area warning there if any (for "Are you okay?" checks).
+  onFix?: (pos: Position, warning: Warning | null) => void;
+}) => {
   const { toast } = useToast();
   const { t, tn } = useI18n();
   // Walks, rides and meetings are journeys: calm wording and "I've arrived" to stop.
@@ -53,6 +62,8 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
   const [error, setError] = useState<"" | "live.noGeo" | "live.updateFailed" | "live.permission">("");
   const [stopping, setStopping] = useState(false);
   const lastRef = useRef<{ at: number; coords: Position } | null>(null);
+  const onFixRef = useRef(onFix);
+  onFixRef.current = onFix;
   const place = useMemo(() => (walk ? journeyDestination.get(share.id) : null), [walk, share.id]);
   const nearRef = useRef(0);
   const keepSharingRef = useRef(false);
@@ -92,6 +103,7 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         }
         if (walk) {
           const w = warningAt(reportsRef.current, pos);
+          onFixRef.current?.(pos, w);
           if (w && !warnedRef.current.has(w.key)) {
             warnedRef.current.add(w.key);
             setWarning(w);
@@ -114,8 +126,11 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
             setError("");
           }
         } catch (err) {
+          // A reply for a share this panel no longer shows (an SOS replaced the journey) must not
+          // end the new one.
+          if (cancelled) return;
           if (err instanceof ApiError && (err.status === 410 || err.status === 404)) onEnded();
-          else if (!cancelled) setError("live.updateFailed");
+          else setError("live.updateFailed");
         }
       },
       (err) => !cancelled && setError(err === "denied" ? "live.permission" : "live.noGeo"),

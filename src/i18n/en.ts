@@ -1564,7 +1564,7 @@ const en = {
   "distress.breathe": "Breathe with me",
   "distress.dismiss": "I'm okay, hide this",
   "scream.label": "Listen for screams",
-  "scream.hint": "While this page is open, a long, loud scream starts the cancellable SOS countdown. Sound is checked on your phone, never recorded or sent.",
+  "scream.hint": "While this page is open, a long, loud scream starts the cancellable SOS countdown. Sound is checked on your phone, never recorded or sent. During a journey with \"Ask if I'm okay\" on, it listens then too, and asks if you're okay instead.",
   "scream.starting": "Starting the microphone...",
   "scream.listening": "Listening for screams",
   "scream.denied": "Microphone access was blocked. Allow it in your browser or phone settings.",
@@ -1724,7 +1724,7 @@ const en = {
   // Emotion AI: voice stress (experimental)
   "stress.label": "Notice stress in my voice",
   "stress.experimental": "Experiment",
-  "stress.hint": "While this page is open, your voice is compared with your own calm voice. If you sound clearly stressed, HerSpace asks if you're okay. It never sends SOS by itself, and it's often wrong. Sound is checked on your phone, never recorded or sent.",
+  "stress.hint": "While this page is open, your voice is compared with your own calm voice. If you sound clearly stressed, HerSpace asks if you're okay. It never sends SOS by itself, and it's often wrong. Sound is checked on your phone, never recorded or sent. During a journey with \"Ask if I'm okay\" on, it listens then too, as one of the clues.",
   "stress.needBaseline": "First, let it learn your calm voice: talk normally for about 10 seconds (read anything aloud).",
   "stress.calibrate": "Learn my calm voice",
   "stress.recalibrate": "Learn my calm voice again",
@@ -1775,6 +1775,23 @@ const en = {
   "track.dir.sw": "south-west",
   "track.dir.w": "west",
   "track.dir.nw": "north-west",
+
+  // "Are you okay?" checks during a journey
+  "check.label": "Ask if I'm okay when something seems wrong",
+  "check.hint": "During a journey, HerSpace notices clues: running all of a sudden, an area with several reports (more so after dark), standing still for a long time, and a scream or stress in your voice if you turned those on. One clue alone is often wrong, so it asks only when clues add up: your phone vibrates and asks if you're okay. If you don't answer within 30 seconds, a silent SOS goes to your contacts. Clues are checked on your phone and never sent.",
+  "check.title": "Are you okay?",
+  "check.notify": "Open HerSpace and tap \"I'm okay\", or a silent SOS goes to your contacts in 30 seconds.",
+  "check.countdown_one": "If you don't answer, a silent SOS goes to your contacts in {count} second.",
+  "check.countdown_other": "If you don't answer, a silent SOS goes to your contacts in {count} seconds.",
+  "check.why": "Asked because of:",
+  "check.why.scream": "a scream",
+  "check.why.stress": "stress in your voice",
+  "check.why.running": "running all of a sudden",
+  "check.why.area": "an area with several reports",
+  "check.why.areaDark": "an area with several reports, after dark",
+  "check.why.stop": "standing still for a long time",
+  "check.okay": "I'm okay",
+  "check.sos": "Send SOS now",
 
   // Error screen
   "error.title": "Something went wrong",

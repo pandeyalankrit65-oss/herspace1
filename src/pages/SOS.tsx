@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -208,6 +208,25 @@ const SOS = () => {
     setCountdown((c) => (c === null ? COUNTDOWN_SECONDS : c));
   }, []);
 
+
+  // Straight away and silently, for alerts that were already a check (no answer to "Are you okay?").
+  const sendNow = useCallback(
+    (trigger: SosTrigger) => {
+      triggerRef.current = trigger;
+      setCountdown(null);
+      void sendSOS({ silent: true });
+    },
+    [sendSOS]
+  );
+  // Router state, never the URL, so a link someone sends can't fire an alert.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const autoSos = (location.state as { autoSos?: SosTrigger } | null)?.autoSos;
+  useEffect(() => {
+    if (!autoSos) return;
+    navigate(location.pathname, { replace: true, state: null });
+    sendNow(autoSos);
+  }, [autoSos, location.pathname, navigate, sendNow]);
 
   const safeWord = useSafeWord();
   const voice = useVoiceTrigger({ lang, onTrigger: () => startCountdown("voice"), safeWord: safeWord.word, helpWords: safeWord.helpWords });
