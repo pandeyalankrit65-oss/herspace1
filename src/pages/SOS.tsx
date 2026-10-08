@@ -229,7 +229,22 @@ const SOS = () => {
   }, [autoSos, location.pathname, navigate, sendNow]);
 
   const safeWord = useSafeWord();
-  const voice = useVoiceTrigger({ lang, onTrigger: () => startCountdown("voice"), safeWord: safeWord.word, helpWords: safeWord.helpWords });
+  // Her code phrase said aloud sends a silent SOS straight away: if she's using it, she can't talk freely.
+  const [codePhrase, setCodePhrase] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) return setCodePhrase(null);
+    api<{ phrase: string | null }>("/api/account/code-phrase")
+      .then((res) => setCodePhrase(res.phrase))
+      .catch(() => {});
+  }, [user]);
+  const voice = useVoiceTrigger({
+    lang,
+    onTrigger: () => startCountdown("voice"),
+    safeWord: safeWord.word,
+    helpWords: safeWord.helpWords,
+    codePhrase,
+    onCodePhrase: () => sendNow("code_phrase"),
+  });
   // Voice commands open this page with ?start=sos|alarm|fakecall.
   // Each command gets a fresh signal, so it also works when this page is already open.
   const [params, setParams] = useSearchParams();
@@ -428,6 +443,7 @@ const SOS = () => {
                   <p className="font-medium text-foreground">
                     {voice.heard ? t("sos.voiceHeard", { text: voice.heard }) : t("sos.voiceWaiting")}
                   </p>
+                  {codePhrase && <p>{t("sos.voiceCodePhrase", { phrase: codePhrase })}</p>}
                   <p>{t("sos.voiceNote")}</p>
                 </div>
               )}

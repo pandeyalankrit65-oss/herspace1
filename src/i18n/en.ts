@@ -1793,6 +1793,10 @@ const en = {
   "check.okay": "I'm okay",
   "check.sos": "Send SOS now",
 
+  // The code phrase said aloud
+  "sos.voiceCodePhrase": "Saying your code phrase (\"{phrase}\") sends a silent SOS straight away, with no countdown.",
+  "safe.phraseSpoken": "Said aloud while voice listening is on (SOS page), a phrase of 3 or more words also sends a silent SOS straight away, and your contacts are told you may not be able to talk. What you say is recognised by Google's speech service in Chrome, or by your phone's speech recognizer in the Android app, which may also use an online service.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

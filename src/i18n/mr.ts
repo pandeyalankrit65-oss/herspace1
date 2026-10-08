@@ -1695,6 +1695,9 @@ const messages: Partial<Record<MessageKey, string>> = {
   "check.why.stop": "बराच वेळ एकाच जागी थांबणे",
   "check.okay": "मी ठीक आहे",
   "check.sos": "आत्ताच SOS पाठवा",
+  // The code phrase said aloud
+  "sos.voiceCodePhrase": "तुमचे कोड वाक्य (\"{phrase}\") म्हटल्यास काउंटडाउनशिवाय लगेच सायलेंट SOS जातो.",
+  "safe.phraseSpoken": "आवाजाने ऐकणे सुरू असताना (SOS पेज), 3 किंवा अधिक शब्दांचे वाक्य मोठ्याने म्हटल्यासही लगेच सायलेंट SOS जातो, आणि तुम्ही कदाचित बोलू शकत नाही असे तुमच्या संपर्कांना सांगितले जाते. तुम्ही जे बोलता ते Chrome मध्ये Google ची स्पीच सेवा, किंवा Android ॲपमध्ये तुमच्या फोनचा स्पीच रिकग्नायझर ओळखतो, जो एखादी ऑनलाइन सेवाही वापरू शकतो.",
 };
 
 export default messages;

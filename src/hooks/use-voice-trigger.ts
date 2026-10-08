@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isNative } from "@/lib/native";
 import { speechLocale, type Lang } from "@/i18n";
 import { SafeWordCounter } from "@/lib/safe-word";
+import { heardCodePhrase } from "@/lib/codePhrase";
 
 // Minimal typing for the Web Speech API, which isn't in TypeScript's DOM lib.
 type RecognitionResultList = ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
@@ -51,6 +52,7 @@ const NATIVE_CHECK_MS = 2000;
 /**
  * Listens continuously for a call for help and calls `onTrigger` once when it hears one: one of
  * the built-in words (unless `helpWords` is off), or the user's safe word said 3 times quickly.
+ * Her code phrase, said once, calls `onCodePhrase` instead (a silent SOS, straight away).
  * Only works while the page is open and visible; browsers stop recognition in the background.
  */
 export function useVoiceTrigger({
@@ -58,11 +60,15 @@ export function useVoiceTrigger({
   onTrigger,
   safeWord = null,
   helpWords = true,
+  codePhrase = null,
+  onCodePhrase,
 }: {
   lang: Lang;
   onTrigger: () => void;
   safeWord?: string | null;
   helpWords?: boolean;
+  codePhrase?: string | null;
+  onCodePhrase?: () => void;
 }) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<VoiceError | null>(null);
@@ -77,6 +83,8 @@ export function useVoiceTrigger({
   // Read at the moment something is heard, so changing the settings needs no restart.
   const helpWordsRef = useRef(helpWords);
   helpWordsRef.current = helpWords;
+  const codePhraseRef = useRef({ phrase: codePhrase, onHeard: onCodePhrase });
+  codePhraseRef.current = { phrase: codePhrase, onHeard: onCodePhrase };
   const counterRef = useRef<{ word: string; counter: SafeWordCounter } | null>(null);
   if ((counterRef.current?.word ?? null) !== safeWord) {
     counterRef.current = safeWord ? { word: safeWord, counter: new SafeWordCounter(safeWord) } : null;
@@ -125,6 +133,12 @@ export function useVoiceTrigger({
       const text = candidates[0]?.trim();
       if (!text) return;
       setHeard(text);
+      const code = codePhraseRef.current;
+      if (code.onHeard && heardCodePhrase(candidates, code.phrase)) {
+        stop();
+        code.onHeard();
+        return;
+      }
       const byHelpWord = helpWordsRef.current && candidates.some(isTriggerPhrase);
       const bySafeWord = counterRef.current?.counter.update(session, transcripts) ?? false;
       if (byHelpWord || bySafeWord) {

@@ -115,6 +115,9 @@ const PrivacyEn = () => (
           directly). They receive only what they need for that task.
         </li>
         <li>
+          <strong>Speech recognition</strong>, only while you use voice listening (the voice trigger, safe word or code phrase on the SOS page, voice commands, or the chat's mic button). In Chrome and Edge, what you say is sent by your browser to its speech service (Google's in Chrome) to turn it into text; in the Android app, your phone's speech recognizer does this, which may also use an online service. HerSpace never receives or keeps the sound, only acts on the words.
+        </li>
+        <li>
           <strong>OpenStreetMap's Nominatim and Overpass services</strong>, contacted by our server, not your device. To add
           an area name such as "Near Connaught Place" to SOS texts, we send your location rounded to about 10 m; to show police
           stations, hospitals and pharmacies near you on the map, we send it rounded to about 1 km. Neither request includes

@@ -1695,6 +1695,9 @@ const messages: Partial<Record<MessageKey, string>> = {
   "check.why.stop": "অনেকক্ষণ এক জায়গায় দাঁড়িয়ে থাকা",
   "check.okay": "আমি ঠিক আছি",
   "check.sos": "এখনই SOS পাঠাও",
+  // The code phrase said aloud
+  "sos.voiceCodePhrase": "নিজের কোড বাক্য (\"{phrase}\") বললে কাউন্টডাউন ছাড়াই সঙ্গে সঙ্গে নীরব SOS চলে যায়।",
+  "safe.phraseSpoken": "গলার আওয়াজ শোনা চালু থাকলে (SOS পেজ), 3 বা তার বেশি শব্দের বাক্য জোরে বললেও সঙ্গে সঙ্গে নীরব SOS চলে যায়, আর আপনার পরিচিতদের জানানো হয় যে আপনি হয়তো কথা বলতে পারছেন না। আপনি যা বলেন তা Chrome-এ Google-এর স্পিচ পরিষেবা, বা Android অ্যাপে আপনার ফোনের স্পিচ রিকগনাইজার চেনে, যা কোনো অনলাইন পরিষেবাও ব্যবহার করতে পারে।",
 };
 
 export default messages;

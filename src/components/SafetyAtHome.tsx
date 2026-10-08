@@ -152,6 +152,7 @@ const SafetyAtHome = () => {
             <MessageSquareLock className="h-4 w-4 text-primary" /> {t("safe.phraseTitle")}
           </h3>
           <p className="text-sm text-muted-foreground">{t("safe.phraseDesc")}</p>
+          <p className="text-xs text-muted-foreground">{t("safe.phraseSpoken")}</p>
           <form
             className="flex flex-col gap-2 sm:flex-row"
             onSubmit={(e) => {
