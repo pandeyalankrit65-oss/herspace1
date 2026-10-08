@@ -1703,6 +1703,24 @@ const en = {
   "plan.linkTitle": "Make a safety plan",
   "plan.linkText": "Who to call, where to go, what to keep ready. Kept only on this phone.",
 
+  // Emotion AI: emotion-aware chat
+  "emotion.region": "How you seem",
+  "emotion.seems.fear": "It sounds like you're scared.",
+  "emotion.seems.panic": "It sounds like you're panicking. Let's slow down together.",
+  "emotion.seems.sadness": "It sounds like you're feeling low.",
+  "emotion.seems.anger": "It sounds like you're angry, and that's fair.",
+  "emotion.byAi": "HerSpace's AI read this from what you wrote. It can be wrong.",
+  "emotion.byWords": "A guess from the words you used. It can be wrong.",
+  "emotion.notRight": "Not right? Hide this",
+  "emotion.breathe": "Breathe with me",
+  "emotion.ground": "Grounding exercise",
+  "emotion.fakeCall": "Fake call",
+  "emotion.walk": "Share my journey",
+  "emotion.checkIn": "Check in with yourself",
+  "emotion.counsellor": "Find a counsellor",
+  "emotion.report": "Write down what happened",
+  "emotion.complaint": "Write a complaint",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

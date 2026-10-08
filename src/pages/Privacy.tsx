@@ -75,6 +75,7 @@ const PrivacyEn = () => (
         </li>
         <li>
           <strong>Support chat:</strong> messages are sent to our AI provider to generate a reply. HerSpace does not save them.
+          The AI also reads how you seem from what you write (for example scared or panicking) so the app can offer the right help; that reading isn't saved either.
         </li>
       </ul>
     </Section>

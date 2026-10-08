@@ -30,6 +30,25 @@ test("the support chat offers SOS or a helpline as soon as a message suggests da
   await page.getByRole("button", { name: "Cancel" }).click();
 });
 
+test("the chat says how she seems and offers what fits, and can be told it's wrong", async ({ page }) => {
+  await page.goto("/support");
+  const input = page.getByPlaceholder(/Type your message/i);
+  await input.fill("I'm really anxious, I can't breathe");
+  await input.press("Enter");
+  const card = page.getByRole("region", { name: "How you seem" });
+  await expect(card).toContainText("It sounds like you're panicking.");
+  // The test server has no AI, so it says the reading came from her words.
+  await expect(card).toContainText("A guess from the words you used. It can be wrong.");
+  await expect(card.getByRole("link", { name: "Breathe with me" })).toHaveAttribute("href", "/wellbeing");
+  await card.getByRole("button", { name: "Not right? Hide this" }).click();
+  await expect(card).toHaveCount(0);
+
+  await input.fill("I'm so angry, my manager humiliated me again");
+  await input.press("Enter");
+  await expect(card).toContainText("It sounds like you're angry, and that's fair.");
+  await expect(card.getByRole("link", { name: "Write down what happened" })).toHaveAttribute("href", "/report");
+});
+
 test("the chat works with the app in Tamil", async ({ page }) => {
   const res = await page.request.post("/api/chat", {
     headers: { "X-Requested-With": "HerSpace" },

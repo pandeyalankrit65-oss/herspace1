@@ -96,7 +96,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
   const body = parse(chatSchema, req, res);
   if (!body) return;
   const reply = await supportReply(body.messages, body.lang);
-  res.json({ message: { role: 'assistant', content: reply.content }, mode: reply.mode });
+  res.json({ message: { role: 'assistant', content: reply.content }, mode: reply.mode, emotion: reply.emotion });
 });
 
 app.use('/api/moderation/partners', partnerModerationRouter);

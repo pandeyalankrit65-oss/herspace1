@@ -16,6 +16,8 @@ import { useOnline } from "@/lib/offline";
 import Logo from "@/components/Logo";
 import type { MessageKey } from "@/i18n/en";
 import DistressBanner from "@/components/DistressBanner";
+import EmotionCard from "@/components/EmotionCard";
+import { worthShowing, type ChatEmotion } from "@/lib/emotion";
 import { detectDistress, type Distress } from "@/lib/distress";
 
 // Conversation starters shown before the first message.
@@ -65,6 +67,8 @@ const Support = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   // Danger or self-harm spotted in what she wrote: offer SOS or a helpline straight away.
   const [distress, setDistress] = useState<Distress | null>(null);
+  // How she seems in her latest message, from the AI (or word lists when it's unavailable).
+  const [emotion, setEmotion] = useState<ChatEmotion | null>(null);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<"ai" | "fallback" | null>(null);
@@ -90,13 +94,17 @@ const Support = () => {
     setInput("");
     setIsTyping(true);
     try {
-      const data = await api<{ message: { role: "assistant"; content: string }; mode: "ai" | "fallback" }>("/api/chat", {
+      const data = await api<{ message: { role: "assistant"; content: string }; mode: "ai" | "fallback"; emotion?: ChatEmotion }>("/api/chat", {
         body: {
           messages: [...messages, userMessage].slice(-20).map(({ role, content }) => ({ role, content })),
           lang,
         },
       });
       setMode(data.mode);
+      setEmotion(data.emotion ?? null);
+      // The AI can recognise danger or crisis that the app's own word lists missed.
+      const urgent = data.emotion?.urgency;
+      if (urgent === "danger" || urgent === "self_harm") setDistress((prev) => (prev === "self_harm" ? prev : urgent));
       const assistant = data.message;
       const assistantMessage: Message = {
         role: "assistant",
@@ -198,6 +206,8 @@ const Support = () => {
                     <div ref={scrollRef} />
                   </div>
                 </ScrollArea>
+
+                {worthShowing(emotion) && !isTyping && <EmotionCard emotion={emotion} onDismiss={() => setEmotion(null)} />}
 
                 {/* Input */}
                 <div className="flex gap-2 rounded-full border bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring">

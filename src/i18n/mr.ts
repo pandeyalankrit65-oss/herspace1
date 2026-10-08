@@ -1610,6 +1610,23 @@ const messages: Partial<Record<MessageKey, string>> = {
   "plan.printWarning": "छापलेली प्रत सुरक्षित ठिकाणी किंवा विश्वासू व्यक्तीकडे ठेवा, तुम्हाला इजा करणाऱ्याला सापडेल अशा ठिकाणी कधीच नाही.",
   "plan.linkTitle": "सुरक्षा योजना बनवा",
   "plan.linkText": "कोणाला फोन करायचा, कुठे जायचे, काय तयार ठेवायचे. फक्त या फोनवर.",
+  // Emotion AI: emotion-aware chat
+  "emotion.region": "तुम्ही कशा वाटता",
+  "emotion.seems.fear": "तुम्ही घाबरलेल्या आहात असे वाटते.",
+  "emotion.seems.panic": "तुम्ही घाबरून गेलेल्या आहात असे वाटते. चला एकत्र हळू होऊया.",
+  "emotion.seems.sadness": "तुमचे मन उदास आहे असे वाटते.",
+  "emotion.seems.anger": "तुम्ही रागावलेल्या आहात असे वाटते, आणि ते योग्यच आहे.",
+  "emotion.byAi": "तुम्ही लिहिलेल्यावरून HerSpace च्या AI ने हे ओळखले. ते चुकीचेही असू शकते.",
+  "emotion.byWords": "तुम्ही वापरलेल्या शब्दांवरून केलेला अंदाज. तो चुकीचाही असू शकतो.",
+  "emotion.notRight": "बरोबर नाही? हे लपवा",
+  "emotion.breathe": "माझ्यासोबत श्वास घ्या",
+  "emotion.ground": "स्थिर होण्याचा सराव",
+  "emotion.fakeCall": "बनावट कॉल",
+  "emotion.walk": "माझा प्रवास शेअर करा",
+  "emotion.checkIn": "मन कसे आहे ते लिहा",
+  "emotion.counsellor": "समुपदेशक शोधा",
+  "emotion.report": "जे घडले ते लिहून ठेवा",
+  "emotion.complaint": "तक्रार लिहा",
 };
 
 export default messages;

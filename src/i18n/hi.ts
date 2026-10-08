@@ -1704,6 +1704,24 @@ const hi: Record<MessageKey, string> = {
   "plan.linkTitle": "सुरक्षा योजना बनाएँ",
   "plan.linkText": "किसे कॉल करें, कहाँ जाएँ, क्या तैयार रखें। केवल इसी फ़ोन पर।",
 
+  // Emotion AI: emotion-aware chat
+  "emotion.region": "आप कैसी लग रही हैं",
+  "emotion.seems.fear": "लगता है आप डरी हुई हैं।",
+  "emotion.seems.panic": "लगता है आप घबराई हुई हैं। चलिए साथ में धीमे होते हैं।",
+  "emotion.seems.sadness": "लगता है आप उदास हैं।",
+  "emotion.seems.anger": "लगता है आप गुस्से में हैं, और यह जायज़ है।",
+  "emotion.byAi": "HerSpace के AI ने यह आपके लिखे से समझा। यह गलत भी हो सकता है।",
+  "emotion.byWords": "आपके शब्दों से लगाया गया अंदाज़ा। यह गलत भी हो सकता है।",
+  "emotion.notRight": "सही नहीं? इसे छिपाएँ",
+  "emotion.breathe": "मेरे साथ साँस लें",
+  "emotion.ground": "ग्राउंडिंग अभ्यास",
+  "emotion.fakeCall": "नकली कॉल",
+  "emotion.walk": "मेरा सफ़र साझा करें",
+  "emotion.checkIn": "अपना हाल लिखें",
+  "emotion.counsellor": "काउंसलर खोजें",
+  "emotion.report": "जो हुआ उसे लिख लें",
+  "emotion.complaint": "शिकायत लिखें",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

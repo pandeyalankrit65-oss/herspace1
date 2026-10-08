@@ -294,6 +294,22 @@ describe('chat', () => {
     assert.match(fallbackReply(say('I want to die'), 'mr'), /14416/, 'the person may write in English with the app in Marathi');
   });
 
+  test('reports how she seems: from the AI when available, otherwise from word lists in five languages', async () => {
+    const { emotionFromWords } = await import('../emotion');
+    assert.deepEqual(emotionFromWords("I'm so scared, he's following me"), { label: 'fear', intensity: 'high', urgency: 'danger', source: 'words' });
+    assert.equal(emotionFromWords("I can't breathe, my heart is racing").label, 'panic');
+    assert.equal(emotionFromWords('मैं बहुत उदास और अकेली हूँ').label, 'sadness');
+    assert.equal(emotionFromWords('எனக்கு ரொம்ப பயமா இருக்கு').label, 'fear');
+    assert.equal(emotionFromWords('আমার খুব রাগ হচ্ছে').label, 'anger');
+    assert.deepEqual(emotionFromWords('मला जगायचं नाही'), { label: 'sadness', intensity: 'high', urgency: 'self_harm', source: 'words' });
+    assert.deepEqual(emotionFromWords('How do I file an FIR?'), { label: 'other', intensity: 'low', urgency: 'none', source: 'words' });
+
+    // The test server has no AI credentials, so the chat falls back to the word lists.
+    const res = await call('/chat', { body: { messages: [{ role: 'user', content: "I'm really anxious, I can't breathe" }] } });
+    assert.equal(res.data.mode, 'fallback');
+    assert.deepEqual(res.data.emotion, { label: 'panic', intensity: 'medium', urgency: 'support', source: 'words' });
+  });
+
   test('answers in every app language (Tamil, Bengali and Marathi used to be rejected)', async () => {
     for (const lang of ['en', 'hi', 'ta', 'bn', 'mr']) {
       const res = await call('/chat', { body: { messages: [{ role: 'user', content: 'hello' }], lang } });

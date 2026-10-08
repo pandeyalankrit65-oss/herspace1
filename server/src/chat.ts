@@ -1,5 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
+import * as z4 from 'zod/v4';
 import { detectDistress } from './distress';
+import { EMOTIONS, emotionFromWords, INTENSITIES, URGENCIES, type Emotion } from './emotion';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -14,6 +17,8 @@ How to respond:
 - Reply in the language the person writes in (for example Hindi, Hinglish or English).
 - Listen first. Offer practical options (grounding exercises, how to document an incident, how to reach trusted people or professional help) when they seem wanted, and ask before giving lots of advice.
 - You are not a therapist, lawyer or emergency service, and you can't contact anyone or take actions for the user. Don't pretend otherwise.
+- Notice how she feels and adapt: if she's panicking, use very short, calm sentences and one small step at a time (a slow breath, then the next thing); if she's afraid, put her safety and options first; if she's sad or alone, slow down and listen; if she's angry, acknowledge it as fair before anything else.
+- Also report the main emotion in her latest message, how strong it seems, and how urgent her situation is. The app uses this to offer SOS, a helpline or a breathing exercise beside your reply, so judge urgency carefully and don't mention these labels in the reply itself.
 
 Safety:
 - If the person may be in immediate danger, tell them clearly to call emergency services (${EMERGENCY_NUMBER}) or use the SOS button in the app, before anything else.
@@ -70,33 +75,55 @@ export function fallbackReply(messages: ChatMessage[], lang: Lang = 'en'): strin
 
 let client: Anthropic | null = null;
 
-export async function supportReply(history: ChatMessage[], lang: Lang = 'en'): Promise<{ content: string; mode: 'ai' | 'fallback' }> {
+export type SupportReply = { content: string; mode: 'ai' | 'fallback'; emotion: Emotion };
+
+// One request returns the reply and Claude's reading of how she seems (structured output), so
+// the app can adapt: calmer replies and a breathing step for panic, SOS for fear or danger.
+const ReplySchema = z4.object({
+  reply: z4.string().describe('The reply to show her: plain text, no markdown, in her language.'),
+  emotion: z4.enum(EMOTIONS).describe('The main emotion in her latest message.'),
+  intensity: z4.enum(INTENSITIES).describe('How strongly she seems to feel it.'),
+  urgency: z4
+    .enum(URGENCIES)
+    .describe('none; support (she would benefit from help or a helpline); danger (she may be in danger from someone now); self_harm (thoughts of suicide or self-harm).'),
+});
+
+const lastUserText = (messages: ChatMessage[]) => [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+
+const fallback = (messages: ChatMessage[], lang: Lang): SupportReply => ({
+  content: fallbackReply(messages, lang),
+  mode: 'fallback',
+  emotion: emotionFromWords(lastUserText(messages)),
+});
+
+export async function supportReply(history: ChatMessage[], lang: Lang = 'en'): Promise<SupportReply> {
   // The API requires the conversation to start with a user turn; drop the UI's greeting.
   const firstUser = history.findIndex((m) => m.role === 'user');
   const messages = firstUser === -1 ? [] : history.slice(firstUser);
-  if (messages.length === 0) return { content: fallbackReply(history, lang), mode: 'fallback' };
+  if (messages.length === 0) return fallback(history, lang);
 
   try {
     client ??= new Anthropic();
-    const response = await client.beta.messages.create({
-      model: 'claude-opus-5',
+    const response = await client.beta.messages.parse({
+      model: 'claude-opus-5-5',
       max_tokens: 16000,
-      output_config: { effort: 'medium' },
+      output_config: { effort: 'medium', format: betaZodOutputFormat(ReplySchema) },
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       system: SYSTEM_PROMPT,
       messages,
     });
 
-    if (response.stop_reason === 'refusal') {
-      return { content: fallbackReply(messages, lang), mode: 'fallback' };
-    }
-    const text = response.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
-      .trim();
-    return text ? { content: text, mode: 'ai' } : { content: fallbackReply(messages, lang), mode: 'fallback' };
+    const parsed = response.stop_reason === 'refusal' ? null : response.parsed_output;
+    if (!parsed?.reply.trim()) return fallback(messages, lang);
+    // The keyword check still counts: if either sees danger or self-harm, the app offers help.
+    const words = emotionFromWords(lastUserText(messages));
+    const urgency = parsed.urgency === 'none' && (words.urgency === 'danger' || words.urgency === 'self_harm') ? words.urgency : parsed.urgency;
+    return {
+      content: parsed.reply.trim(),
+      mode: 'ai',
+      emotion: { label: parsed.emotion, intensity: parsed.intensity, urgency, source: 'ai' },
+    };
   } catch (err) {
     if (err instanceof Anthropic.AuthenticationError) {
       console.warn('[chat] Anthropic credentials missing or invalid; using fallback replies.');
@@ -105,6 +132,6 @@ export async function supportReply(history: ChatMessage[], lang: Lang = 'en'): P
     } else {
       console.error('[chat] Failed to reach Anthropic API:', err instanceof Error ? err.message : err);
     }
-    return { content: fallbackReply(messages, lang), mode: 'fallback' };
+    return fallback(messages, lang);
   }
 }
