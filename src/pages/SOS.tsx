@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import SetupChecklist from "@/components/SetupChecklist";
 import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
 import { useScreamTrigger } from "@/hooks/use-scream-trigger";
+import type { SosTrigger } from "@/lib/sosTrigger";
 import ScreamSettings from "@/components/ScreamSettings";
 import { useVoiceStress } from "@/hooks/use-voice-stress";
 import VoiceStressSettings, { StressPrompt } from "@/components/VoiceStressSettings";
@@ -143,12 +144,16 @@ const SOS = () => {
     stopRecording();
     setLiveShare(null);
   }, [stopRecording]);
-  const sendSOS = useCallback(async () => {
+  // What started this alert (button, scream, no answer...): contacts are told, so they know how serious it is.
+  const triggerRef = useRef<SosTrigger>("button");
+  const sendSOS = useCallback(async (options: { silent?: boolean } = {}) => {
     setSending(true);
     setResult(null);
     const coords = await getLocation();
+    const trigger = triggerRef.current;
+    triggerRef.current = "button";
     try {
-      const res = await api<SosResult>("/api/sos", { body: { coords, silent } });
+      const res = await api<SosResult>("/api/sos", { body: { coords, silent: silent || options.silent, trigger } });
       setResult(res);
       if (res.share) setLiveShare(res.share);
       // Evidence: record audio in short pieces that upload as they go.
@@ -195,12 +200,17 @@ const SOS = () => {
     return () => clearTimeout(t);
   }, [countdown, sendSOS]);
 
-  const startCountdown = useCallback(() => {
+  const countdownRef = useRef(countdown);
+  countdownRef.current = countdown;
+  const startCountdown = useCallback((trigger: SosTrigger = "button") => {
+    // The first trigger counts; a second one during the countdown doesn't restart it.
+    if (countdownRef.current === null) triggerRef.current = trigger;
     setCountdown((c) => (c === null ? COUNTDOWN_SECONDS : c));
   }, []);
 
+
   const safeWord = useSafeWord();
-  const voice = useVoiceTrigger({ lang, onTrigger: startCountdown, safeWord: safeWord.word, helpWords: safeWord.helpWords });
+  const voice = useVoiceTrigger({ lang, onTrigger: () => startCountdown("voice"), safeWord: safeWord.word, helpWords: safeWord.helpWords });
   // Voice commands open this page with ?start=sos|alarm|fakecall.
   // Each command gets a fresh signal, so it also works when this page is already open.
   const [params, setParams] = useSearchParams();
@@ -212,12 +222,15 @@ const SOS = () => {
     setParams({}, { replace: true });
     if (startParam === "sos") startCountdown();
   }, [startParam, setParams, startCountdown]);
-  const shake = useShakeTrigger(startCountdown);
-  const scream = useScreamTrigger(startCountdown);
+  const shake = useShakeTrigger(() => startCountdown("shake"));
+  const scream = useScreamTrigger(() => startCountdown("scream"));
   const stress = useVoiceStress();
   const sosMode = useSosMode();
   // Holding is already deliberate, so a completed hold sends straight away.
-  const hold = useHoldToSend(sendSOS, HOLD_SECONDS * 1000);
+  const hold = useHoldToSend(() => {
+    triggerRef.current = "hold";
+    void sendSOS();
+  }, HOLD_SECONDS * 1000);
   const holdMode = sosMode.mode === "hold";
   const VOICE_ERRORS = {
     unsupported: isNative ? "sos.voiceUnsupportedApp" : "sos.voiceUnsupportedDesc",
@@ -335,7 +348,7 @@ const SOS = () => {
                           variant="emergency"
                           aria-label={sending ? t("sos.buttonSending") : holdMode ? t("sos.buttonHoldLabel") : t("sos.button")}
                           className={`h-48 w-48 touch-none select-none rounded-full p-0 sm:h-56 sm:w-56 ${sending ? "animate-pulse" : ""} ${hold.holding ? "scale-95" : ""}`}
-                          onClick={holdMode ? undefined : startCountdown}
+                          onClick={holdMode ? undefined : () => startCountdown("button")}
                           {...(holdMode ? hold.handlers : {})}
                           disabled={sending}
                         >
@@ -484,7 +497,7 @@ const SOS = () => {
               )}
               <ScreamSettings scream={scream} />
               <VoiceStressSettings stress={stress} />
-              <StressPrompt stress={stress} onSos={startCountdown} />
+              <StressPrompt stress={stress} onSos={() => startCountdown("stress")} />
             </CardContent>
           </Card>
 

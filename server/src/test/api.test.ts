@@ -420,6 +420,29 @@ async function userWithConfirmedContact(name = 'Nisha') {
   return { token, contactId: c.data.contact.id as number };
 }
 
+describe('the situation for contacts', () => {
+  test('contacts are told how an alert started, whether to call, and which way she is moving', async () => {
+    const { token } = await userWithConfirmedContact('Ira');
+    assert.equal((await call('/sos', { token, body: { trigger: 'gossip' } })).status, 400);
+    const sos = await call('/sos', { token, body: { coords: { lat: 28.6, lng: 77.2 }, trigger: 'no_answer', silent: true } });
+    assert.match(sos.data.message, /didn't answer a safety check/);
+    assert.match(sos.data.message, /DON'T call them first/);
+    const shareToken = sos.data.share.url.split('/track/')[1];
+    let view = (await call(`/track/${shareToken}`)).data;
+    assert.equal(view.trigger, 'no_answer');
+    assert.equal(view.silent, true);
+    assert.equal(view.motion, null);
+
+    await call(`/location-shares/${sos.data.share.id}/location`, { token, body: { coords: { lat: 28.601, lng: 77.2 }, motion: { speed: 1.4, heading: 0 } } });
+    view = (await call(`/track/${shareToken}`)).data;
+    assert.deepEqual(view.motion, { speed: 1.4, heading: 0 });
+
+    // A plain press says nothing extra.
+    const plain = await call('/sos', { token, body: {} });
+    assert.doesNotMatch(plain.data.message, /started/);
+  });
+});
+
 describe('contact acknowledgements', () => {
   test("\"I'm on my way\" from a personal link tells the user who is coming", async () => {
     const { token, contactId } = await userWithConfirmedContact();

@@ -387,6 +387,14 @@ const migrations: string[] = [
   `
   ALTER TABLE reports ADD COLUMN incident_time TEXT;
   `,
+  // Situation for contacts: what started an SOS (a scream, no answer to "are you okay?"...), whether
+  // it was silent, and which way and how fast she's moving (worked out on her phone).
+  `
+  ALTER TABLE sos_events ADD COLUMN trigger TEXT;
+  ALTER TABLE sos_events ADD COLUMN silent INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE location_shares ADD COLUMN speed REAL;
+  ALTER TABLE location_shares ADD COLUMN heading REAL;
+  `,
 ];
 
 function migrate() {

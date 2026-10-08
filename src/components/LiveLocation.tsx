@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
 import { readBattery } from "@/lib/battery";
+import { motionBetween } from "@/lib/motion";
 import { isAt, journeyDestination, metresBetween } from "@/lib/places";
 import AreaWarning from "@/components/AreaWarning";
 import { savedData } from "@/lib/offline";
@@ -101,10 +102,12 @@ const LiveLocation = ({ share, onEnded }: { share: LiveShare; onEnded: () => voi
         const last = lastRef.current;
         const due = !last || Date.now() - last.at >= SEND_EVERY_MS || metresBetween(last.coords, pos) >= SEND_IF_MOVED_M;
         if (!due) return;
+        // Which way and how fast, so contacts can tell if she's still walking, running or in a vehicle.
+        const motion = last ? motionBetween(last, pos, Date.now()) : undefined;
         lastRef.current = { at: Date.now(), coords: pos };
         try {
           const battery = await readBattery();
-          const res = await api<{ acks?: ShareAck[] }>(`/api/location-shares/${share.id}/location`, { body: { coords: pos, battery } });
+          const res = await api<{ acks?: ShareAck[] }>(`/api/location-shares/${share.id}/location`, { body: { coords: pos, battery, motion } });
           if (!cancelled) {
             if (res.acks) setAcks(res.acks);
             setLastSent(new Date());

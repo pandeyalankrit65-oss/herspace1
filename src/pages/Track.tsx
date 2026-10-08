@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Circle, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { BatteryCharging, BatteryLow, BatteryMedium, CheckCircle2, Footprints, HeartPulse, Phone, ShieldCheck } from "lucide-react";
+import { BatteryCharging, BatteryLow, BatteryMedium, CheckCircle2, Footprints, HeartPulse, ListChecks, Navigation, Phone, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, EMERGENCY_NUMBER } from "@/lib/api";
 import { useI18n } from "@/i18n";
+import type { MessageKey } from "@/i18n/en";
 import type { EmergencyInfo } from "@/components/EmergencyInfoSettings";
+import { compassOf, paceOf, type Motion } from "@/lib/motion";
+import type { SosTrigger } from "@/lib/sosTrigger";
 
 type Position = { lat: number; lng: number; accuracy: number | null; updatedAt: string };
 type TrackView = {
@@ -24,6 +27,9 @@ type TrackView = {
   emergencyInfo: EmergencyInfo | null;
   destination: string | null;
   arrived: boolean;
+  motion: Motion | null;
+  trigger: SosTrigger | null;
+  silent: boolean;
 };
 
 const POLL_MS = 15_000;
@@ -88,6 +94,49 @@ const EmergencyInfoCard = ({ info, name }: { info: EmergencyInfo; name: string }
               </div>
             ))}
         </dl>
+      </CardContent>
+    </Card>
+  );
+};
+// "Moving north-east at walking pace": tells contacts whether she's still on foot, running or in a vehicle.
+const MotionLine = ({ motion }: { motion: Motion }) => {
+  const { t } = useI18n();
+  const pace = paceOf(motion.speed);
+  return (
+    <span className="flex items-center gap-1.5">
+      <Navigation className="h-3.5 w-3.5 shrink-0" style={motion.heading !== null ? { transform: `rotate(${motion.heading}deg)` } : undefined} />
+      {pace === "still" || motion.heading === null
+        ? t("track.motion.still")
+        : t(`track.motion.${pace}`, { dir: t(`track.dir.${compassOf(motion.heading)}`) })}
+    </span>
+  );
+};
+
+// What a frightened contact should do, in order. Silent alerts mean "don't call".
+const HowToHelp = ({ silent, acked }: { silent: boolean; acked: boolean }) => {
+  const { t } = useI18n();
+  const steps: MessageKey[] = [
+    "track.help.calm",
+    "track.help.ack",
+    silent ? "track.help.text" : "track.help.call",
+    "track.help.emergency",
+    "track.help.go",
+    "track.help.lost",
+  ].filter((key) => !(acked && key === "track.help.ack")) as MessageKey[];
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ListChecks className="h-5 w-5 text-primary" />
+          {t("track.helpTitle")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ol className="list-decimal space-y-2 pl-5 text-sm">
+          {steps.map((key) => (
+            <li key={key}>{t(key, { number: EMERGENCY_NUMBER })}</li>
+          ))}
+        </ol>
       </CardContent>
     </Card>
   );
@@ -179,6 +228,7 @@ const Track = () => {
                     : t("track.expiredDesc")}{" "}
                   {view.kind === "sos" && t("track.stillWorried")}
                 </CardDescription>
+                {view.kind === "sos" && view.endedAt && <p className="pt-2 text-sm">{t("track.after")}</p>}
               </CardHeader>
             </Card>
           )}
@@ -197,7 +247,14 @@ const Track = () => {
                 ) : (
                   <>
                     <h1 className="text-3xl font-extrabold text-destructive">{t("track.needsHelp", { name: view.name })}</h1>
-                    <p className="text-muted-foreground">{t("track.intro", { name: view.name })}</p>
+                    <p className="text-muted-foreground">
+                      {/* How it started and whether to call: an automatic or silent alert changes what helps. */}
+                      {(view.trigger ?? "button") === "button" || view.trigger === "hold"
+                        ? view.silent
+                          ? `${t("track.how.button", { name: view.name })} ${t("track.sharing")} ${t("track.actSilent")}`
+                          : t("track.intro", { name: view.name })
+                        : `${t(`track.how.${view.trigger}`, { name: view.name })} ${t("track.sharing")} ${t(view.silent ? "track.actSilent" : "track.actCall")}`}
+                    </p>
                   </>
                 )}
                 {view.note && <p className="font-semibold">"{view.note}"</p>}
@@ -231,6 +288,7 @@ const Track = () => {
                       {t("track.updated", { ago: ago(view.position.updatedAt, now, tn) })}
                       {view.position.accuracy ? ` · ${t("track.accuracy", { meters: Math.round(view.position.accuracy) })}` : ""}
                       {view.battery && <BatteryLine battery={view.battery} />}
+                      {view.motion && !stale && <MotionLine motion={view.motion} />}
                       {stale && <strong className="block">{t("track.stale")}</strong>}
                     </div>
                     <div className="relative z-0 h-[55vh] min-h-[320px]">
@@ -265,6 +323,8 @@ const Track = () => {
                   </CardHeader>
                 </Card>
               )}
+
+              {view.kind === "sos" && <HowToHelp silent={view.silent} acked={view.acked} />}
 
               {view.emergencyInfo && <EmergencyInfoCard info={view.emergencyInfo} name={view.name} />}
 

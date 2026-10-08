@@ -23,7 +23,7 @@ const PrivacyEn = () => (
           <strong>SOS alerts:</strong> when you press SOS we store the time, your location if you allow location access, and
           whether each message or call was delivered. If you're logged in, your contacts also get a private live-location link:
           while the SOS page is open we keep only your latest position, and delete it as soon as you tap "I'm safe" or after 4
-          hours. With each position we also keep your phone's battery level, so contacts know if it's about to switch off. If a
+          hours. With each position we also keep your phone's battery level, so contacts know if it's about to switch off. We also keep which way and roughly how fast you're moving, worked out on your phone, so contacts can tell if you're walking, running or in a vehicle; it's deleted along with the position. If a
           contact taps "I'm on my way" on that page, we record their reply so you can see it.
         </li>
         <li>

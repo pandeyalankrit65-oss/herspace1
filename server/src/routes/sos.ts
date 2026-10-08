@@ -45,6 +45,23 @@ export type AlertOptions = {
   checkIn?: { note: string | null; startedAt: string; dueAt: string };
   // Sent without any sign on her phone; contacts are asked not to call, in case someone is listening.
   silent?: boolean;
+  // What started it, when not a press of the button: told to contacts so they know how serious it is.
+  trigger?: SosTrigger;
+};
+
+export const SOS_TRIGGERS = ['button', 'hold', 'voice', 'safe_word', 'shake', 'scream', 'no_answer', 'code_phrase', 'stress', 'stopped_answering'] as const;
+export type SosTrigger = (typeof SOS_TRIGGERS)[number];
+
+// Told to contacts after the alert: how it started, when it wasn't a plain press of SOS.
+const TRIGGER_TEXT: Partial<Record<SosTrigger, string>> = {
+  voice: ' It was started by voice.',
+  safe_word: ' It was started with their safe word.',
+  shake: ' It was started by shaking the phone.',
+  scream: ' It started automatically: their phone heard a scream.',
+  no_answer: ' It started automatically: they didn\'t answer a safety check.',
+  code_phrase: ' They said their code phrase, so they may not be able to talk freely.',
+  stress: ' They chose to send it after their phone noticed stress in their voice.',
+  stopped_answering: ' It started automatically: they stopped answering check-ins while being kept company by the app.',
 };
 
 const fmtTime = (iso: string) => new Date(iso).toUTCString();
@@ -53,8 +70,17 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const isTest = Boolean(options.test);
   const createdAt = now();
   const sos = db
-    .prepare('INSERT INTO sos_events (user_id, lat, lng, accuracy, created_at, is_test) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(user?.id ?? null, coords?.lat ?? null, coords?.lng ?? null, coords?.accuracy ?? null, createdAt, isTest ? 1 : 0);
+    .prepare('INSERT INTO sos_events (user_id, lat, lng, accuracy, created_at, is_test, trigger, silent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(
+      user?.id ?? null,
+      coords?.lat ?? null,
+      coords?.lng ?? null,
+      coords?.accuracy ?? null,
+      createdAt,
+      isTest ? 1 : 0,
+      options.trigger ?? null,
+      options.silent ? 1 : 0
+    );
   const sosId = Number(sos.lastInsertRowid);
 
   const contacts = user ? listContacts(user.id) : [];
@@ -82,7 +108,7 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`
     : checkIn
       ? `HerSpace safety alert: ${who} started a safety timer at ${fmtTime(checkIn.startedAt)}${checkIn.note ? ` ("${checkIn.note}")` : ''} and didn't check in by ${fmtTime(checkIn.dueAt)}. Last known ${where.charAt(0).toLowerCase()}${where.slice(1)}${live}${reply}`
-      : `HerSpace SOS: ${who} triggered an emergency alert at ${time}. ${where}${live}${reply}`;
+      : `HerSpace SOS: ${who} triggered an emergency alert at ${time}.${TRIGGER_TEXT[options.trigger ?? 'button'] ?? ''} ${where}${live}${reply}`;
   // The generic version (no personal link) is what the app offers to send by hand.
   const message = messageFor(share?.url);
 
@@ -122,14 +148,14 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   };
 }
 
-const sosSchema = z.object({ coords: coordsSchema.optional(), silent: z.boolean().optional() });
+const sosSchema = z.object({ coords: coordsSchema.optional(), silent: z.boolean().optional(), trigger: z.enum(SOS_TRIGGERS).optional() });
 
 // Works without login (an emergency shouldn't be blocked on a login screen), but only
 // logged-in users have saved contacts to alert.
 sosRouter.post('/', sosIpLimiter, sosUserLimiter, async (req, res) => {
   const body = parse(sosSchema, req, res);
   if (!body) return;
-  res.status(201).json(await triggerAlert(req.user, body.coords, { silent: body.silent }));
+  res.status(201).json(await triggerAlert(req.user, body.coords, { silent: body.silent, trigger: body.trigger }));
 });
 
 sosRouter.post('/test', requireAuth, testLimiter, async (req, res) => {

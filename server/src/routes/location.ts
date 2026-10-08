@@ -31,6 +31,8 @@ type ShareRow = {
   arrived: number;
   battery: number | null;
   charging: number | null;
+  speed: number | null;
+  heading: number | null;
 };
 
 const isActive = (s: Pick<ShareRow, 'ended_at' | 'expires_at'>) => !s.ended_at && new Date(s.expires_at) > new Date();
@@ -47,7 +49,7 @@ export function createShare(
   options: { sosId?: number; coords?: z.infer<typeof coordsSchema>; kind?: ShareKind; note?: string | null; minutes?: number } = {}
 ) {
   const stamp = now();
-  db.prepare('UPDATE location_shares SET ended_at = ?, lat = NULL, lng = NULL, accuracy = NULL WHERE user_id = ? AND ended_at IS NULL').run(
+  db.prepare('UPDATE location_shares SET ended_at = ?, lat = NULL, lng = NULL, accuracy = NULL, speed = NULL, heading = NULL WHERE user_id = ? AND ended_at IS NULL').run(
     stamp,
     userId
   );
@@ -216,7 +218,12 @@ const updateLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 600, key: perUs
 
 locationSharesRouter.post('/:id/location', updateLimiter, (req, res) => {
   const body = parse(
-    z.object({ coords: coordsSchema, battery: z.object({ level: z.number().min(0).max(1), charging: z.boolean() }).optional() }),
+    z.object({
+      coords: coordsSchema,
+      battery: z.object({ level: z.number().min(0).max(1), charging: z.boolean() }).optional(),
+      // Worked out on her phone from consecutive positions: metres per second, degrees from north.
+      motion: z.object({ speed: z.number().min(0).max(100), heading: z.number().min(0).max(360).nullable() }).optional(),
+    }),
     req,
     res
   );
@@ -225,7 +232,7 @@ locationSharesRouter.post('/:id/location', updateLimiter, (req, res) => {
   if (!share) return res.status(404).json({ error: 'Share not found.' });
   if (!isActive(share)) return res.status(410).json({ error: 'Location sharing has ended.' });
   db.prepare(
-    'UPDATE location_shares SET lat = ?, lng = ?, accuracy = ?, updated_at = ?, stale_alerted_at = NULL, battery = ?, charging = ? WHERE id = ?'
+    'UPDATE location_shares SET lat = ?, lng = ?, accuracy = ?, updated_at = ?, stale_alerted_at = NULL, battery = ?, charging = ?, speed = ?, heading = ? WHERE id = ?'
   ).run(
     body.coords.lat,
     body.coords.lng,
@@ -233,6 +240,8 @@ locationSharesRouter.post('/:id/location', updateLimiter, (req, res) => {
     now(),
     body.battery?.level ?? null,
     body.battery ? (body.battery.charging ? 1 : 0) : null,
+    body.motion?.speed ?? null,
+    body.motion?.heading ?? null,
     share.id
   );
   // A journey's safety timer alerts with the latest position.
@@ -261,7 +270,7 @@ locationSharesRouter.post('/:id/stop', async (req, res) => {
     db
       .prepare('UPDATE location_shares SET ended_at = ?, arrived = ? WHERE id = ? AND ended_at IS NULL')
       .run(now(), arrived ? 1 : 0, share.id).changes > 0;
-  db.prepare('UPDATE location_shares SET lat = NULL, lng = NULL, accuracy = NULL WHERE id = ?').run(share.id);
+  db.prepare('UPDATE location_shares SET lat = NULL, lng = NULL, accuracy = NULL, speed = NULL, heading = NULL WHERE id = ?').run(share.id);
   // Arriving also ends the journey's safety timer.
   if (share.check_in_id) {
     db.prepare("UPDATE check_ins SET status = 'completed' WHERE id = ? AND status = 'active'").run(share.check_in_id);
@@ -282,12 +291,19 @@ locationSharesRouter.post('/:id/stop', async (req, res) => {
 const trackLimiter = rateLimit({ windowMs: 60 * 1000, max: 30 });
 const ackLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
 
-type ShareWithUser = ShareRow & { name: string; emergencyInfo: string | null; emergencyInfoShare: number };
+type ShareWithUser = ShareRow & {
+  name: string;
+  emergencyInfo: string | null;
+  emergencyInfoShare: number;
+  sosTrigger: string | null;
+  sosSilent: number | null;
+};
 const shareByToken = (token: string) =>
   db
     .prepare(
-      `SELECT s.*, u.name, u.emergency_info AS emergencyInfo, u.emergency_info_share AS emergencyInfoShare
-       FROM location_shares s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`
+      `SELECT s.*, u.name, u.emergency_info AS emergencyInfo, u.emergency_info_share AS emergencyInfoShare,
+         e.trigger AS sosTrigger, e.silent AS sosSilent
+       FROM location_shares s JOIN users u ON u.id = s.user_id LEFT JOIN sos_events e ON e.id = s.sos_id WHERE s.token_hash = ?`
     )
     .get(sha256(token)) as
     | ShareWithUser
@@ -322,6 +338,10 @@ trackRouter.get('/:token', trackLimiter, (req, res) => {
         ? { lat: share.lat, lng: share.lng, accuracy: share.accuracy, updatedAt: share.updated_at }
         : null,
     battery: active && share.battery !== null ? { level: share.battery, charging: Boolean(share.charging) } : null,
+    motion: active && share.speed !== null ? { speed: share.speed, heading: share.heading } : null,
+    // How an SOS started, and whether she asked not to be called: shapes the "how to help" advice.
+    trigger: share.kind === 'sos' ? share.sosTrigger ?? 'button' : null,
+    silent: share.kind === 'sos' ? Boolean(share.sosSilent) : false,
     destination: share.kind === 'sos' ? null : share.destination,
     arrived: Boolean(share.arrived),
     // Health details only during an emergency, only if the user chose to share them, and only

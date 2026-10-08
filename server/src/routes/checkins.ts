@@ -126,7 +126,7 @@ checkInsRouter.post('/:id/complete', (req, res) => {
   }
   if (c.status === 'alerted') {
     db.prepare(
-      'UPDATE location_shares SET ended_at = COALESCE(ended_at, ?), lat = NULL, lng = NULL, accuracy = NULL WHERE user_id = ? AND ended_at IS NULL'
+      'UPDATE location_shares SET ended_at = COALESCE(ended_at, ?), lat = NULL, lng = NULL, accuracy = NULL, speed = NULL, heading = NULL WHERE user_id = ? AND ended_at IS NULL'
     ).run(now(), req.user!.id);
   }
   res.json({ success: true, wasAlerted: c.status === 'alerted' });
