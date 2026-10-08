@@ -420,6 +420,27 @@ async function userWithConfirmedContact(name = 'Nisha') {
   return { token, contactId: c.data.contact.id as number };
 }
 
+describe('fake call that talks back', () => {
+  test('without the AI, scripted caller lines take turns, in her language', async () => {
+    const first = await call('/fake-call/reply', { body: { caller: 'Mom', lang: 'hi', messages: [{ role: 'user', content: 'हाँ मम्मी' }] } });
+    assert.equal(first.status, 200);
+    assert.equal(first.data.mode, 'fallback');
+    assert.match(first.data.reply, /कहाँ/);
+    const second = await call('/fake-call/reply', {
+      body: {
+        caller: 'Mom',
+        messages: [
+          { role: 'user', content: 'hello' },
+          { role: 'assistant', content: first.data.reply },
+          { role: 'user', content: 'near the bus stop' },
+        ],
+      },
+    });
+    assert.equal(second.data.reply, 'Okay, stay where there are people. I can see the main road.');
+    assert.equal((await call('/fake-call/reply', { body: { caller: '', messages: [{ role: 'user', content: 'hi' }] } })).status, 400);
+  });
+});
+
 describe('the situation for contacts', () => {
   test('contacts are told how an alert started, whether to call, and which way she is moving', async () => {
     const { token } = await userWithConfirmedContact('Ira');

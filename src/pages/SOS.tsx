@@ -654,7 +654,7 @@ const SOS = () => {
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
-            <FakeCall ringSignal={signal?.action === "fakecall" ? signal.at : undefined} />
+            <FakeCall ringSignal={signal?.action === "fakecall" ? signal.at : undefined} voiceBusy={voice.status === "listening"} />
           </div>
 
           <Card>

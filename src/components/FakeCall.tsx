@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, User, MicOff, Grid3x3, Volume2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { speechLocale, useI18n } from "@/i18n";
 import { canSpeak, speak, stopSpeaking } from "@/lib/speak";
+import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 
 const DELAYS = [0, 10, 30, 60];
 
@@ -40,10 +41,16 @@ function startRingtone(): () => void {
 }
 
 type Phase = "idle" | "waiting" | "ringing" | "onCall";
+type Turn = { role: "user" | "assistant"; content: string };
+
+// Her turn ends after this long without new words.
+const END_OF_TURN_MS = 1200;
 
 // Shows a realistic incoming call as an excuse to leave an uncomfortable situation.
 // ringSignal: a new value rings straight away (the "fake call" voice command).
-const FakeCall = ({ ringSignal }: { ringSignal?: number }) => {
+// voiceBusy: the page's voice trigger is listening; browsers allow one listener, so the caller
+// then sticks to its script instead of talking back.
+const FakeCall = ({ ringSignal, voiceBusy = false }: { ringSignal?: number; voiceBusy?: boolean }) => {
   const { t, lang } = useI18n();
   const { user } = useAuth();
   const [caller, setCaller] = useState("");
@@ -79,15 +86,67 @@ const FakeCall = ({ ringSignal }: { ringSignal?: number }) => {
     };
   }, [phase]);
 
+  // The caller talks back: after each line it listens, and answers what she says (AI on the
+  // server, or scripted lines without it). "Help" isn't a trigger here: people say it on calls.
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const turns = useRef<Turn[]>([]);
+  const heardRef = useRef("");
+  const turnTimer = useRef<number>();
+  const listenRef = useRef<() => void>(() => {});
+  const voice = useVoiceTrigger({
+    lang,
+    onTrigger: () => {},
+    helpWords: false,
+    onHeard: (text) => {
+      heardRef.current = text;
+      window.clearTimeout(turnTimer.current);
+      turnTimer.current = window.setTimeout(() => void herTurn(), END_OF_TURN_MS);
+    },
+  });
+  const { start: startListening, stop: stopListening } = voice;
+  const canTalkBack = canSpeak && voice.supported && !voiceBusy;
+
+  const callerSays = useCallback(
+    async (text: string) => {
+      turns.current.push({ role: "assistant", content: text });
+      await speak(text, speechLocale(lang)).catch(() => {});
+      // Listen only after speaking, so the phone doesn't hear the caller as her.
+      if (phaseRef.current === "onCall") listenRef.current();
+    },
+    [lang]
+  );
+
+  const herTurn = async () => {
+    const said = heardRef.current.trim();
+    heardRef.current = "";
+    if (!said || phaseRef.current !== "onCall") return;
+    stopListening();
+    turns.current.push({ role: "user", content: said });
+    try {
+      const res = await api<{ reply: string }>("/api/fake-call/reply", { body: { messages: turns.current.slice(-20), caller: name, lang } });
+      if (phaseRef.current === "onCall") await callerSays(res.reply);
+    } catch {
+      if (phaseRef.current === "onCall") listenRef.current();
+    }
+  };
+
+  useEffect(() => {
+    listenRef.current = canTalkBack ? startListening : () => {};
+  }, [canTalkBack, startListening]);
+
   // Once answered, a voice speaks from the phone, so the call sounds real to people nearby.
   useEffect(() => {
     if (phase !== "onCall" || !canSpeak) return;
-    const timer = window.setTimeout(() => speak(t("fakeCall.script"), speechLocale(lang)).catch(() => {}), 1200);
+    turns.current = [];
+    const timer = window.setTimeout(() => void callerSays(t("fakeCall.script")), 1200);
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(turnTimer.current);
+      stopListening();
       stopSpeaking();
     };
-  }, [phase, t, lang]);
+  }, [phase, t, callerSays, stopListening]);
 
   // "Keypad" on the call screen sends a silent SOS without anything visible changing.
   const [sosSent, setSosSent] = useState(false);
@@ -123,7 +182,7 @@ const FakeCall = ({ ringSignal }: { ringSignal?: number }) => {
           <Phone className="h-8 w-8 text-primary mb-2" />
           <CardTitle className="text-lg">{t("fakeCall.title")}</CardTitle>
           <CardDescription>
-            {t("fakeCall.desc")} {user && t("fakeCall.keypadHint")}
+            {t("fakeCall.desc")} {canTalkBack && t("fakeCall.talkBack")} {user && t("fakeCall.keypadHint")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

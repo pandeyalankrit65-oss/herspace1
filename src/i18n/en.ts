@@ -1836,6 +1836,9 @@ const en = {
   "stay.waiting_one": "Are you okay? Answer within {count} second.",
   "stay.waiting_other": "Are you okay? Answer within {count} seconds.",
 
+  // Fake call that talks back
+  "fakeCall.talkBack": "Once answered, the caller listens and answers what you say, so the conversation sounds real.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

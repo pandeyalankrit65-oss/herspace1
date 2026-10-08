@@ -1735,6 +1735,8 @@ const messages: Partial<Record<MessageKey, string>> = {
   "stay.okay": "আমি ঠিক আছি",
   "stay.waiting_one": "আপনি ঠিক আছেন? {count} সেকেন্ডের মধ্যে উত্তর দিন।",
   "stay.waiting_other": "আপনি ঠিক আছেন? {count} সেকেন্ডের মধ্যে উত্তর দিন।",
+  // Fake call that talks back
+  "fakeCall.talkBack": "কল ধরার পরে কলার আপনার কথা শোনে আর উত্তর দেয়, তাই কথোপকথন আসল মনে হয়।",
 };
 
 export default messages;

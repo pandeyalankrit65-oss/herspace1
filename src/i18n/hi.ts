@@ -1837,6 +1837,9 @@ const hi: Record<MessageKey, string> = {
   "stay.waiting_one": "आप ठीक हैं? {count} सेकंड में जवाब दें।",
   "stay.waiting_other": "आप ठीक हैं? {count} सेकंड में जवाब दें।",
 
+  // Fake call that talks back
+  "fakeCall.talkBack": "कॉल उठाने के बाद कॉल करने वाला आपकी बात सुनता है और जवाब देता है, ताकि बातचीत असली लगे।",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

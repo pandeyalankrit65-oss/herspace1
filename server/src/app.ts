@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { csrfGuard, loadUser } from './auth';
 import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
 import { supportReply } from './chat';
+import { callerReply } from './fakeCall';
 import { rateLimit } from './rateLimit';
 import { parse } from './util';
 import { NEARBY_RADIUS_M, nearbyPlaces, searchPlaces } from './geo';
@@ -97,6 +98,24 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
   if (!body) return;
   const reply = await supportReply(body.messages, body.lang);
   res.json({ message: { role: 'assistant', content: reply.content }, mode: reply.mode, emotion: reply.emotion });
+});
+
+// The fake call's caller talking back. Short turns, so tighter limits than the chat.
+const fakeCallLimiter = rateLimit({ windowMs: 60 * 1000, max: 20 });
+const fakeCallSchema = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().trim().min(1).max(500) }))
+    .min(1)
+    .max(40),
+  caller: z.string().trim().min(1).max(40),
+  lang: z.enum(['en', 'hi', 'ta', 'bn', 'mr']).optional(),
+});
+
+app.post('/api/fake-call/reply', fakeCallLimiter, async (req, res) => {
+  const body = parse(fakeCallSchema, req, res);
+  if (!body) return;
+  const reply = await callerReply(body.messages, body.caller, body.lang);
+  res.json({ reply: reply.content, mode: reply.mode });
 });
 
 app.use('/api/moderation/partners', partnerModerationRouter);
