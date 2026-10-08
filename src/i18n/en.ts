@@ -1839,6 +1839,19 @@ const en = {
   // Fake call that talks back
   "fakeCall.talkBack": "Once answered, the caller listens and answers what you say, so the conversation sounds real.",
 
+  // Tell it in your own words (a draft report)
+  "tell.title": "Tell it in your own words",
+  "tell.desc": "Say or type what happened, at your own pace. HerSpace turns it into a draft in the form below for you to check and change. Nothing is sent until you press \"Submit Report\".",
+  "tell.placeholder": "What happened? Where and when? Take your time.",
+  "tell.speak": "Speak",
+  "tell.stopSpeaking": "Stop",
+  "tell.make": "Make a draft",
+  "tell.making": "Writing the draft...",
+  "tell.doneAi": "Your draft is in the form below. Please check every part, especially the type, place and time, before you send it.",
+  "tell.doneWords": "Your words are in the description below. Choose the type and add the place and time before you send it.",
+  "tell.failed": "Couldn't make a draft. Your words are in the description below.",
+  "tell.privacy": "What you write here is sent to our AI provider to write the draft. It isn't saved.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

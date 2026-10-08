@@ -5,6 +5,7 @@ import { csrfGuard, loadUser } from './auth';
 import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
 import { supportReply } from './chat';
 import { callerReply } from './fakeCall';
+import { draftReport } from './reportDraft';
 import { rateLimit } from './rateLimit';
 import { parse } from './util';
 import { NEARBY_RADIUS_M, nearbyPlaces, searchPlaces } from './geo';
@@ -116,6 +117,21 @@ app.post('/api/fake-call/reply', fakeCallLimiter, async (req, res) => {
   if (!body) return;
   const reply = await callerReply(body.messages, body.caller, body.lang);
   res.json({ reply: reply.content, mode: reply.mode });
+});
+
+// "Tell it in your own words": a draft report from what she said. Nothing is saved.
+const draftLimiter = rateLimit({ windowMs: 60 * 1000, max: 6 });
+const draftSchema = z.object({
+  text: z.string().trim().min(10).max(5000),
+  // Her own date, so "yesterday" means her yesterday.
+  today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  lang: z.enum(['en', 'hi', 'ta', 'bn', 'mr']).optional(),
+});
+
+app.post('/api/reports/draft', draftLimiter, async (req, res) => {
+  const body = parse(draftSchema, req, res);
+  if (!body) return;
+  res.json(await draftReport(body.text, body.today, body.lang));
 });
 
 app.use('/api/moderation/partners', partnerModerationRouter);

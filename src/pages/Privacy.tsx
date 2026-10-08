@@ -79,6 +79,7 @@ const PrivacyEn = () => (
           <strong>Support chat:</strong> messages are sent to our AI provider to generate a reply. HerSpace does not save them.
           The AI also reads how you seem from what you write (for example scared or panicking) so the app can offer the right help; that reading isn't saved either.
           On a fake call, what you say to the caller is turned into text by speech recognition and sent to the same AI provider to write the caller's next line; it isn't saved either.
+          If you use "Tell it in your own words" on the report page, what you say or type there is sent to the same AI provider to write a draft report; it isn't saved, and nothing is reported until you submit the form.
         </li>
       </ul>
     </Section>

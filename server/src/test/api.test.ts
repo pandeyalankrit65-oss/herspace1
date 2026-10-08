@@ -420,6 +420,17 @@ async function userWithConfirmedContact(name = 'Nisha') {
   return { token, contactId: c.data.contact.id as number };
 }
 
+describe('a report told in her own words', () => {
+  test('without the AI, her words become the description and nothing else is guessed', async () => {
+    const text = 'A man followed me from the metro to my lane last night and kept calling out';
+    const res = await call('/reports/draft', { body: { text, today: '2026-10-09', lang: 'en' } });
+    assert.equal(res.status, 200);
+    assert.equal(res.data.mode, 'fallback');
+    assert.deepEqual(res.data.draft, { incidentType: 'other', description: text, location: '', date: '', time: '' });
+    assert.equal((await call('/reports/draft', { body: { text: 'too short', today: '2026-10-09' } })).status, 400);
+  });
+});
+
 describe('fake call that talks back', () => {
   test('without the AI, scripted caller lines take turns, in her language', async () => {
     const first = await call('/fake-call/reply', { body: { caller: 'Mom', lang: 'hi', messages: [{ role: 'user', content: 'हाँ मम्मी' }] } });

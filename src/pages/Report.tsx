@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import TellItYourWay from "@/components/TellItYourWay";
 import { FileText, MapPin, Calendar, Clock, LocateFixed, ImagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -135,8 +136,23 @@ const Report = () => {
         <div className="container mx-auto max-w-4xl">
           <PageHeader icon={FileText} title={t("report.title")} subtitle={t("report.intro")} />
 
+          {/* Say or type it freely first, if she likes: it fills in the form below. */}
+          <TellItYourWay
+            onDraft={(draft, byAi) =>
+              setFormData((f) => ({
+                ...f,
+                // Without the AI, only her words: she chooses the type and adds the rest.
+                incidentType: byAi ? draft.incidentType : f.incidentType,
+                description: draft.description,
+                location: draft.location || f.location,
+                date: draft.date || f.date,
+                time: draft.time || f.time,
+              }))
+            }
+          />
+
           {/* Report Form */}
-          <Card className="mb-8">
+          <Card className="mb-8 mt-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
