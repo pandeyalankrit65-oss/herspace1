@@ -24,6 +24,7 @@ import RoutineReminder from "@/components/routines/RoutineReminder";
 import RoutinesManager from "@/components/routines/RoutinesManager";
 import { readRoutines } from "@/lib/routines";
 import { MicClues, SafetyCheckPrompt, SafetyCheckToggle } from "@/components/SafetyCheck";
+import StayWithMe from "@/components/StayWithMe";
 import { useSafetyCheck, useSafetyCheckSetting } from "@/hooks/use-safety-check";
 import type { Contact } from "./Contacts";
 
@@ -148,6 +149,7 @@ const Walk = () => {
           <LiveLocation share={share} onEnded={ended} onFix={check.onFix} />
           <SafetyCheckToggle on={checkSetting.on} setOn={checkSetting.setOn} />
           {checkSetting.on && <MicClues onClue={check.clue} />}
+          <StayWithMe name={user?.name.split(" ")[0] ?? ""} />
           <SafetyCheckPrompt check={check} />
           {checkInDue && (
             <p className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">

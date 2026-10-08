@@ -117,6 +117,7 @@ const PrivacyEn = () => (
         <li>
           <strong>Speech recognition</strong>, only while you use voice listening (the voice trigger, safe word or code phrase on the SOS page, voice commands, or the chat's mic button). In Chrome and Edge, what you say is sent by your browser to its speech service (Google's in Chrome) to turn it into text; in the Android app, your phone's speech recognizer does this, which may also use an online service. HerSpace never receives or keeps the sound, only acts on the words.
           Reading aloud (replies, the SOS page, guidance to a safe place) uses your device's voices; in Chrome some of them (named "Google ...") are online, so the text being read goes to Google.
+          "Stay with me" on a journey listens the same way for your answers, only right after it asks.
         </li>
         <li>
           <strong>OpenStreetMap's Nominatim and Overpass services</strong>, contacted by our server, not your device. To add

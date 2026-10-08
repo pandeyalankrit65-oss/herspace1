@@ -62,6 +62,7 @@ export function useVoiceTrigger({
   helpWords = true,
   codePhrase = null,
   onCodePhrase,
+  onHeard,
 }: {
   lang: Lang;
   onTrigger: () => void;
@@ -69,6 +70,8 @@ export function useVoiceTrigger({
   helpWords?: boolean;
   codePhrase?: string | null;
   onCodePhrase?: () => void;
+  // Anything else heard (used to hear an answer to "Stay with me").
+  onHeard?: (text: string) => void;
 }) {
   const [status, setStatus] = useState<VoiceStatus>("idle");
   const [error, setError] = useState<VoiceError | null>(null);
@@ -85,6 +88,8 @@ export function useVoiceTrigger({
   helpWordsRef.current = helpWords;
   const codePhraseRef = useRef({ phrase: codePhrase, onHeard: onCodePhrase });
   codePhraseRef.current = { phrase: codePhrase, onHeard: onCodePhrase };
+  const onHeardRef = useRef(onHeard);
+  onHeardRef.current = onHeard;
   const counterRef = useRef<{ word: string; counter: SafeWordCounter } | null>(null);
   if ((counterRef.current?.word ?? null) !== safeWord) {
     counterRef.current = safeWord ? { word: safeWord, counter: new SafeWordCounter(safeWord) } : null;
@@ -145,7 +150,7 @@ export function useVoiceTrigger({
         // One trigger per session: stop listening so continued speech can't start a second alert.
         stop();
         onTriggerRef.current();
-      }
+      } else onHeardRef.current?.(text);
     },
     [stop]
   );

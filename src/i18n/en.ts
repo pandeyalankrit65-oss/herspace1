@@ -1819,6 +1819,23 @@ const en = {
   "guide.told": "{names} can see where you are.",
   "guide.arrived": "You've arrived. Go inside and ask for help.",
 
+  // Stay with me: a voice that checks on her during a journey
+  "stay.label": "Stay with me",
+  "stay.hint": "A calm voice keeps you company through your earphones and checks on you every 3 minutes. Answer by tapping \"I'm okay\" or by saying anything. If you don't answer twice in a row, a silent SOS goes to your contacts. Talking back also makes it look like you're on a call.",
+  "stay.status": "I'm with you. I'll check on you every 3 minutes.",
+  "stay.start": "Start",
+  "stay.stop": "Stop",
+  "stay.hello": "I'm here with you, {name}. I'll check on you every few minutes. Just answer when I ask.",
+  "stay.ask1": "{name}, how are you doing? Still okay?",
+  "stay.ask2": "Just checking in. Everything alright, {name}?",
+  "stay.ask3": "I'm still here. Are you okay, {name}?",
+  "stay.askAgain": "{name}, are you there? Please answer, or I'll alert your contacts.",
+  "stay.ok": "Good. I'm still here with you.",
+  "stay.listening": "Listening for your answer...",
+  "stay.okay": "I'm okay",
+  "stay.waiting_one": "Are you okay? Answer within {count} second.",
+  "stay.waiting_other": "Are you okay? Answer within {count} seconds.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",
