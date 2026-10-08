@@ -1550,7 +1550,7 @@ const messages: Partial<Record<MessageKey, string>> = {
   "routine.how": "எப்படி",
   "routine.walk": "நடை",
   "routine.ride": "கேப் அல்லது ஆட்டோ",
-  "routine.place": "செல்லும் இடம் (விருப்பம்)",
+  "routine.place": "சேமித்த சேருமிடம் (விருப்பம்)",
   "routine.noPlace": "அமைக்கவில்லை",
   "routine.add": "வழக்கமான பயணத்தைச் சேர்",
   "routine.added": "வழக்கமான பயணம் சேர்க்கப்பட்டது",

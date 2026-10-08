@@ -1642,7 +1642,7 @@ const hi: Record<MessageKey, string> = {
   "routine.how": "कैसे",
   "routine.walk": "पैदल",
   "routine.ride": "कैब या ऑटो",
-  "routine.place": "कहाँ जा रही हैं (वैकल्पिक)",
+  "routine.place": "सेव की हुई मंज़िल (वैकल्पिक)",
   "routine.noPlace": "तय नहीं",
   "routine.add": "रोज़ का सफ़र जोड़ें",
   "routine.added": "रोज़ का सफ़र जुड़ गया",

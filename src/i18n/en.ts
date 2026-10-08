@@ -1641,7 +1641,7 @@ const en = {
   "routine.how": "How",
   "routine.walk": "Walk",
   "routine.ride": "Cab or auto",
-  "routine.place": "Going to (optional)",
+  "routine.place": "Saved place to head to (optional)",
   "routine.noPlace": "Not set",
   "routine.add": "Add regular journey",
   "routine.added": "Regular journey added",

@@ -30,7 +30,8 @@ test("check the way: search a destination, see reports along a straight line and
   const check = page.getByRole("region", { name: /Check the way to Underpass Market/ });
   await check.getByRole("button", { name: "Check the way" }).click();
   await expect(check).toContainText("About 7.8 km in a straight line.");
-  await expect(check).toContainText("area with recent reports along the way");
+  // Other tests may report near the destination too, so one or more areas.
+  await expect(check).toContainText(/areas? with recent reports along the way/);
   await expect(check).toContainText(/% of the way: Several reports \(3\)/);
   await expect(check).toContainText("Nearest police there: Parliament Street Police Station");
   await expect(check).toContainText("Consider a ride instead of walking");
