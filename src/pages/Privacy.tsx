@@ -60,6 +60,7 @@ const PrivacyEn = () => (
           If you turn on listening for screams, sound is checked on your device while the SOS page is open and is never recorded or sent. The support chat's check for signs of danger also runs on your device.
           Regular journeys (their names, days and times) are kept only on your device too, and removed when you log out.
           Your safety plan is kept only on your device as well, never sent to us, and erased when you log out or delete it.
+          If you turn on noticing stress in your voice, your voice is compared on your device with your own calm voice; only four numbers describing your usual pitch and loudness are kept there, and no sound is recorded or sent.
         </li>
         <li>
           <strong>Corporate Connect (only if you join a workplace):</strong> which workplace you belong to, whether you're on its HR team, and the reports you send to your HR team with the conversation that follows. Each report is anonymous to HR unless you choose to share your name. If your HR team turns on Slack, Teams or email alerts, those alerts say only that a report or message arrived, never what it says or who sent it.

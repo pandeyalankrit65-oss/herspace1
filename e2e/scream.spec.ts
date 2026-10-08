@@ -6,7 +6,9 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     navigator.mediaDevices.getUserMedia = async () => {
       const ctx = new AudioContext();
-      await ctx.resume();
+      // Like a real microphone after a reload: sound only flows once the page has been tapped.
+      void ctx.resume();
+      window.addEventListener("pointerdown", () => void ctx.resume());
       const osc = ctx.createOscillator();
       osc.type = "sawtooth";
       osc.frequency.value = 1500;
@@ -53,7 +55,12 @@ test("listening for screams: off by default, testable without starting SOS, then
   await scream(page, false);
   await page.getByRole("button", { name: "Cancel" }).click();
 
-  // Remembered.
+  // Remembered. After a reload sound only flows once the page is tapped, and it says so.
   await page.reload();
   await expect(page.getByRole("switch", { name: "Listen for screams" })).toBeChecked();
+  await expect(page.getByText(/Tap anywhere on the page to start listening/)).toBeVisible();
+  await page.getByRole("heading").first().click();
+  await expect(page.getByText("Listening for screams")).toBeVisible();
+  await scream(page, true);
+  await expect(page.getByText("Sending alert...")).toBeVisible({ timeout: 4000 });
 });

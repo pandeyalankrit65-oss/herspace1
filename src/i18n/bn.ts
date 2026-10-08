@@ -1627,6 +1627,24 @@ const messages: Partial<Record<MessageKey, string>> = {
   "emotion.counsellor": "কাউন্সেলর খুঁজুন",
   "emotion.report": "যা ঘটেছে লিখে রাখুন",
   "emotion.complaint": "অভিযোগ লিখুন",
+  // Emotion AI: voice stress (experimental)
+  "stress.label": "আমার গলায় চাপ খেয়াল করুন",
+  "stress.experimental": "পরীক্ষামূলক",
+  "stress.hint": "এই পেজ খোলা থাকলে, আপনার গলা আপনার নিজের শান্ত গলার সঙ্গে মেলানো হয়। স্পষ্টভাবে চাপে আছেন মনে হলে HerSpace জিজ্ঞেস করে আপনি ঠিক আছেন কি না। এটি নিজে কখনও SOS পাঠায় না, আর প্রায়ই ভুল হয়। শব্দ আপনার ফোনেই যাচাই হয়, রেকর্ড বা পাঠানো হয় না।",
+  "stress.needBaseline": "আগে এটিকে আপনার শান্ত গলা শিখতে দিন: প্রায় 10 সেকেন্ড স্বাভাবিকভাবে কথা বলুন (যা খুশি জোরে পড়ুন)।",
+  "stress.calibrate": "আমার শান্ত গলা শিখুন",
+  "stress.recalibrate": "আমার শান্ত গলা আবার শিখুন",
+  "stress.calibratingText": "স্বাভাবিকভাবে কথা বলতে থাকুন...",
+  "stress.calibrationFailed": "আপনার গলা যথেষ্ট শোনা যায়নি। কোনো শান্ত জায়গায় একটু জোরে বলে আবার চেষ্টা করুন।",
+  "stress.starting": "মাইক্রোফোন চালু হচ্ছে...",
+  "stress.listening": "আপনার গলায় চাপ শুনছে",
+  "stress.unsupported": "এই ব্রাউজার এটি শুনতে পারে না।",
+  "stress.askTitle": "আপনাকে চাপে আছেন মনে হচ্ছে। আপনি ঠিক আছেন?",
+  "stress.askText": "আপনার গলা স্বাভাবিকের চেয়ে আলাদা শোনাচ্ছে। সাহায্য দরকার হলে এখনই SOS শুরু করুন। ঠিক থাকলে এটা উপেক্ষা করুন।",
+  "stress.okay": "আমি ঠিক আছি",
+  "stress.sos": "SOS কাউন্টডাউন শুরু করুন",
+  // Listening needs a tap after a reload
+  "scream.needsTap": "শোনা শুরু করতে পেজের যেকোনো জায়গায় ট্যাপ করুন (ব্রাউজারের আগে একটি ট্যাপ দরকার)।",
 };
 
 export default messages;

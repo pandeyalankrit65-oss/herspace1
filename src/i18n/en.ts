@@ -1721,6 +1721,26 @@ const en = {
   "emotion.report": "Write down what happened",
   "emotion.complaint": "Write a complaint",
 
+  // Emotion AI: voice stress (experimental)
+  "stress.label": "Notice stress in my voice",
+  "stress.experimental": "Experiment",
+  "stress.hint": "While this page is open, your voice is compared with your own calm voice. If you sound clearly stressed, HerSpace asks if you're okay. It never sends SOS by itself, and it's often wrong. Sound is checked on your phone, never recorded or sent.",
+  "stress.needBaseline": "First, let it learn your calm voice: talk normally for about 10 seconds (read anything aloud).",
+  "stress.calibrate": "Learn my calm voice",
+  "stress.recalibrate": "Learn my calm voice again",
+  "stress.calibratingText": "Keep talking normally...",
+  "stress.calibrationFailed": "It didn't hear enough of your voice. Try again somewhere quieter, talking a little louder.",
+  "stress.starting": "Starting the microphone...",
+  "stress.listening": "Listening for stress in your voice",
+  "stress.unsupported": "This browser can't listen for this.",
+  "stress.askTitle": "You sound stressed. Are you okay?",
+  "stress.askText": "Your voice sounds different from usual. If you need help, start SOS now. If you're fine, ignore this.",
+  "stress.okay": "I'm okay",
+  "stress.sos": "Start SOS countdown",
+
+  // Listening needs a tap after a reload
+  "scream.needsTap": "Tap anywhere on the page to start listening (your browser needs a tap first).",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

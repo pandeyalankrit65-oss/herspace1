@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { vibrate } from "@/lib/disguise";
+import { keepAudioRunning } from "@/lib/audio";
 import { analyse, looksLikeScream, ScreamDetector, type Sensitivity } from "@/lib/scream";
 
 const ENABLED_KEY = "herspace_scream";
 const SENSITIVITY_KEY = "herspace_scream_sensitivity";
 const FRAME_MS = 50;
 
-export type ScreamStatus = "off" | "starting" | "listening" | "denied" | "unsupported" | "error";
+export type ScreamStatus = "off" | "starting" | "listening" | "needsTap" | "denied" | "unsupported" | "error";
 
 export const screamSupported = () =>
   typeof window !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia) && ("AudioContext" in window || "webkitAudioContext" in window);
@@ -70,6 +71,7 @@ export function useScreamTrigger(onScream: () => void) {
     let stream: MediaStream | null = null;
     let ctx: AudioContext | null = null;
     let timer = 0;
+    let releaseAudio = () => {};
     setStatus("starting");
     (async () => {
       try {
@@ -78,7 +80,6 @@ export function useScreamTrigger(onScream: () => void) {
         if (stopped) return stream.getTracks().forEach((t) => t.stop());
         const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         ctx = new Ctx();
-        await ctx.resume().catch(() => {});
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 2048;
         analyser.smoothingTimeConstant = 0;
@@ -86,7 +87,8 @@ export function useScreamTrigger(onScream: () => void) {
         const samples = new Float32Array(analyser.fftSize);
         const spectrum = new Float32Array(analyser.frequencyBinCount);
         const detector = new ScreamDetector(sensitivity, FRAME_MS);
-        setStatus("listening");
+        // Listening only once the browser really lets audio run (after a tap, after a reload).
+        releaseAudio = keepAudioRunning(ctx, (running) => !stopped && setStatus(running ? "listening" : "needsTap"));
         timer = window.setInterval(() => {
           analyser.getFloatTimeDomainData(samples);
           analyser.getFloatFrequencyData(spectrum);
@@ -108,6 +110,7 @@ export function useScreamTrigger(onScream: () => void) {
       stopped = true;
       window.clearInterval(timer);
       stream?.getTracks().forEach((t) => t.stop());
+      releaseAudio();
       ctx?.close().catch(() => {});
       setLevel(0);
       setScreamy(false);

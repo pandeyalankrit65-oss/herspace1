@@ -10,6 +10,7 @@ const STATUS: Record<string, MessageKey | null> = {
   off: null,
   starting: "scream.starting",
   listening: "scream.listening",
+  needsTap: "scream.needsTap",
   denied: "scream.denied",
   unsupported: "scream.unsupported",
   error: "scream.error",

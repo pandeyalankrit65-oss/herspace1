@@ -1627,6 +1627,24 @@ const messages: Partial<Record<MessageKey, string>> = {
   "emotion.counsellor": "समुपदेशक शोधा",
   "emotion.report": "जे घडले ते लिहून ठेवा",
   "emotion.complaint": "तक्रार लिहा",
+  // Emotion AI: voice stress (experimental)
+  "stress.label": "माझ्या आवाजातील ताण ओळखा",
+  "stress.experimental": "प्रयोग",
+  "stress.hint": "हे पेज उघडे असताना, तुमचा आवाज तुमच्या स्वतःच्या शांत आवाजाशी तुलना केला जातो. तुम्ही स्पष्टपणे तणावात वाटल्यास HerSpace तुम्ही ठीक आहात का ते विचारते. ते स्वतः कधीच SOS पाठवत नाही, आणि बऱ्याचदा चुकते. आवाज तुमच्या फोनवरच तपासला जातो, रेकॉर्ड किंवा पाठवला जात नाही.",
+  "stress.needBaseline": "आधी त्याला तुमचा शांत आवाज शिकू द्या: सुमारे 10 सेकंद नेहमीसारखे बोला (काहीही मोठ्याने वाचा).",
+  "stress.calibrate": "माझा शांत आवाज शिका",
+  "stress.recalibrate": "माझा शांत आवाज पुन्हा शिका",
+  "stress.calibratingText": "नेहमीसारखे बोलत राहा...",
+  "stress.calibrationFailed": "तुमचा आवाज पुरेसा ऐकू आला नाही. शांत ठिकाणी थोडे मोठ्याने बोलून पुन्हा प्रयत्न करा.",
+  "stress.starting": "मायक्रोफोन सुरू होत आहे...",
+  "stress.listening": "तुमच्या आवाजातील ताण ऐकत आहे",
+  "stress.unsupported": "हा ब्राउझर हे ऐकू शकत नाही.",
+  "stress.askTitle": "तुम्ही तणावात वाटता. तुम्ही ठीक आहात का?",
+  "stress.askText": "तुमचा आवाज नेहमीपेक्षा वेगळा वाटतो. मदत हवी असल्यास आत्ता SOS सुरू करा. ठीक असाल तर याकडे दुर्लक्ष करा.",
+  "stress.okay": "मी ठीक आहे",
+  "stress.sos": "SOS उलटगणती सुरू करा",
+  // Listening needs a tap after a reload
+  "scream.needsTap": "ऐकणे सुरू करण्यासाठी पेजवर कुठेही टॅप करा (ब्राउझरला आधी एक टॅप लागतो).",
 };
 
 export default messages;

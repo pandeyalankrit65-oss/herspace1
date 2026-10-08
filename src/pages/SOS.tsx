@@ -19,6 +19,8 @@ import { useVoiceTrigger } from "@/hooks/use-voice-trigger";
 import { useShakeTrigger } from "@/hooks/use-shake-trigger";
 import { useScreamTrigger } from "@/hooks/use-scream-trigger";
 import ScreamSettings from "@/components/ScreamSettings";
+import { useVoiceStress } from "@/hooks/use-voice-stress";
+import VoiceStressSettings, { StressPrompt } from "@/components/VoiceStressSettings";
 import { SAFE_WORD_REPEATS, useSafeWord } from "@/lib/safe-word";
 import SafeWordSettings from "@/components/SafeWordSettings";
 import { useHoldToSend, useSosMode } from "@/hooks/use-hold-to-send";
@@ -212,6 +214,7 @@ const SOS = () => {
   }, [startParam, setParams, startCountdown]);
   const shake = useShakeTrigger(startCountdown);
   const scream = useScreamTrigger(startCountdown);
+  const stress = useVoiceStress();
   const sosMode = useSosMode();
   // Holding is already deliberate, so a completed hold sends straight away.
   const hold = useHoldToSend(sendSOS, HOLD_SECONDS * 1000);
@@ -480,6 +483,8 @@ const SOS = () => {
                 </div>
               )}
               <ScreamSettings scream={scream} />
+              <VoiceStressSettings stress={stress} />
+              <StressPrompt stress={stress} onSos={startCountdown} />
             </CardContent>
           </Card>
 
