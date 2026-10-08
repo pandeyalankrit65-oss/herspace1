@@ -1749,6 +1749,22 @@ const messages: Partial<Record<MessageKey, string>> = {
   "tell.doneWords": "আপনার কথাগুলো নিচে বিবরণে আছে। পাঠানোর আগে ধরন বেছে নিন আর জায়গা ও সময় যোগ করুন।",
   "tell.failed": "খসড়া বানানো গেল না। আপনার কথাগুলো নিচে বিবরণে আছে।",
   "tell.privacy": "আপনি এখানে যা লেখেন তা খসড়া লিখতে আমাদের AI প্রদানকারীর কাছে পাঠানো হয়। এটা সেভ হয় না।",
+  // Gentle follow-up after an SOS or a report
+  "follow.titleSos": "{day}-এর অ্যালার্টের পরে খোঁজ নিচ্ছি",
+  "follow.titleReport": "{day}-এর রিপোর্টের পরে খোঁজ নিচ্ছি",
+  "follow.ask": "তারপর থেকে কেমন আছেন?",
+  "follow.better": "ভালো",
+  "follow.same": "প্রায় একই রকম",
+  "follow.worse": "আরও খারাপ",
+  "follow.betterReply": "শুনে ভালো লাগল। নিজের প্রতি নরম থাকুন: কোনো কোনো দিন অন্য দিনের চেয়ে কঠিন হলে সেটা স্বাভাবিক।",
+  "follow.notBetterReply": "ভয়ের কিছু ঘটার পরে এমন হওয়া খুবই স্বাভাবিক। ঘুম না হওয়া, অস্থির লাগা বা বাইরে যেতে ইচ্ছে না করা কিছুদিন থাকতে পারে। আপনাকে একা এর মোকাবিলা করতে হবে না।",
+  "follow.counsellor": "কাউন্সেলরের সঙ্গে কথা বলুন",
+  "follow.talk": "এখানে কথা বলুন",
+  "follow.writeItDown": "যা হয়েছিল লিখে রাখুন",
+  "follow.close": "বন্ধ করুন",
+  "follow.stop": "এ নিয়ে আর খোঁজ নিও না",
+  "follow.notifyTitle": "HerSpace",
+  "follow.notifyBody": "এমনি খোঁজ নিচ্ছি। আজ কেমন আছেন?",
 };
 
 export default messages;

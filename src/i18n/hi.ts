@@ -1853,6 +1853,23 @@ const hi: Record<MessageKey, string> = {
   "tell.failed": "ड्राफ़्ट नहीं बन पाया। आपके शब्द नीचे विवरण में हैं।",
   "tell.privacy": "आप यहाँ जो लिखती हैं, वह ड्राफ़्ट लिखने के लिए हमारे AI प्रदाता को भेजा जाता है। इसे सेव नहीं किया जाता।",
 
+  // Gentle follow-up after an SOS or a report
+  "follow.titleSos": "{day} के आपके अलर्ट के बाद हाल पूछ रहे हैं",
+  "follow.titleReport": "{day} की आपकी रिपोर्ट के बाद हाल पूछ रहे हैं",
+  "follow.ask": "तब से आप कैसी हैं?",
+  "follow.better": "बेहतर",
+  "follow.same": "लगभग वैसी ही",
+  "follow.worse": "पहले से बुरा",
+  "follow.betterReply": "यह सुनकर अच्छा लगा। अपने साथ नरमी बरतें: कुछ दिन दूसरों से मुश्किल हों तो यह ठीक है।",
+  "follow.notBetterReply": "किसी डरावनी घटना के बाद ऐसा होना बहुत आम है। नींद न आना, बेचैनी या बाहर जाने का मन न करना कुछ समय तक रह सकता है। आपको इससे अकेले नहीं जूझना है।",
+  "follow.counsellor": "काउंसलर से बात करें",
+  "follow.talk": "यहाँ बात करें",
+  "follow.writeItDown": "जो हुआ उसे लिख लें",
+  "follow.close": "बंद करें",
+  "follow.stop": "इस बारे में अब हाल न पूछें",
+  "follow.notifyTitle": "HerSpace",
+  "follow.notifyBody": "बस हाल पूछ रहे हैं। आज आप कैसी हैं?",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

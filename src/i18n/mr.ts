@@ -1749,6 +1749,22 @@ const messages: Partial<Record<MessageKey, string>> = {
   "tell.doneWords": "तुमचे शब्द खाली वर्णनात आहेत. पाठवण्यापूर्वी प्रकार निवडा आणि ठिकाण व वेळ जोडा.",
   "tell.failed": "मसुदा तयार करता आला नाही. तुमचे शब्द खाली वर्णनात आहेत.",
   "tell.privacy": "तुम्ही इथे जे लिहिता ते मसुदा लिहिण्यासाठी आमच्या AI प्रदात्याकडे पाठवले जाते. ते सेव्ह होत नाही.",
+  // Gentle follow-up after an SOS or a report
+  "follow.titleSos": "{day} च्या तुमच्या अलर्टनंतर चौकशी करत आहोत",
+  "follow.titleReport": "{day} च्या तुमच्या तक्रारीनंतर चौकशी करत आहोत",
+  "follow.ask": "तेव्हापासून तुम्ही कशा आहात?",
+  "follow.better": "बरी",
+  "follow.same": "साधारण तशीच",
+  "follow.worse": "आणखी वाईट",
+  "follow.betterReply": "ऐकून बरे वाटले. स्वतःशी प्रेमाने वागा: काही दिवस इतरांपेक्षा कठीण असले तरी चालेल.",
+  "follow.notBetterReply": "भीतीदायक घटनेनंतर असे होणे खूप सामान्य आहे. झोप न लागणे, अस्वस्थ वाटणे किंवा बाहेर जावेसे न वाटणे काही काळ टिकू शकते. तुम्हाला याचा एकटीने सामना करावा लागणार नाही.",
+  "follow.counsellor": "समुपदेशकाशी बोला",
+  "follow.talk": "इथे बोला",
+  "follow.writeItDown": "जे घडले ते लिहून ठेवा",
+  "follow.close": "बंद करा",
+  "follow.stop": "याबद्दल आता चौकशी करू नका",
+  "follow.notifyTitle": "HerSpace",
+  "follow.notifyBody": "सहज चौकशी करत आहोत. आज तुम्ही कशा आहात?",
 };
 
 export default messages;

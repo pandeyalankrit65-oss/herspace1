@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import TellItYourWay from "@/components/TellItYourWay";
+import { followUpAfter } from "@/lib/followUpNotifications";
 import { FileText, MapPin, Calendar, Clock, LocateFixed, ImagePlus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,7 @@ const Report = () => {
         // No connection: keep it on this phone and send it when back online.
         await queueReport({ userId: body.anonymous ? null : (user?.id ?? null), body, photos: photos.map((p) => p.blob), createdAt: new Date().toISOString() });
         toast({ title: t("offline.reportQueuedTitle"), description: t("offline.reportQueuedDesc") });
+        followUpAfter("report", { title: t("follow.notifyTitle"), body: t("follow.notifyBody") });
         setFormData(emptyForm);
         photos.forEach((p) => URL.revokeObjectURL(p.url));
         setPhotos([]);
@@ -114,6 +116,8 @@ const Report = () => {
         description: failedUploads ? tn("report.photosNotUploaded", failedUploads) : created.held ? t("report.heldDesc") : t("report.submittedDesc"),
         variant: failedUploads ? "destructive" : undefined,
       });
+      // "How are you doing?" tomorrow, and a few days later.
+      followUpAfter("report", { title: t("follow.notifyTitle"), body: t("follow.notifyBody") });
       setFormData(emptyForm);
       photos.forEach((p) => URL.revokeObjectURL(p.url));
       setPhotos([]);

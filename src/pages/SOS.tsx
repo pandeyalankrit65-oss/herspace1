@@ -11,6 +11,7 @@ import { isNative } from "@/lib/native";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import GuideToSafety from "@/components/GuideToSafety";
+import { followUpAfter } from "@/lib/followUpNotifications";
 import FakeCall from "@/components/FakeCall";
 import type { Contact } from "./Contacts";
 import { useI18n } from "@/i18n";
@@ -160,6 +161,8 @@ const SOS = () => {
       const res = await api<SosResult>("/api/sos", { body: { coords, silent: silent || options.silent, trigger } });
       setResult(res);
       if (res.share) setLiveShare(res.share);
+      // "How are you doing?" tomorrow, and a few days later.
+      followUpAfter("sos", { title: t("follow.notifyTitle"), body: t("follow.notifyBody") });
       // Evidence: record audio in short pieces that upload as they go.
       if (user && res.id && readRecordSetting()) startRecording(res.id);
     } catch (err) {

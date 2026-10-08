@@ -1852,6 +1852,23 @@ const en = {
   "tell.failed": "Couldn't make a draft. Your words are in the description below.",
   "tell.privacy": "What you write here is sent to our AI provider to write the draft. It isn't saved.",
 
+  // Gentle follow-up after an SOS or a report
+  "follow.titleSos": "Checking in after your alert on {day}",
+  "follow.titleReport": "Checking in after your report on {day}",
+  "follow.ask": "How are you doing since then?",
+  "follow.better": "Better",
+  "follow.same": "About the same",
+  "follow.worse": "Worse",
+  "follow.betterReply": "Glad to hear it. Be gentle with yourself: it's okay if some days are harder than others.",
+  "follow.notBetterReply": "That's very common after something frightening. Trouble sleeping, feeling on edge or not wanting to go out can last a while. You don't have to deal with it alone.",
+  "follow.counsellor": "Talk to a counsellor",
+  "follow.talk": "Talk it through here",
+  "follow.writeItDown": "Write down what happened",
+  "follow.close": "Close",
+  "follow.stop": "No more check-ins about this",
+  "follow.notifyTitle": "HerSpace",
+  "follow.notifyBody": "Just checking in. How are you doing today?",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

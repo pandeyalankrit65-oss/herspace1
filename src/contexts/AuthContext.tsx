@@ -2,6 +2,8 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useState 
 import { api, ApiError } from "@/lib/api";
 import { deleteJournal } from "@/lib/mood";
 import { deletePlan } from "@/lib/safetyPlan";
+import { clearFollowUps } from "@/lib/followUp";
+import { syncFollowUpNotifications } from "@/lib/followUpNotifications";
 import { syncRoutineNotifications } from "@/lib/routineNotifications";
 import { clearOfflineData, offlineUser } from "@/lib/offline";
 
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Someone else signing in on this phone: the journal and plan belonged to the previous person.
       deleteJournal();
       deletePlan();
+      clearFollowUps();
     }
     offlineUser.set(next);
     setUser(next);
@@ -96,6 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // erase a journal kept by someone who never signed in.
     deleteJournal();
     deletePlan();
+    clearFollowUps();
+    void syncFollowUpNotifications({ title: "", body: "" });
     // Routines go with the other on-device data; their phone reminders go too.
     void syncRoutineNotifications([], () => ({ title: "", body: "" }));
     clearSession();
