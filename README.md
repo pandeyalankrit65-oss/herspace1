@@ -116,6 +116,7 @@ Open http://localhost:8080. The Vite dev server forwards `/api` requests to the 
 | `ANTHROPIC_API_KEY` | Powers the AI support chat. Without it, the chat uses scripted fallback replies. |
 | `EMERGENCY_NUMBER` | Emergency number the chat assistant mentions (default `112`). |
 | `CORS_ORIGIN` | Comma-separated origins allowed to call the API directly (default `http://localhost:8080`). |
+| `AI_DAILY_LIMIT` | Most AI calls (support chat, fake caller, report drafts) per day across everyone, default 2000. These work without an account, so this caps the bill; past it they quietly use their scripted fallbacks until the next day (UTC). |
 | `DATABASE_PATH` | SQLite file location (default `server/data/herspace.db`). |
 | `UPLOAD_DIR` | Where report photos are stored (default `server/data/uploads`). Back it up with the database. |
 | `ADMIN_EMAILS` | Development and tests only: comma-separated emails treated as moderators. Ignored in production, because sign-up doesn't verify email addresses. In production, grant the role with `npm run moderator -- add <email>` (also `remove`, `list`) in `server/`, after the person has signed up. |
@@ -285,6 +286,8 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 - Moderate map reports. Anyone can submit one, so false reports are possible.
 - Security headers on the web host: a Content-Security-Policy, `frame-ancestors 'none'` (or `X-Frame-Options: DENY`) so HerSpace can't be embedded in another site to trick people into tapping things, and HSTS. The API already sends `nosniff` and `no-referrer`; the web pages are served by the host, so these have to be set there.
 - Set `TRUST_PROXY` to the number of proxies in front of the API. Rate limits on SOS, logins and verification codes use the client's IP address, and without it everyone appears to come from the proxy.
+- In Twilio, turn on **Geo Permissions** for SMS and voice and allow only the countries you need (India, and wherever users' contacts live). Verification codes and contact invites are rate-limited per account, IP and number, but premium-rate numbers abroad are the usual target of SMS-pumping fraud.
+- Serve everything over HTTPS and have the proxy send `Strict-Transport-Security`; the API sets its own no-store, nosniff and referrer headers, but not HSTS.
 - Keep `server/data` (the database and uploads, including SOS audio and report photos) on persistent storage with regular backups, and test restoring one.
 - Error monitoring and uptime alerts for the API and for Twilio delivery failures. An SOS that silently fails to send is the worst failure this app can have.
 - Android: sign release builds, point `VITE_API_BASE_URL` at the HTTPS API, and fill in Google Play's data safety form (location in the background, microphone, health details in emergency info).

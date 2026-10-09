@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { takeAiBudget } from './aiBudget';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import * as z4 from 'zod/v4';
 import type { Lang } from './chat';
@@ -37,6 +38,7 @@ const isTime = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
 
 export async function draftReport(text: string, today: string, lang: Lang = 'en'): Promise<{ draft: ReportDraft; mode: 'ai' | 'fallback' }> {
   const fallback = { draft: { incidentType: 'other' as const, description: text, location: '', date: '', time: '' }, mode: 'fallback' as const };
+  if (!takeAiBudget()) return fallback;
   try {
     client ??= new Anthropic();
     const response = await client.beta.messages.parse({

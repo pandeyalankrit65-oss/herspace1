@@ -10,6 +10,7 @@ import { db, purgeExpiredData } from '../db';
 import { photoPath } from '../photos';
 import { processOverdueCheckIns } from '../routes/checkins';
 import { deadlineAfter, processMissedDailyCheckIns } from '../routes/daily';
+import { takeAiBudget } from '../aiBudget';
 import { contactCode, processStaleRides } from '../routes/location';
 import { formatAddress, parsePlaces } from '../geo';
 import { keyedHash } from '../util';
@@ -125,8 +126,14 @@ describe('hardening', () => {
       await call('/auth/login', { body: { email: e, password: 'wrong-guess' } });
       return performance.now() - start;
     };
-    const known = await time(email);
-    const unknown = await time('nobody-here@example.com');
+    // The median of a few tries each, so one slow moment on a busy machine can't decide it.
+    const median = async (e: string) => {
+      const runs: number[] = [];
+      for (let i = 0; i < 5; i++) runs.push(await time(e));
+      return runs.sort((x, y) => x - y)[2];
+    };
+    const known = await median(email);
+    const unknown = await median('nobody-here@example.com');
     assert.ok(unknown > known * 0.5, `unknown email answered in ${unknown.toFixed(1)}ms vs ${known.toFixed(1)}ms`);
   });
 
@@ -462,6 +469,22 @@ async function userWithConfirmedContact(name = 'Nisha') {
   await call(`/contact-invites/${c.data.inviteLink.split('/confirm-contact/')[1]}`, { body: { accept: true } });
   return { token, contactId: c.data.contact.id as number };
 }
+
+describe('AI cost ceiling', () => {
+  test('past the daily ceiling, AI features use their fallbacks', async () => {
+    const saved = process.env.AI_DAILY_LIMIT;
+    process.env.AI_DAILY_LIMIT = '0';
+    try {
+      assert.equal(takeAiBudget(), false);
+      const reply = await call('/fake-call/reply', { body: { caller: 'Mom', messages: [{ role: 'user', content: 'hello' }] } });
+      assert.equal(reply.data.mode, 'fallback');
+    } finally {
+      if (saved === undefined) delete process.env.AI_DAILY_LIMIT;
+      else process.env.AI_DAILY_LIMIT = saved;
+    }
+    assert.equal(takeAiBudget(), true);
+  });
+});
 
 describe('a report told in her own words', () => {
   test('without the AI, her words become the description and nothing else is guessed', async () => {

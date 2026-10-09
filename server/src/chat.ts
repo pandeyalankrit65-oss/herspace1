@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { takeAiBudget } from './aiBudget';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import * as z4 from 'zod/v4';
 import { detectDistress } from './distress';
@@ -101,6 +102,7 @@ export async function supportReply(history: ChatMessage[], lang: Lang = 'en'): P
   const firstUser = history.findIndex((m) => m.role === 'user');
   const messages = firstUser === -1 ? [] : history.slice(firstUser);
   if (messages.length === 0) return fallback(history, lang);
+  if (!takeAiBudget()) return fallback(messages, lang);
 
   try {
     client ??= new Anthropic();

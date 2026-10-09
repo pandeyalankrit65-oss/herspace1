@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { takeAiBudget } from './aiBudget';
 import type { ChatMessage, Lang } from './chat';
 
 // The fake call's caller, talking back. It has to sound like a real person on the phone and
@@ -72,6 +73,7 @@ export async function callerReply(history: ChatMessage[], caller: string, lang: 
   const firstUser = history.findIndex((m) => m.role === 'user');
   const messages = firstUser === -1 ? [] : history.slice(firstUser);
   if (messages.length === 0) return fallback(history, lang);
+  if (!takeAiBudget()) return fallback(messages, lang);
   try {
     client ??= new Anthropic();
     const response = await client.messages.create(
