@@ -39,6 +39,9 @@ const PrivacyEn = () => (
           <strong>Private record (only if you start one):</strong> what you write and the photos you add, encrypted on your device before they're sent, so we can't read them; your record's key, locked with your PIN and with your recovery code; and checks that let us refuse it after a few wrong PINs. Photos are kept as you add them, with their original details. Deleted when you delete the record or your account. Someone who stole our database could try every short PIN, which is why a longer passphrase is safer.
         </li>
         <li>
+          <strong>Daily check-in (only if you turn it on):</strong> the time you chose, your time zone, and when you last said you're fine or your contacts were last told, so a missed day can be noticed even if your phone is off. Deleted when you turn it off or delete your account.
+        </li>
+        <li>
           <strong>Walk with me and safety timers:</strong> the same live-location sharing, started by you, with an optional note
           about where you're going. We keep only your latest position and delete it when you stop sharing or the time runs out.
           If you head to one of your saved places, we store only its name (such as "Home") so your contacts know where you're

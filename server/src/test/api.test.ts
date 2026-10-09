@@ -9,6 +9,7 @@ import { app } from '../app';
 import { db, purgeExpiredData } from '../db';
 import { photoPath } from '../photos';
 import { processOverdueCheckIns } from '../routes/checkins';
+import { deadlineAfter, processMissedDailyCheckIns } from '../routes/daily';
 import { contactCode, processStaleRides } from '../routes/location';
 import { formatAddress, parsePlaces } from '../geo';
 import { keyedHash } from '../util';
@@ -362,6 +363,48 @@ describe('live location', () => {
     assert.equal((await call('/sos', { body: {} })).data.share, null);
     assert.equal((await call('/sos/test', { token, method: 'POST' })).data.share, null);
     assert.equal((await call('/track/not-a-real-token')).status, 404);
+  });
+});
+
+describe('daily check-in', () => {
+  test('the deadline is her time, the next day', () => {
+    // 08:30 in India (UTC+5:30), deadline 10:00: tomorrow at 10:00 IST.
+    assert.equal(deadlineAfter(new Date('2026-10-09T03:00:00Z'), '10:00', 330, 1).toISOString(), '2026-10-10T04:30:00.000Z');
+    // 01:30 IST is already the 10th there: the next deadline is the 11th.
+    assert.equal(deadlineAfter(new Date('2026-10-09T20:00:00Z'), '10:00', 330, 1).toISOString(), '2026-10-11T04:30:00.000Z');
+  });
+
+  test("a missed day tells her contacts once, without a live link; \"I'm fine\" and pausing move the deadline", async () => {
+    const { token } = await userWithConfirmedContact('Kamala');
+    const on = await call('/daily-checkin', { token, method: 'PUT', body: { deadline: '10:00', utcOffset: 330 } });
+    assert.equal(on.data.active, true);
+    const due = new Date(on.data.nextDueAt);
+    assert.ok(due.getTime() > Date.now() && due.getTime() - Date.now() <= 48 * 60 * 60_000);
+
+    // The day of a deadline (a minute from now): "I'm fine" moves it to tomorrow, so nothing happens.
+    const soon = new Date(Date.now() + 60_000);
+    db.prepare("UPDATE daily_checkins SET next_due_at = ? WHERE deadline = '10:00' AND utc_offset = 330").run(soon.toISOString());
+    const ok = await call('/daily-checkin/ok', { token, body: {} });
+    assert.ok(new Date(ok.data.nextDueAt).getTime() - soon.getTime() > 60 * 60_000);
+    assert.equal(await processMissedDailyCheckIns(new Date(soon.getTime() + 60_000)), 0);
+
+    // Missed: one alert, then the deadline moves to the next day.
+    const missedAt = new Date(new Date(ok.data.nextDueAt).getTime() + 60_000);
+    assert.equal(await processMissedDailyCheckIns(missedAt), 1);
+    assert.equal(await processMissedDailyCheckIns(missedAt), 0, 'never twice for the same day');
+    const sos = db.prepare("SELECT id FROM sos_events ORDER BY id DESC LIMIT 1").get() as { id: number };
+    assert.equal((db.prepare('SELECT COUNT(*) AS n FROM location_shares WHERE sos_id = ?').get(sos.id) as { n: number }).n, 0, 'no live link');
+    const after = await call('/daily-checkin', { token });
+    assert.equal(new Date(after.data.nextDueAt).getTime() - new Date(ok.data.nextDueAt).getTime(), 24 * 60 * 60_000);
+    // Then "I'm fine": her contacts are told she's okay.
+    assert.equal((await call('/daily-checkin/ok', { token, body: {} })).data.told, 1);
+    assert.equal((await call('/daily-checkin/ok', { token, body: {} })).data.told, 0, 'only once');
+
+    // Away for 3 days: the next deadline is 4 days on; off means no row.
+    const paused = await call('/daily-checkin/pause', { token, body: { days: 3 } });
+    assert.ok(new Date(paused.data.nextDueAt).getTime() - Date.now() > 3 * 24 * 60 * 60_000);
+    assert.equal((await call('/daily-checkin', { token, method: 'DELETE' })).data.active, false);
+    assert.equal((await call('/daily-checkin/ok', { token, body: {} })).status, 404);
   });
 });
 

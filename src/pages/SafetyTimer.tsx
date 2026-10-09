@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ShieldCheck, Timer } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { DailyCheckInSettings } from "@/components/DailyCheckIn";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -325,6 +326,7 @@ const SafetyTimer = () => {
           <PageHeader icon={Timer} title={t("timer.title")} subtitle={t("timer.intro")} />
           <NeedsInternet message="offline.timer" />
           {body()}
+          <DailyCheckInSettings />
         </div>
       </main>
       <Footer />

@@ -435,6 +435,19 @@ const migrations: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  // Daily check-in, for someone living alone: "I'm fine" by her chosen time each day, or her
+  // contacts are told. Her time zone offset (minutes) turns her local time into a deadline.
+  `
+  CREATE TABLE daily_checkins (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    deadline TEXT NOT NULL,
+    utc_offset INTEGER NOT NULL,
+    next_due_at TEXT NOT NULL,
+    last_ok_at TEXT,
+    last_alerted_at TEXT,
+    created_at TEXT NOT NULL
+  );
+  `,
 ];
 
 function migrate() {

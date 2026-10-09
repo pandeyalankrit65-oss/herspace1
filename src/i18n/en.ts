@@ -1947,6 +1947,26 @@ const en = {
   "offRoute.notifyBody": "It seems to be heading away from {place}.",
   "check.why.offRoute": "your ride heading away from where you're going",
 
+  // Daily check-in for someone living alone
+  "daily.title": "Daily check-in",
+  "daily.desc": "For when you live alone: if you haven't said you're fine by your chosen time each day, your confirmed contacts are told and asked to check on you. It works even if your phone is off or lost.",
+  "daily.deadline": "Say I'm fine by",
+  "daily.turnOn": "Turn on",
+  "daily.on": "On: say you're fine by {deadline} each day. Next: {next}.",
+  "daily.pause3": "Away for 3 days",
+  "daily.paused": "Paused: no check-ins for 3 days.",
+  "daily.turnOff": "Turn off",
+  "daily.note": "Turning it on counts as today. Your contacts get one text for a missed day, and another when you say you're fine.",
+  "daily.cardTitle": "Daily check-in",
+  "daily.cardText": "Tap before {time} so your contacts know you're fine today.",
+  "daily.missedTitle": "Your contacts were told you hadn't checked in",
+  "daily.missedText": "Let them know you're okay.",
+  "daily.imFine": "I'm fine",
+  "daily.toldOkay_one": "Thanks. {count} contact was told you're okay.",
+  "daily.toldOkay_other": "Thanks. {count} contacts were told you're okay.",
+  "daily.notifyTitle": "Daily check-in",
+  "daily.notifyBody": "Tap \"I'm fine\" in HerSpace in the next 30 minutes.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

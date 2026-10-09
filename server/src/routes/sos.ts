@@ -47,6 +47,8 @@ export type AlertOptions = {
   silent?: boolean;
   // What started it, when not a press of the button: told to contacts so they know how serious it is.
   trigger?: SosTrigger;
+  // A missed daily check-in (she lives alone): her phone isn't sharing, so no live link.
+  daily?: { deadline: string };
 };
 
 export const SOS_TRIGGERS = ['button', 'hold', 'voice', 'safe_word', 'shake', 'scream', 'no_answer', 'code_phrase', 'stress', 'stopped_answering'] as const;
@@ -98,7 +100,7 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const time = new Date(createdAt).toUTCString();
   // Real alerts from a logged-in user get a live-location link that keeps updating; each contact
   // gets their own copy of it, so their "I'm on my way" says who is coming.
-  const share = user && !isTest ? createShare(user.id, { sosId, coords }) : undefined;
+  const share = user && !isTest && !options.daily ? createShare(user.id, { sosId, coords }) : undefined;
   const messageFor = (link?: string) => buildMessage(link ? ` Live location: ${link}` : '');
   const checkIn = options.checkIn;
   const reply = options.silent
@@ -106,7 +108,9 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
     : " Please call them now. If you can't reach them, contact local emergency services.";
   const buildMessage = (live: string) => isTest
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`
-    : checkIn
+    : options.daily
+      ? `HerSpace daily check-in: ${who} confirms each day by ${options.daily.deadline} that they're okay, and hasn't today. Please call them or check on them. If you can't reach them, contact local emergency services.`
+      : checkIn
       ? `HerSpace safety alert: ${who} started a safety timer at ${fmtTime(checkIn.startedAt)}${checkIn.note ? ` ("${checkIn.note}")` : ''} and didn't check in by ${fmtTime(checkIn.dueAt)}. Last known ${where.charAt(0).toLowerCase()}${where.slice(1)}${live}${reply}`
       : `HerSpace SOS: ${who} triggered an emergency alert at ${time}.${TRIGGER_TEXT[options.trigger ?? 'button'] ?? ''} ${where}${live}${reply}`;
   // The generic version (no personal link) is what the app offers to send by hand.
@@ -128,7 +132,9 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
 
   // A ringing phone could give a silent alert away, so no automated calls then.
   if (!isTest && !options.silent && voiceCallsEnabled()) {
-    const spoken = checkIn
+    const spoken = options.daily
+      ? `This is a daily check-in alert from HerSpace. ${who} has not confirmed today that they are okay. Please call them or check on them now.`
+      : checkIn
       ? `This is a safety alert from HerSpace. ${who} did not check in when their safety timer ended. Please check your text messages for their last known location, and call them now.`
       : `This is an emergency alert from HerSpace. ${who} has pressed their S O S button. Please check your text messages for their location, and call them now.`;
     const callResults = await Promise.all(confirmed.map((c) => placeCall(c.phone, spoken)));

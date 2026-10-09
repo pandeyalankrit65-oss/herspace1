@@ -1840,6 +1840,25 @@ const messages: Partial<Record<MessageKey, string>> = {
   "offRoute.notifyTitle": "আপনার গাড়ি কি ঠিক পথে যাচ্ছে?",
   "offRoute.notifyBody": "মনে হচ্ছে এটা {place} থেকে দূরে যাচ্ছে।",
   "check.why.offRoute": "আপনার গাড়ি গন্তব্য থেকে দূরে যাচ্ছে",
+  // Daily check-in for someone living alone
+  "daily.title": "রোজকার খোঁজ",
+  "daily.desc": "আপনি একা থাকলে: প্রতিদিন বেছে নেওয়া সময়ের মধ্যে ঠিক আছেন না জানালে, আপনার নিশ্চিত পরিচিতদের জানানো হয় আর খোঁজ নিতে বলা হয়। আপনার ফোন বন্ধ থাকলে বা হারালেও এটা কাজ করে।",
+  "daily.deadline": "এই সময়ের মধ্যে জানাব ঠিক আছি",
+  "daily.turnOn": "চালু করো",
+  "daily.on": "চালু: প্রতিদিন {deadline}-এর মধ্যে জানান যে ঠিক আছেন। পরেরটা: {next}।",
+  "daily.pause3": "3 দিন বাইরে আছি",
+  "daily.paused": "বিরতি: 3 দিন খোঁজ নেওয়া হবে না।",
+  "daily.turnOff": "বন্ধ করো",
+  "daily.note": "চালু করা আজকের জন্য ধরা হয়। কোনো দিন বাদ গেলে আপনার পরিচিতরা একটা মেসেজ পান, আর আপনি ঠিক আছেন জানালে আরেকটা।",
+  "daily.cardTitle": "রোজকার খোঁজ",
+  "daily.cardText": "{time}-এর আগে চাপুন, যাতে পরিচিতরা জানেন আজ আপনি ঠিক আছেন।",
+  "daily.missedTitle": "আপনার পরিচিতদের জানানো হয়েছে যে আপনি খোঁজ দেননি",
+  "daily.missedText": "ওঁদের জানান যে আপনি ঠিক আছেন।",
+  "daily.imFine": "আমি ঠিক আছি",
+  "daily.toldOkay_one": "ধন্যবাদ। {count} জন পরিচিতকে জানানো হয়েছে যে আপনি ঠিক আছেন।",
+  "daily.toldOkay_other": "ধন্যবাদ। {count} জন পরিচিতকে জানানো হয়েছে যে আপনি ঠিক আছেন।",
+  "daily.notifyTitle": "রোজকার খোঁজ",
+  "daily.notifyBody": "পরের 30 মিনিটের মধ্যে HerSpace-এ \"আমি ঠিক আছি\" চাপুন।",
 };
 
 export default messages;

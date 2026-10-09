@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, ChevronRight, FileText, Footprints, HeartPul
 import SetupChecklist from "@/components/SetupChecklist";
 import RoutineReminder from "@/components/routines/RoutineReminder";
 import FollowUpCard from "@/components/FollowUpCard";
+import { DailyCheckInCard } from "@/components/DailyCheckIn";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
@@ -144,6 +145,7 @@ const Dashboard = () => {
           </div>
         )}
 
+        <DailyCheckInCard />
         <FollowUpCard />
         <RoutineReminder />
 

@@ -4,6 +4,7 @@ import { db, purgeExpiredData } from './db';
 import { emailConfigured, smsConfigured, statusCallbackUrl, voiceCallsEnabled } from './messaging';
 import { processOverdueCheckIns } from './routes/checkins';
 import { processStaleRides } from './routes/location';
+import { processMissedDailyCheckIns } from './routes/daily';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
@@ -19,6 +20,7 @@ setInterval(async () => {
   try {
     await processOverdueCheckIns();
     await processStaleRides();
+    await processMissedDailyCheckIns();
   } catch (err) {
     console.error('[check-in] Scheduler error:', err);
   } finally {
