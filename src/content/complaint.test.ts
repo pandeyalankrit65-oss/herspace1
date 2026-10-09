@@ -27,6 +27,17 @@ describe("complaint letters", () => {
     expect(letter).not.toContain("Witnesses");
   });
 
+  it("writes to the Superintendent of Police when a station refused to register the FIR", () => {
+    const letter = buildComplaint({ ...base, kind: "refused", to: "Gautam Buddh Nagar", refusedStation: "Sector 20 Police Station", refusedOn: "2026-09-02" }, "en");
+    expect(letter).toContain("The Superintendent of Police,\nGautam Buddh Nagar");
+    expect(letter).toContain("Section 173(4) of the Bharatiya Nagarik Suraksha Sanhita, 2023");
+    expect(letter).toContain("On 2 September 2026, I went to Sector 20 Police Station to report the incident below, but the officer in charge did not register my FIR.");
+    expect(letter).toContain("A man grabbed my arm.");
+    expect(letter).not.toContain("Zero FIR");
+    expect(letterSubject(letter)).toContain("did not register my FIR");
+    for (const lang of LETTER_LANGS) expect(buildComplaint({ ...base, kind: "refused" }, lang)).toContain("173(4)");
+  });
+
   it("writes a POSH complaint to the Internal Committee", () => {
     const letter = buildComplaint({ ...base, kind: "workplace", to: "Acme Ltd" }, "en");
     expect(letter).toContain("Internal Committee (POSH),\nAcme Ltd");

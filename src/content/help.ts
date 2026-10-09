@@ -51,6 +51,7 @@ const en: HelpSection[] = [
       "You get a free copy of the FIR.",
       "Your name must not be published in cases of sexual offences.",
       "Free legal aid is available through your District Legal Services Authority (call 15100).",
+      "If they refuse, HerSpace can write your letter to the Superintendent of Police (Write a complaint > Police refused my FIR). Send it by registered post and keep the receipt.",
     ],
   },
   {
@@ -87,6 +88,7 @@ const en: HelpSection[] = [
       "If someone threatens to share intimate images, StopNCII.org can help stop them being posted on major platforms, without you uploading the images.",
       "Don't pay a blackmailer: it usually leads to more demands. Report them instead.",
       "Report the account on the platform, and tighten your privacy settings.",
+      "Keep the screenshots in your private record (Account > Safety at home), so they're safe even if your phone is checked or lost, or the messages are deleted.",
     ],
     links: [
       { label: "cybercrime.gov.in", href: "https://cybercrime.gov.in" },
@@ -141,6 +143,7 @@ const hi: HelpSection[] = [
       "आपको FIR की मुफ़्त कॉपी मिलती है।",
       "यौन अपराधों के मामलों में आपका नाम प्रकाशित नहीं किया जा सकता।",
       "ज़िला विधिक सेवा प्राधिकरण के ज़रिए मुफ़्त कानूनी सहायता मिलती है (15100 पर कॉल करें)।",
+      "अगर वे मना करें, तो HerSpace पुलिस अधीक्षक के लिए आपका पत्र लिख सकता है (शिकायत लिखें > पुलिस ने FIR दर्ज नहीं की)। इसे रजिस्टर्ड डाक से भेजें और रसीद रखें।",
     ],
   },
   {
@@ -177,6 +180,7 @@ const hi: HelpSection[] = [
       "अगर कोई निजी तस्वीरें शेयर करने की धमकी दे, तो StopNCII.org बड़े प्लेटफ़ॉर्म पर उन्हें पोस्ट होने से रोकने में मदद कर सकता है, बिना तस्वीरें अपलोड किए।",
       "ब्लैकमेल करने वाले को पैसे न दें: इससे आम तौर पर और मांगें आती हैं। इसके बजाय शिकायत करें।",
       "प्लेटफ़ॉर्म पर उस अकाउंट की शिकायत करें, और अपनी प्राइवेसी सेटिंग कड़ी करें।",
+      "स्क्रीनशॉट अपने निजी रिकॉर्ड में रखें (खाता > घर पर सुरक्षा), ताकि आपका फ़ोन देखे जाने, खो जाने या मैसेज मिटा दिए जाने पर भी वे सुरक्षित रहें।",
     ],
     links: [
       { label: "cybercrime.gov.in", href: "https://cybercrime.gov.in" },

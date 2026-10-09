@@ -41,6 +41,8 @@ const Complaint = () => {
     accused: "",
     witnesses: "",
     attachments: 0,
+    refusedStation: "",
+    refusedOn: "",
   });
   const [edited, setEdited] = useState<string | null>(null);
 
@@ -84,9 +86,9 @@ const Complaint = () => {
     <div className="space-y-1">
       <Label htmlFor={`c-${key}`}>{label}</Label>
       {opts.textarea ? (
-        <Textarea id={`c-${key}`} rows={4} value={String(fields[key])} onChange={set(key)} placeholder={opts.placeholder} />
+        <Textarea id={`c-${key}`} rows={4} value={String(fields[key] ?? "")} onChange={set(key)} placeholder={opts.placeholder} />
       ) : (
-        <Input id={`c-${key}`} type={opts.type ?? "text"} value={String(fields[key])} onChange={set(key)} placeholder={opts.placeholder} />
+        <Input id={`c-${key}`} type={opts.type ?? "text"} value={String(fields[key] ?? "")} onChange={set(key)} placeholder={opts.placeholder} />
       )}
     </div>
   );
@@ -104,8 +106,8 @@ const Complaint = () => {
               <CardContent className="space-y-4 pt-6">
                 <fieldset>
                   <legend className="mb-2 text-sm font-semibold">{t("complaint.kind")}</legend>
-                  <div className="grid grid-cols-2 gap-2" role="radiogroup">
-                    {(["police", "workplace"] as ComplaintKind[]).map((k) => (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup">
+                    {(["police", "refused", "workplace"] as ComplaintKind[]).map((k) => (
                       <button
                         key={k}
                         type="button"
@@ -117,12 +119,19 @@ const Complaint = () => {
                         }}
                         className={`rounded-lg border px-3 py-2 text-sm transition-colors ${fields.kind === k ? "border-primary bg-primary/10 font-semibold" : "text-muted-foreground hover:bg-muted"}`}
                       >
-                        {k === "police" ? t("complaint.police") : t("complaint.workplace")}
+                        {t(k === "police" ? "complaint.police" : k === "refused" ? "complaint.refused" : "complaint.workplace")}
                       </button>
                     ))}
                   </div>
                 </fieldset>
-                {field("to", fields.kind === "police" ? t("complaint.station") : t("complaint.organisation"))}
+                {fields.kind === "refused" && <p className="rounded-lg bg-primary/5 p-3 text-sm">{t("complaint.refusedNote")}</p>}
+                {field("to", t(fields.kind === "police" ? "complaint.station" : fields.kind === "refused" ? "complaint.district" : "complaint.organisation"))}
+                {fields.kind === "refused" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {field("refusedStation", t("complaint.refusedStation"))}
+                    {field("refusedOn", t("complaint.refusedOn"), { type: "date" })}
+                  </div>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   {field("name", t("complaint.name"))}
                   {field("phone", t("complaint.phone"), { type: "tel" })}

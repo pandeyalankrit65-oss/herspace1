@@ -3,7 +3,8 @@
 // Tamil, Bengali and Marathi were drafted with AI assistance: have them checked by a native
 // speaker with legal knowledge before launch.
 
-export type ComplaintKind = "police" | "workplace";
+// "refused": to the Superintendent of Police when a police station wouldn't register an FIR.
+export type ComplaintKind = "police" | "workplace" | "refused";
 export type LetterLang = "en" | "hi" | "ta" | "bn" | "mr";
 export type ComplaintFields = {
   kind: ComplaintKind;
@@ -17,6 +18,9 @@ export type ComplaintFields = {
   accused: string;
   witnesses: string;
   attachments: number;
+  // "refused" only: which police station refused, and when.
+  refusedStation?: string;
+  refusedOn?: string;
 };
 
 type Template = {
@@ -33,12 +37,22 @@ type Template = {
   attached: (n: number) => string;
   closing: string;
   phoneLabel: string;
+  // Section 173(4) of the Bharatiya Nagarik Suraksha Sanhita, 2023 (Section 154(3) of the old CrPC).
+  refused: { to: (district: string) => string; district: string; subject: string; line: (station: string, on: string) => string; station: string; ask: string };
   blanks: { name: string; address: string; date: string; place: string; description: string; phone: string };
 };
 
 const TEMPLATES: Record<LetterLang, Template> = {
   en: {
     locale: "en-IN",
+    refused: {
+      to: (d) => `To,\nThe Superintendent of Police,\n${d}`,
+      district: "[District]",
+      subject: "Subject: Complaint under Section 173(4) of the Bharatiya Nagarik Suraksha Sanhita, 2023, as the police station did not register my FIR",
+      line: (s, on) => `On ${on}, I went to ${s} to report the incident below, but the officer in charge did not register my FIR.`,
+      station: "[police station]",
+      ask: "As provided in Section 173(4) of the Bharatiya Nagarik Suraksha Sanhita, 2023, I request you to investigate this matter yourself or direct a police officer under you to investigate it, and to have an FIR registered. Kindly provide me with a copy of the FIR.",
+    },
     to: {
       police: (s) => `To,\nThe Station House Officer,\n${s}`,
       workplace: (o) => `To,\nThe Presiding Officer,\nInternal Committee (POSH),\n${o}`,
@@ -75,6 +89,14 @@ const TEMPLATES: Record<LetterLang, Template> = {
   },
   hi: {
     locale: "hi-IN",
+    refused: {
+      to: (d) => `सेवा में,\nपुलिस अधीक्षक (SP),\n${d}`,
+      district: "[ज़िला]",
+      subject: "विषय: भारतीय नागरिक सुरक्षा संहिता, 2023 की धारा 173(4) के तहत शिकायत, क्योंकि थाने ने मेरी FIR दर्ज नहीं की",
+      line: (s, on) => `${on} को मैं नीचे दी गई घटना की शिकायत करने ${s} गई थी, लेकिन थाना प्रभारी ने मेरी FIR दर्ज नहीं की।`,
+      station: "[थाने का नाम]",
+      ask: "भारतीय नागरिक सुरक्षा संहिता, 2023 की धारा 173(4) के अनुसार, मेरा अनुरोध है कि आप इस मामले की स्वयं जाँच करें या अपने अधीन किसी पुलिस अधिकारी को जाँच का निर्देश दें, और FIR दर्ज करवाएँ। कृपया मुझे FIR की एक प्रति दें।",
+    },
     to: {
       police: (s) => `सेवा में,\nथाना प्रभारी (SHO),\n${s}`,
       workplace: (o) => `सेवा में,\nअध्यक्ष, आंतरिक समिति (POSH),\n${o}`,
@@ -111,6 +133,14 @@ const TEMPLATES: Record<LetterLang, Template> = {
   },
   ta: {
     locale: "ta-IN",
+    refused: {
+      to: (d) => `பெறுநர்,\nகாவல் கண்காணிப்பாளர்,\n${d}`,
+      district: "[மாவட்டம்]",
+      subject: "பொருள்: காவல் நிலையம் என் FIR ஐப் பதிவு செய்யாததால், பாரதிய நாகரிக் சுரக்ஷா சன்ஹிதா, 2023 பிரிவு 173(4) இன் கீழ் புகார்",
+      line: (s, on) => `${on} அன்று கீழே உள்ள சம்பவத்தைப் புகாரளிக்க ${s} சென்றேன், ஆனால் பொறுப்பு அதிகாரி என் FIR ஐப் பதிவு செய்யவில்லை.`,
+      station: "[காவல் நிலையம்]",
+      ask: "பாரதிய நாகரிக் சுரக்ஷா சன்ஹிதா, 2023 பிரிவு 173(4) இன்படி, இந்த விஷயத்தை நீங்களே விசாரிக்கவோ அல்லது உங்களுக்குக் கீழுள்ள காவல் அதிகாரியை விசாரிக்க உத்தரவிடவோ, FIR பதிவு செய்ய வைக்கவோ கேட்டுக்கொள்கிறேன். FIR இன் நகலை எனக்கு வழங்குமாறு கேட்டுக்கொள்கிறேன்.",
+    },
     to: {
       police: (s) => `பெறுநர்,\nகாவல் நிலையப் பொறுப்பு அதிகாரி (SHO),\n${s}`,
       workplace: (o) => `பெறுநர்,\nதலைமை அலுவலர், உள் புகார் குழு (POSH),\n${o}`,
@@ -147,6 +177,14 @@ const TEMPLATES: Record<LetterLang, Template> = {
   },
   bn: {
     locale: "bn-IN",
+    refused: {
+      to: (d) => `প্রতি,\nপুলিশ সুপার,\n${d}`,
+      district: "[জেলা]",
+      subject: "বিষয়: থানা আমার FIR নথিভুক্ত না করায়, ভারতীয় নাগরিক সুরক্ষা সংহিতা, 2023-এর ধারা 173(4) অনুযায়ী অভিযোগ",
+      line: (s, on) => `${on} তারিখে আমি নিচের ঘটনার অভিযোগ জানাতে ${s} গিয়েছিলাম, কিন্তু ভারপ্রাপ্ত আধিকারিক আমার FIR নথিভুক্ত করেননি।`,
+      station: "[থানার নাম]",
+      ask: "ভারতীয় নাগরিক সুরক্ষা সংহিতা, 2023-এর ধারা 173(4) অনুযায়ী, আমার অনুরোধ, আপনি নিজে এই বিষয়ের তদন্ত করুন বা আপনার অধীন কোনো পুলিশ আধিকারিককে তদন্তের নির্দেশ দিন, এবং FIR নথিভুক্ত করান। অনুগ্রহ করে আমাকে FIR-এর একটি প্রতিলিপি দিন।",
+    },
     to: {
       police: (s) => `প্রতি,\nভারপ্রাপ্ত আধিকারিক (OC/SHO),\n${s}`,
       workplace: (o) => `প্রতি,\nসভাপতি, অভ্যন্তরীণ কমিটি (POSH),\n${o}`,
@@ -183,6 +221,14 @@ const TEMPLATES: Record<LetterLang, Template> = {
   },
   mr: {
     locale: "mr-IN",
+    refused: {
+      to: (d) => `प्रति,\nपोलीस अधीक्षक,\n${d}`,
+      district: "[जिल्हा]",
+      subject: "विषय: पोलीस ठाण्याने माझा FIR नोंदवला नाही म्हणून, भारतीय नागरिक सुरक्षा संहिता, 2023 च्या कलम 173(4) अंतर्गत तक्रार",
+      line: (s, on) => `${on} रोजी मी खालील घटनेची तक्रार करण्यासाठी ${s} येथे गेले होते, परंतु ठाणे प्रभारी अधिकाऱ्यांनी माझा FIR नोंदवला नाही.`,
+      station: "[पोलीस ठाणे]",
+      ask: "भारतीय नागरिक सुरक्षा संहिता, 2023 च्या कलम 173(4) नुसार, आपण स्वतः या प्रकरणाची चौकशी करावी किंवा आपल्या अधिपत्याखालील पोलीस अधिकाऱ्याला चौकशीचे निर्देश द्यावेत, आणि FIR नोंदवून घ्यावा, अशी माझी विनंती आहे. कृपया मला FIR ची प्रत द्यावी.",
+    },
     to: {
       police: (s) => `प्रति,\nपोलीस ठाणे प्रभारी (SHO),\n${s}`,
       workplace: (o) => `प्रति,\nअध्यक्ष, अंतर्गत समिती (POSH),\n${o}`,
@@ -242,17 +288,20 @@ export function buildComplaint(f: ComplaintFields, lang: LetterLang): string {
   const place = blank(f.place, l.blanks.place);
   const name = blank(f.name, l.blanks.name);
   const police = f.kind === "police";
+  const refused = f.kind === "refused";
+  const refusedOn = f.refusedOn ? longDate(new Date(`${f.refusedOn}T12:00:00`), l.locale) : l.blanks.date;
   return [
-    police ? l.to.police(blank(f.to, l.to.station)) : l.to.workplace(blank(f.to, l.to.org)),
+    refused ? l.refused.to(blank(f.to, l.refused.district)) : police ? l.to.police(blank(f.to, l.to.station)) : l.to.workplace(blank(f.to, l.to.org)),
     "",
     `${l.dateLabel}: ${longDate(new Date(), l.locale)}`,
     "",
-    police ? l.subject.police(when, place) : l.subject.workplace,
+    refused ? l.refused.subject : police ? l.subject.police(when, place) : l.subject.workplace,
     "",
     l.salutation,
     "",
     l.intro(name, blank(f.address, l.blanks.address)),
     "",
+    ...(refused ? [l.refused.line(blank(f.refusedStation ?? "", l.refused.station), refusedOn), ""] : []),
     `${l.dateLabel}: ${when || l.blanks.date}`,
     `${l.placeLabel}: ${place}`,
     "",
@@ -261,7 +310,7 @@ export function buildComplaint(f: ComplaintFields, lang: LetterLang): string {
     ...(f.accused.trim() ? [`${l.accused}: ${f.accused.trim()}`, ""] : []),
     ...(f.witnesses.trim() ? [`${l.witnesses}: ${f.witnesses.trim()}`, ""] : []),
     ...(f.attachments ? [l.attached(f.attachments), ""] : []),
-    police ? l.ask.police : l.ask.workplace,
+    refused ? l.refused.ask : police ? l.ask.police : l.ask.workplace,
     "",
     l.closing,
     name,

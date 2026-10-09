@@ -32,6 +32,8 @@ test("after an SOS, the phone says out loud which way to the nearest safe place,
   await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
   await expect(page.getByText("Sharing your live location")).toBeVisible({ timeout: 15_000 });
 
+  // Time-critical help after an assault is a tap away.
+  await expect(page.getByRole("link", { name: "If you were hurt or assaulted: what to do in the first hours" })).toHaveAttribute("href", "/help#after-assault");
   await page.getByRole("button", { name: "Guide me" }).click();
   const status = page.getByRole("status").filter({ hasText: "City Care Hospital" });
   await expect(status).toContainText(/City Care Hospital is 450 metres south-west\. Walk there now, on busy, lit roads\. Riya can see where you are\./);

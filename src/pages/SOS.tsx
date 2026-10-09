@@ -545,6 +545,12 @@ const SOS = () => {
 
           {liveShare && <LiveLocation share={liveShare} onEnded={endLiveShare} onFix={setHere} />}
           {result && (
+            // Emergency contraception and HIV medicine only work within 72 hours: say so early.
+            <Link to="/help#after-assault" className="block rounded-xl border border-border p-3 text-sm font-semibold underline-offset-2 hover:underline">
+              {t("help.afterAssaultLink")}
+            </Link>
+          )}
+          {result && (
             <GuideToSafety
               position={here}
               told={[...new Set(result.deliveries.filter((d) => d.channel === "sms" && ["sent", "delivered", "ok"].includes(d.status)).map((d) => d.name))]}

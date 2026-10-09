@@ -1673,3 +1673,45 @@ describe('private record', () => {
     }
   });
 });
+
+describe('alert by text message', () => {
+  test("a HELP text from her verified phone alerts her contacts; other numbers and words don't", async () => {
+    const saved = { token: process.env.TWILIO_AUTH_TOKEN, url: process.env.PUBLIC_API_URL };
+    process.env.TWILIO_AUTH_TOKEN = 'test-auth-token';
+    process.env.PUBLIC_API_URL = 'https://herspace.example';
+    const { createHmac } = await import('node:crypto');
+    // Signed the way Twilio signs: the URL plus the sorted parameters, HMAC-SHA1 with the auth token.
+    const text = async (params: Record<string, string>, sign = true) => {
+      const data = 'https://herspace.example/api/twilio/sms' + Object.keys(params).sort().map((k) => k + params[k]).join('');
+      const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
+      if (sign) headers['X-Twilio-Signature'] = createHmac('sha1', 'test-auth-token').update(data).digest('base64');
+      const res = await fetch(`${base}/twilio/sms`, { method: 'POST', headers, body: new URLSearchParams(params).toString() });
+      return { status: res.status, body: await res.text() };
+    };
+    try {
+      const { token } = await userWithConfirmedContact('Parvati');
+      const phone = '+919811112222';
+      const me = await call('/auth/me', { token });
+      db.prepare('UPDATE users SET phone = ?, phone_verified_at = ? WHERE id = ?').run(phone, new Date().toISOString(), me.data.user.id);
+
+      assert.equal((await text({ From: phone, Body: 'HELP' }, false)).status, 403);
+      assert.match((await text({ From: '+919800000000', Body: 'HELP' })).body, /isn't a verified phone/);
+      assert.match((await text({ From: phone, Body: 'what is this' })).body, /reply HELP/);
+
+      const sent = await text({ From: phone, Body: 'bachao please' });
+      assert.match(sent.body, /1 emergency contact was alerted/);
+      const sos = db.prepare("SELECT id, trigger FROM sos_events WHERE user_id = ? ORDER BY id DESC LIMIT 1").get(me.data.user.id) as { id: number; trigger: string };
+      assert.equal(sos.trigger, 'sms');
+      assert.equal((db.prepare('SELECT COUNT(*) AS n FROM location_shares WHERE sos_id = ?').get(sos.id) as { n: number }).n, 0, 'no live link');
+
+      await text({ From: phone, Body: 'HELP' });
+      await text({ From: phone, Body: 'SOS' });
+      assert.match((await text({ From: phone, Body: 'HELP' })).body, /already alerted/);
+    } finally {
+      process.env.TWILIO_AUTH_TOKEN = saved.token;
+      process.env.PUBLIC_API_URL = saved.url;
+      if (saved.token === undefined) delete process.env.TWILIO_AUTH_TOKEN;
+      if (saved.url === undefined) delete process.env.PUBLIC_API_URL;
+    }
+  });
+});

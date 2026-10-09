@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import { z } from 'zod';
 import { csrfGuard, loadUser } from './auth';
-import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
+import { emailConfigured, smsConfigured, voiceCallsEnabled, incomingSmsUrl } from './messaging';
 import { supportReply } from './chat';
 import { callerReply } from './fakeCall';
 import { draftReport } from './reportDraft';
@@ -76,6 +76,11 @@ app.get('/api/nearby', nearbyLimiter, async (req, res) => {
   if (!q.success) return res.status(400).json({ error: 'lat and lng are required' });
   const places = await nearbyPlaces(q.data.lat, q.data.lng);
   res.json({ available: places !== null, radius: NEARBY_RADIUS_M, places: places ?? [] });
+});
+
+// HerSpace's number for alerts by text message, only when incoming texts are set up.
+app.get('/api/sms-alert', (_req, res) => {
+  res.json({ number: smsConfigured() && incomingSmsUrl() ? process.env.TWILIO_FROM_NUMBER ?? null : null });
 });
 
 // Place search for "Check the way". Public OSM services ask for low rates: limited per address.

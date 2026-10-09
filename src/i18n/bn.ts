@@ -1859,6 +1859,22 @@ const messages: Partial<Record<MessageKey, string>> = {
   "daily.toldOkay_other": "ধন্যবাদ। {count} জন পরিচিতকে জানানো হয়েছে যে আপনি ঠিক আছেন।",
   "daily.notifyTitle": "রোজকার খোঁজ",
   "daily.notifyBody": "পরের 30 মিনিটের মধ্যে HerSpace-এ \"আমি ঠিক আছি\" চাপুন।",
+  // Complaint letter when police refused an FIR
+  "complaint.refused": "পুলিশ FIR নেয়নি",
+  "complaint.refusedNote": "থানা আপনার FIR নথিভুক্ত না করলে, আইন আপনাকে জেলার পুলিশ সুপারকে লিখিত অভিযোগ পাঠানোর অধিকার দেয়। রেজিস্টার্ড ডাকে পাঠান আর রসিদ রাখুন। তাতে কাজ না হলে ম্যাজিস্ট্রেটের কাছে আবেদন করতে পারেন; বিনামূল্যে আইনি সাহায্য (15100) সাহায্য করতে পারে।",
+  "complaint.district": "জেলা (পুলিশ সুপারের জন্য)",
+  "complaint.refusedStation": "যে থানা অস্বীকার করেছে",
+  "complaint.refusedOn": "আপনি কবে সেখানে গিয়েছিলেন",
+  // Link to the after-assault guide
+  "help.afterAssaultLink": "আপনি আঘাত পেলে বা আক্রান্ত হলে: প্রথম কয়েক ঘণ্টায় কী করবেন",
+  // Alert by text message
+  "smsAlert.title": "মেসেজে অ্যালার্ট",
+  "smsAlert.desc": "যখন অ্যাপ খুলতে পারছেন না, বা শুধু সাধারণ ফোন আছে: একটা মেসেজে আপনার নিশ্চিত পরিচিতদের অ্যালার্ট যায়।",
+  "smsAlert.how": "{phone} থেকে {number}-এ HELP লিখে পাঠান। নম্বরটা এখনই ফোনে সেভ করে রাখুন।",
+  "smsAlert.needPhone": "এটা ব্যবহার করতে ওপরে আপনার ফোন নম্বর যাচাই করুন। শুধু যাচাই করা নম্বর থেকে আসা মেসেজই গোনা হয়।",
+  "smsAlert.note": "আপনার পরিচিতদের জানানো হয় যে আপনি মেসেজে পাঠিয়েছেন, তাই আপনার লোকেশন ওঁরা জানতে পারেন না। কাদের অ্যালার্ট করা হল তা জানিয়ে উত্তর আসে। ঘণ্টায় সর্বোচ্চ 3টা অ্যালার্ট।",
+  // How an SOS started: by text message
+  "track.how.sms": "{name} মেসেজে SOS পাঠিয়েছেন, তাই তাঁর লোকেশন জানা নেই।",
 };
 
 export default messages;

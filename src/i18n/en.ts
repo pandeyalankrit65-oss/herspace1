@@ -1967,6 +1967,26 @@ const en = {
   "daily.notifyTitle": "Daily check-in",
   "daily.notifyBody": "Tap \"I'm fine\" in HerSpace in the next 30 minutes.",
 
+  // Complaint letter when police refused an FIR
+  "complaint.refused": "Police refused my FIR",
+  "complaint.refusedNote": "If a police station won't register your FIR, the law lets you send your complaint in writing to the Superintendent of Police of the district. Send it by registered post and keep the receipt. If that doesn't work, you can apply to a magistrate; free legal aid (15100) can help.",
+  "complaint.district": "District (for the Superintendent of Police)",
+  "complaint.refusedStation": "Police station that refused",
+  "complaint.refusedOn": "When you went there",
+
+  // Link to the after-assault guide
+  "help.afterAssaultLink": "If you were hurt or assaulted: what to do in the first hours",
+
+  // Alert by text message
+  "smsAlert.title": "Alert by text message",
+  "smsAlert.desc": "For when you can't open the app, or only have a basic phone: a text alerts your confirmed contacts.",
+  "smsAlert.how": "From {phone}, text HELP to {number}. Save this number in your phone now.",
+  "smsAlert.needPhone": "Verify your phone number above to use this. Only texts from your verified number count.",
+  "smsAlert.note": "Your contacts are told you sent it by text, so your location isn't known to them. You get a reply saying who was alerted. At most 3 alerts an hour.",
+
+  // How an SOS started: by text message
+  "track.how.sms": "{name} sent SOS by text message, so their location isn't known.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

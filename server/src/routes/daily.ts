@@ -51,7 +51,7 @@ dailyRouter.post('/ok', async (req, res) => {
   if (!r) return res.status(404).json({ error: 'Daily check-in is off.' });
   const next = deadlineAfter(new Date(), r.deadline, r.utc_offset, 1).toISOString();
   db.prepare('UPDATE daily_checkins SET next_due_at = ?, last_ok_at = ? WHERE user_id = ?').run(next, now(), r.user_id);
-  const afterAlert = r.last_alerted_at && (!r.last_ok_at || r.last_alerted_at > r.last_ok_at) && Date.now() - Date.parse(r.last_alerted_at) < 24 * 60 * 60_000;
+  const afterAlert = r.last_alerted_at && (!r.last_ok_at || r.last_alerted_at >= r.last_ok_at) && Date.now() - Date.parse(r.last_alerted_at) < 24 * 60 * 60_000;
   let told = 0;
   if (afterAlert) {
     const confirmed = listContacts(r.user_id).filter((c) => c.status === 'confirmed');

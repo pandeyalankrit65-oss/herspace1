@@ -66,6 +66,13 @@ const FollowUpCard = () => {
               </Button>
             </Link>
             {followUp.kind === "sos" && (
+              <Link to="/help#after-assault">
+                <Button type="button" variant="outline" size="sm">
+                  {t("help.afterAssaultLink")}
+                </Button>
+              </Link>
+            )}
+            {followUp.kind === "sos" && (
               <Link to="/report">
                 <Button type="button" variant="outline" size="sm">
                   {t("follow.writeItDown")}

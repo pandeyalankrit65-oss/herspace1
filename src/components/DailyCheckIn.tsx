@@ -80,7 +80,7 @@ export const DailyCheckInCard = () => {
   const [told, setTold] = useState<number | null>(null);
   if (told !== null) return told > 0 ? <p className="rounded-2xl bg-success/10 p-4 text-sm font-medium">{tn("daily.toldOkay", told)}</p> : null;
   if (!daily?.active) return null;
-  const missed = Boolean(daily.lastAlertedAt && (!daily.lastOkAt || daily.lastAlertedAt > daily.lastOkAt));
+  const missed = Boolean(daily.lastAlertedAt && (!daily.lastOkAt || daily.lastAlertedAt >= daily.lastOkAt));
   const dueSoon = new Date(daily.nextDueAt).getTime() - Date.now() <= SHOW_BEFORE_MS;
   if (!missed && !dueSoon) return null;
   return (

@@ -3,7 +3,7 @@ import { photoPath, saveFile, type StoredExt } from '../photos';
 import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth, User } from '../auth';
-import { placeCall, sendSms, SendResult, smsConfigured, statusCallbackUrl, validTwilioSignature, voiceCallsEnabled } from '../messaging';
+import { incomingSmsUrl, placeCall, sendSms, SendResult, smsConfigured, statusCallbackUrl, validTwilioSignature, voiceCallsEnabled } from '../messaging';
 import { perUser, rateLimit } from '../rateLimit';
 import { coordsSchema, now, parse } from '../util';
 import { listContacts } from './contacts';
@@ -51,7 +51,7 @@ export type AlertOptions = {
   daily?: { deadline: string };
 };
 
-export const SOS_TRIGGERS = ['button', 'hold', 'voice', 'safe_word', 'shake', 'scream', 'no_answer', 'code_phrase', 'stress', 'stopped_answering'] as const;
+export const SOS_TRIGGERS = ['button', 'hold', 'voice', 'safe_word', 'shake', 'scream', 'no_answer', 'code_phrase', 'stress', 'stopped_answering', 'sms'] as const;
 export type SosTrigger = (typeof SOS_TRIGGERS)[number];
 
 // Told to contacts after the alert: how it started, when it wasn't a plain press of SOS.
@@ -64,6 +64,7 @@ const TRIGGER_TEXT: Partial<Record<SosTrigger, string>> = {
   code_phrase: ' They said their code phrase, so they may not be able to talk freely.',
   stress: ' They chose to send it after their phone noticed stress in their voice.',
   stopped_answering: ' It started automatically: they stopped answering check-ins while being kept company by the app.',
+  sms: " They sent it by text message, so their location isn't known.",
 };
 
 const fmtTime = (iso: string) => new Date(iso).toUTCString();
@@ -100,7 +101,8 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const time = new Date(createdAt).toUTCString();
   // Real alerts from a logged-in user get a live-location link that keeps updating; each contact
   // gets their own copy of it, so their "I'm on my way" says who is coming.
-  const share = user && !isTest && !options.daily ? createShare(user.id, { sosId, coords }) : undefined;
+  // No live link when her phone can't share (a missed daily check-in, or a text from a basic phone).
+  const share = user && !isTest && !options.daily && options.trigger !== 'sms' ? createShare(user.id, { sosId, coords }) : undefined;
   const messageFor = (link?: string) => buildMessage(link ? ` Live location: ${link}` : '');
   const checkIn = options.checkIn;
   const reply = options.silent
@@ -305,4 +307,31 @@ twilioRouter.post('/status', express.urlencoded({ extended: false }), (req, res)
     );
   }
   res.type('text/xml').send('<Response/>');
+});
+
+// A text to HerSpace's number from her verified phone: "HELP" (or SOS, bachao, बचाओ, உதவி, বাঁচাও,
+// वाचवा...) alerts her contacts. For a basic phone, or when the app can't be opened. Only her own
+// verified number counts, and at most 3 an hour.
+const SMS_HELP = /\b(help|sos|bachao|bachaao)\b|बचाओ|मदद|உதவி|காப்பா|বাঁচাও|সাহায্য|वाचवा|मदत/i;
+const xml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const reply = (res: express.Response, text: string) => res.type('text/xml').send(`<Response><Message>${xml(text)}</Message></Response>`);
+
+twilioRouter.post('/sms', express.urlencoded({ extended: false }), async (req, res) => {
+  const url = incomingSmsUrl();
+  const params = req.body as Record<string, string>;
+  if (!url || !validTwilioSignature(req.header('X-Twilio-Signature'), url, params)) return res.status(403).send('Invalid signature');
+  const user = db
+    .prepare('SELECT id, name, email, phone FROM users WHERE phone = ? AND phone_verified_at IS NOT NULL')
+    .get(params.From ?? '') as (User & { phone: string }) | undefined;
+  if (!user) return reply(res, "HerSpace: this number isn't a verified phone on a HerSpace account, so no one was alerted. In danger, call 112.");
+  if (!SMS_HELP.test(params.Body ?? '')) return reply(res, 'HerSpace: to alert your emergency contacts, reply HELP. In danger, call 112.');
+  const recent = (
+    db
+      .prepare("SELECT COUNT(*) AS n FROM sos_events WHERE user_id = ? AND trigger = 'sms' AND created_at > ?")
+      .get(user.id, new Date(Date.now() - 60 * 60 * 1000).toISOString()) as { n: number }
+  ).n;
+  if (recent >= 3) return reply(res, 'HerSpace: your contacts were already alerted. In danger, call 112.');
+  const result = await triggerAlert(user, undefined, { trigger: 'sms' });
+  const sent = result.deliveries.filter((d) => d.channel === 'sms' && d.status !== 'failed' && d.status !== 'not_confirmed').length;
+  reply(res, sent ? `HerSpace: ${sent} emergency contact${sent === 1 ? ' was' : 's were'} alerted. In danger, call 112.` : "HerSpace: you have no confirmed contacts to alert. Call 112.");
 });
