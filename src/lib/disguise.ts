@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { onAppVisibility } from "./appVisibility";
 
 // Disguised mode: for someone whose phone may be checked by an abuser. HerSpace opens as a
 // working calculator; typing the PIN and "=" opens the real app. An optional second code
@@ -78,15 +79,16 @@ export function useDisguise() {
   useEffect(() => {
     if (!settings) return;
     let hiddenAt = 0;
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") hiddenAt = Date.now();
-      else if (hiddenAt && Date.now() - hiddenAt > RELOCK_AFTER_MS) {
-        setUnlocked(false);
-        window.dispatchEvent(new Event("herspace-disguise"));
+    return onAppVisibility((visible) => {
+      if (!visible) hiddenAt ||= Date.now();
+      else {
+        if (hiddenAt && Date.now() - hiddenAt > RELOCK_AFTER_MS) {
+          setUnlocked(false);
+          window.dispatchEvent(new Event("herspace-disguise"));
+        }
+        hiddenAt = 0;
       }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+    });
   }, [settings]);
 
   // Every component using this hook follows lock/unlock through the event.

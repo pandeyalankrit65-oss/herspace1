@@ -29,6 +29,7 @@ import {
   type RecordEntry,
 } from "@/lib/record";
 import { pinIsStrongEnough } from "@/lib/recordCrypto";
+import { onAppVisibility } from "@/lib/appVisibility";
 
 // Locks itself after this long without a tap or key, and at once when the app is hidden.
 const IDLE_LOCK_MS = 3 * 60 * 1000;
@@ -72,15 +73,14 @@ const PrivateRecord = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(lock, IDLE_LOCK_MS);
     };
-    const hidden = () => document.visibilityState === "hidden" && !pickingRef.current && lock();
+    const stopWatching = onAppVisibility((visible) => !visible && !pickingRef.current && lock());
     window.addEventListener("pointerdown", activity);
     window.addEventListener("keydown", activity);
-    document.addEventListener("visibilitychange", hidden);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener("pointerdown", activity);
       window.removeEventListener("keydown", activity);
-      document.removeEventListener("visibilitychange", hidden);
+      stopWatching();
     };
   }, [record, lock]);
 

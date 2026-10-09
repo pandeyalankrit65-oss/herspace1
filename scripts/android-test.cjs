@@ -189,10 +189,14 @@ function preflight() {
     adb("shell pm clear app.herspace");
     // Microphone is left ungranted: the recording and voice prompts are part of the test.
     for (const p of ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "POST_NOTIFICATIONS"]) adb(`shell pm grant app.herspace android.permission.${p}`);
-    // A nearly flat, unplugged battery.
-    adb("emu power ac off");
-    adb("emu power status discharging");
-    adb("emu power capacity 12");
+    // A nearly flat, unplugged battery, through Android's battery service: the emulator's own
+    // power commands crash the system UI on newer images, which sleeps the screen mid-run.
+    adb("shell dumpsys battery unplug");
+    adb("shell dumpsys battery set level 12");
+    // Keep the screen on and unlocked for the whole run: a sleeping screen pauses the WebView.
+    adb("shell svc power stayon true");
+    adb("shell input keyevent KEYCODE_WAKEUP");
+    adb("shell wm dismiss-keyguard");
     geo(START.lat, START.lng);
     adb("shell am start -n app.herspace/.MainActivity");
     await sleep(6000);
@@ -254,8 +258,19 @@ function preflight() {
 
     // --- Saved place (standing at home) ---
     await section("saved place", async () => {
+      // The app accepts a position up to 30 seconds old, so wait until the phone itself reports
+      // Home: otherwise a previous run's last position can be used.
       geo(HOME.lat, HOME.lng);
-      await sleep(1500);
+      await waitFor(async () => {
+        geo(HOME.lat, HOME.lng);
+        const at = await page.evaluate(
+          () =>
+            new Promise((ok) =>
+              navigator.geolocation.getCurrentPosition((p) => ok(p.coords.latitude), () => ok(null), { maximumAge: 0, enableHighAccuracy: true, timeout: 5000 })
+            )
+        );
+        return at !== null && Math.abs(at - HOME.lat) < 0.0005;
+      }, 30000, 2000);
       await go("/account");
       await page.getByRole("button", { name: "Add a place" }).click();
       const pinned = await waitFor(() => visible(page.getByTestId("place-map").locator(".leaflet-interactive")), 20000);
@@ -481,6 +496,13 @@ function preflight() {
       await press(["C"]).catch(() => {});
       await press(["2", "4", "6", "8", "="]);
       check("PIN opens the app", !!(await waitFor(async () => !(await visible(calc)), 8000)));
+      // A minute in the background (someone picks up the phone later): it's a calculator again.
+      adb("shell input keyevent KEYCODE_HOME");
+      await sleep(65000);
+      adb("shell am start -n app.herspace/.MainActivity");
+      check("a minute in the background locks it to the calculator again", !!(await waitFor(() => visible(calc), 15000)));
+      await press(["2", "4", "6", "8", "="]);
+      await waitFor(async () => !(await visible(calc)), 8000);
       await go("/account");
       await page.getByRole("button", { name: "Turn off", exact: true }).click();
       await go("/sos");
@@ -509,7 +531,8 @@ function preflight() {
   } finally {
     try {
       adb("shell cmd connectivity airplane-mode disable");
-      adb("emu power ac on");
+      adb("shell dumpsys battery reset");
+      adb("shell svc power stayon false");
     } catch {}
     server.kill();
     fs.writeFileSync(resultsFile, results.join("\n"));
