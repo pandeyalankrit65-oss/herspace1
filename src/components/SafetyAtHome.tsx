@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { hashCode, readQuickExit, saveDisguise, saveQuickExit, useDisguise } from "@/lib/disguise";
+import { neutraliseScheduledNotifications } from "@/lib/lockScreen";
 
 const CODE = /^\d{4,8}$/;
 
@@ -46,6 +47,7 @@ const SafetyAtHome = () => {
     // Stays open for now; it locks next time the app opens or after a minute away.
     unlock();
     saveDisguise({ enabled: true, pinHash: await hashCode(pin), sosCodeHash: sosCode ? await hashCode(sosCode) : null });
+    void neutraliseScheduledNotifications();
     setPin("");
     setPin2("");
     setSosCode("");

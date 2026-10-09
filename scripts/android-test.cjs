@@ -1,8 +1,9 @@
 // Android app check: drives the HerSpace app on a running emulator through its WebView
 // (Chrome DevTools Protocol over adb) and checks native behaviour through adb: SOS with audio
 // recording, battery and emergency info, photos, the evidence pack's print dialog, automatic
-// arrival, the safe word and voice commands, the fake call's voice, disguised mode and
-// offline reports.
+// arrival, a ride heading the wrong way, the safe word and voice commands, the fake call's voice,
+// follow-up notifications (and their text hidden by disguised mode), the private record's
+// encryption and lock, and offline reports.
 //
 // Usage:  npm run test:android            (the app must already be installed)
 //         npm run test:android -- --install   (installs the debug APK first)
@@ -115,6 +116,14 @@ const nativeListening = (page) =>
   page.evaluate(() => window.Capacitor.Plugins.SpeechRecognition.isListening().then((r) => r.listening)).catch(() => false);
 
 let currentSection = "start";
+// The SOS page folds its settings away.
+const openSosSettings = async (page) => {
+  const button = page.getByRole("button", { name: /^SOS settings/ });
+  if ((await button.getAttribute("aria-expanded")) !== "true") await button.click();
+};
+const pendingNotifications = (page) =>
+  page.evaluate(() => window.Capacitor.Plugins.LocalNotifications.getPending().then((r) => r.notifications)).catch(() => []);
+
 async function section(name, fn) {
   currentSection = name;
   try {
@@ -263,11 +272,15 @@ function preflight() {
     let trackToken = null;
     await section("sos recording", async () => {
       await go("/sos");
+      await openSosSettings(page);
       await page.locator("#record-toggle").click();
       await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
       const prompted = await waitFor(async () => tapDialogButton(/resource-id="[^"]*permission_allow_foreground_only_button"/), 25000, 1000);
       check("Android asks for the microphone for SOS recording", !!prompted);
       check("SOS sent", !!(await waitFor(() => visible(page.getByText("Alert sent to 1 contact")), 25000)));
+      // "How are you doing?" tomorrow at 10, as a real Android notification.
+      const followUp = await waitFor(async () => (await pendingNotifications(page)).find((n) => n.id === 30000), 10000);
+      check("tomorrow's follow-up is scheduled on the phone", !!followUp, followUp ? `${followUp.title}: ${followUp.body}` : "none");
       const recording = await waitFor(() => visible(page.getByText(/Recording audio as evidence · [1-9]/)), 40000, 1000);
       check("audio pieces upload during the SOS", !!recording, recording ? await page.getByText(/Recording audio as evidence/).innerText() : "");
       shot("2-sos-recording");
@@ -346,6 +359,7 @@ function preflight() {
     // --- Voice: native recognizer, safe word and "help me" ---
     await section("voice", async () => {
       await go("/sos");
+      await openSosSettings(page);
       await page.getByRole("button", { name: "Set", exact: true }).click();
       await page.locator("#safe-word").fill("pineapple");
       await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -396,6 +410,54 @@ function preflight() {
       await page.getByRole("button", { name: "End call" }).click().catch(() => {});
     });
 
+    // --- A ride heading the wrong way, from real GPS fixes ---
+    await section("ride off route", async () => {
+      geo(START.lat, START.lng);
+      await go("/walk");
+      await page.getByRole("tab", { name: "Cab or auto" }).click();
+      await page.getByLabel("Vehicle number").fill("DL 1C AB 1234");
+      await page.getByRole("button", { name: "Home", exact: true }).click();
+      await page.getByRole("button", { name: "Start sharing" }).click();
+      await waitFor(() => visible(page.getByText(/Heading to Home/)));
+      // Closer first, then further and further south, every 25 seconds.
+      const warning = page.getByText("Your ride seems to be heading away from Home");
+      let lat = START.lat + 0.004;
+      geo(lat, START.lng);
+      const noticed = await waitFor(async () => {
+        lat -= 0.004;
+        geo(lat, START.lng);
+        return visible(warning);
+      }, 180000, 25000);
+      check("a ride heading away from home is noticed", !!noticed);
+      shot("5-off-route");
+      await page.getByRole("button", { name: /I've arrived/ }).click().catch(() => {});
+      await page.getByRole("button", { name: /Stop now|stop sharing/i }).first().click().catch(() => {});
+    });
+
+    // --- Private record: encryption in the WebView, and the lock when the app is left ---
+    await section("private record", async () => {
+      await go("/record");
+      await page.getByLabel("PIN", { exact: true }).fill("482916");
+      await page.getByLabel("PIN again").fill("482916");
+      await page.getByRole("button", { name: "Create my private record" }).click();
+      check("record created (WebCrypto works in Android's WebView)", !!(await waitFor(() => visible(page.getByText("Your recovery code")), 30000)));
+      await page.getByText("I've written it down or given it to someone I trust").click();
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByLabel("What happened").fill("Written on the phone, encrypted before upload.");
+      await page.getByRole("button", { name: "Save to my record" }).click();
+      check("entry saved", !!(await waitFor(() => visible(page.getByRole("heading", { name: "1 entry" })), 20000)));
+      // Someone takes the phone: Home, then back to the app.
+      adb("shell input keyevent KEYCODE_HOME");
+      await sleep(2000);
+      adb("shell am start -n app.herspace/.MainActivity");
+      check("leaving the app locks the record", !!(await waitFor(() => visible(page.getByText("Your record is locked")), 15000)));
+      shot("6-record-locked");
+      await page.getByLabel("PIN", { exact: true }).fill("482916");
+      await page.getByRole("button", { name: "Open" }).click();
+      check("the PIN opens it again, decrypted", !!(await waitFor(() => visible(page.getByText("Written on the phone, encrypted before upload.")), 30000)));
+      await page.getByRole("button", { name: "Lock now" }).click();
+    });
+
     // --- Disguised calculator ---
     await section("disguise", async () => {
       await go("/account");
@@ -403,6 +465,8 @@ function preflight() {
       await page.getByLabel("PIN again").fill("2468");
       await page.getByLabel("SOS code (optional)").fill("1357");
       await page.getByRole("button", { name: "Turn on disguised mode" }).click();
+      const hidden = await waitFor(async () => (await pendingNotifications(page)).find((n) => n.id === 30000 && n.title === "Reminder"), 10000);
+      check("disguised mode hides the text of notifications already scheduled", !!hidden, hidden ? `${hidden.title}: ${hidden.body}` : "still revealing");
       await page.getByRole("button", { name: "Lock now" }).click();
       const calc = page.getByRole("main", { name: "Calculator" });
       check("locks to a calculator", !!(await waitFor(() => visible(calc), 8000)));
