@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 const RESEND_MS = 60_000;
 const RECHECK_MS = 15_000;
 
-// Shows a small "offline" pill on every page (the SOS page has its own, fuller notice), and
+// Shows a small "offline" pill on other pages, and
 // sends reports saved while offline as soon as the connection is back.
 const OfflineStatus = () => {
   const { t, tn } = useI18n();
@@ -45,7 +45,9 @@ const OfflineStatus = () => {
     return () => window.removeEventListener("herspace-outbox-sent", onSent);
   }, [toast, tn]);
 
-  if (online || pathname === "/sos") return null;
+  // The SOS page and the signed-in home page have their own, fuller notice; there the pill would
+  // only cover the SOS button.
+  if (online || pathname === "/sos" || (pathname === "/" && user)) return null;
   return (
     <div role="status" className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center px-4 lg:bottom-6">
       <Link
