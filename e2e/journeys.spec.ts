@@ -44,7 +44,7 @@ test("during a fake call, Keypad quietly sends a silent SOS", async ({ page, bro
   await page.getByRole("button", { name: /Accept|Answer/ }).click();
   await page.getByRole("button", { name: "Keypad" }).click();
   const sms = await waitForMessage((m) => m.to === sister.phone && m.body.startsWith("HerSpace SOS"), 20_000);
-  expect(sms.body).toContain("DON'T call them first");
+  expect(sms.body).toContain("DON'T call them or mention this alert");
   // Nothing on the call screen gives it away.
   await expect(page.getByRole("dialog")).not.toContainText(/SOS|alert/i);
   await page.getByRole("button", { name: /End/ }).click();

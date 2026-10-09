@@ -102,7 +102,7 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const messageFor = (link?: string) => buildMessage(link ? ` Live location: ${link}` : '');
   const checkIn = options.checkIn;
   const reply = options.silent
-    ? " They may not be able to talk safely: DON'T call them first. Text them, and if you can't reach them, contact local emergency services."
+    ? " They may not be able to talk safely, and someone may be checking their phone: DON'T call them or mention this alert in a text. Follow the live location, and if you think they're in danger, contact local emergency services."
     : " Please call them now. If you can't reach them, contact local emergency services.";
   const buildMessage = (live: string) => isTest
     ? `HerSpace TEST alert from ${who}. This is only a test, no action is needed. In a real emergency you'd get their location here.`

@@ -1,5 +1,6 @@
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { isNative } from "./native";
+import { forLockScreen } from "./lockScreen";
 import { readFollowUps, scheduleFollowUp, type FollowUpKind } from "./followUp";
 
 // In the Android app each follow-up is also a notification at its time, so it comes even when
@@ -21,7 +22,7 @@ export async function syncFollowUpNotifications(text: FollowUpText) {
     await LocalNotifications.schedule({
       notifications: list.map((f, i) => ({
         id: BASE_ID + i,
-        ...text,
+        ...forLockScreen(text),
         schedule: { at: new Date(f.dueAt), allowWhileIdle: true },
         extra: { path: "/" },
       })),

@@ -458,7 +458,7 @@ describe('the situation for contacts', () => {
     assert.equal((await call('/sos', { token, body: { trigger: 'gossip' } })).status, 400);
     const sos = await call('/sos', { token, body: { coords: { lat: 28.6, lng: 77.2 }, trigger: 'no_answer', silent: true } });
     assert.match(sos.data.message, /didn't answer a safety check/);
-    assert.match(sos.data.message, /DON'T call them first/);
+    assert.match(sos.data.message, /DON'T call them or mention this alert/);
     const shareToken = sos.data.share.url.split('/track/')[1];
     let view = (await call(`/track/${shareToken}`)).data;
     assert.equal(view.trigger, 'no_answer');
@@ -714,7 +714,7 @@ describe('protection at home', () => {
     const loud = await call('/sos', { token, body: {} });
     assert.match(loud.data.message, /Please call them now/);
     const silent = await call('/sos', { token, body: { silent: true } });
-    assert.match(silent.data.message, /DON'T call them first/);
+    assert.match(silent.data.message, /DON'T call them or mention this alert/);
     assert.doesNotMatch(silent.data.message, /Please call them now/);
   });
 

@@ -1,5 +1,6 @@
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { isNative } from "./native";
+import { forLockScreen } from "./lockScreen";
 
 const WARN_BEFORE_MS = 2 * 60_000;
 
@@ -14,7 +15,7 @@ export async function scheduleTimerWarning(id: number, dueAt: string, title: str
     const at = new Date(new Date(dueAt).getTime() - WARN_BEFORE_MS);
     if (at.getTime() <= Date.now()) return;
     await LocalNotifications.schedule({
-      notifications: [{ id, title, body, schedule: { at, allowWhileIdle: true }, extra: { path: "/timer" } }],
+      notifications: [{ id, ...forLockScreen({ title, body }), schedule: { at, allowWhileIdle: true }, extra: { path: "/timer" } }],
     });
   } catch (err) {
     console.warn("Couldn't schedule the timer notification:", err);
@@ -33,7 +34,9 @@ export async function notifyNow(id: number, title: string, body: string, path: s
   try {
     const perm = await LocalNotifications.checkPermissions();
     if (perm.display !== "granted" && (await LocalNotifications.requestPermissions()).display !== "granted") return;
-    await LocalNotifications.schedule({ notifications: [{ id, title, body, schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true }, extra: { path } }] });
+    await LocalNotifications.schedule({
+      notifications: [{ id, ...forLockScreen({ title, body }), schedule: { at: new Date(Date.now() + 500), allowWhileIdle: true }, extra: { path } }],
+    });
   } catch (err) {
     console.warn("Couldn't show the notification:", err);
   }

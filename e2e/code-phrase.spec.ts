@@ -26,7 +26,7 @@ test("saying the code phrase aloud sends a silent SOS straight away, and contact
   await page.evaluate(say, "hey is the blue cattle fixed yet");
   const sos = await waitForMessage((m) => m.to === cousin.phone && m.body.startsWith("HerSpace SOS"), 20_000);
   expect(sos.body).toContain("They said their code phrase");
-  expect(sos.body).toContain("DON'T call them first");
+  expect(sos.body).toContain("DON'T call them or mention this alert");
   // No countdown to cancel: it went straight away.
   await expect(page.getByRole("button", { name: "Cancel" })).toHaveCount(0);
 });

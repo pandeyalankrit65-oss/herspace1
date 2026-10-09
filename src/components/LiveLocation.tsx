@@ -8,6 +8,7 @@ import { useI18n } from "@/i18n";
 import { watchLocation, type Position } from "@/lib/location";
 import { readBattery } from "@/lib/battery";
 import { motionBetween } from "@/lib/motion";
+import { forLockScreen } from "@/lib/lockScreen";
 import { isAt, journeyDestination, metresBetween } from "@/lib/places";
 import AreaWarning from "@/components/AreaWarning";
 import { savedData } from "@/lib/offline";
@@ -94,7 +95,9 @@ const LiveLocation = ({
       })
       .catch(() => {});
 
-    // In the Android app this keeps running with the screen locked (with a notification).
+    // In the Android app this keeps running with the screen locked (with a notification, which
+    // is neutral in disguised mode).
+    const notice = forLockScreen({ title: t("native.liveTitle"), body: t("native.liveMessage") });
     const stop = watchLocation(
       async (pos) => {
         if (place && !keepSharingRef.current) {
@@ -134,7 +137,7 @@ const LiveLocation = ({
         }
       },
       (err) => !cancelled && setError(err === "denied" ? "live.permission" : "live.noGeo"),
-      { title: t("native.liveTitle"), message: t("native.liveMessage") },
+      { title: notice.title, message: notice.body },
     );
 
     return () => {

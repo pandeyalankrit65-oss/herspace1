@@ -55,6 +55,6 @@ test("Stay with me checks in by voice, an answer keeps it going, and two missed 
   await page.clock.fastForward("00:31");
   const sos = await waitForMessage((m) => m.to === brother.phone && m.body.startsWith("HerSpace SOS"), 30_000);
   expect(sos.body).toContain("they stopped answering check-ins");
-  expect(sos.body).toContain("DON'T call them first");
+  expect(sos.body).toContain("DON'T call them or mention this alert");
   await expect(page).toHaveURL(/\/sos$/);
 });

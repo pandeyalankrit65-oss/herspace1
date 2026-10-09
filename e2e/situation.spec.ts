@@ -19,9 +19,9 @@ test("contacts are told how to help, not to call during a silent SOS, and which 
   const contact = await browser.newContext();
   const contactPage = await contact.newPage();
   await contactPage.goto(linkIn(sos.body, "/track/"));
-  await expect(contactPage.getByText("Kavya pressed SOS in HerSpace. They're sharing their live location with you. Don't call them first")).toBeVisible();
+  await expect(contactPage.getByText("Kavya pressed SOS in HerSpace. They're sharing their live location with you. Don't call or text them about this alert")).toBeVisible();
   const help = contactPage.getByRole("list").filter({ hasText: "Take a breath" });
-  await expect(help).toContainText("Don't keep calling. Send one short text");
+  await expect(help).toContainText("Don't call or text about the alert");
   await expect(help).not.toContainText("Call once or twice");
   await expect(help).toContainText("Tap \"I'm on my way\"");
 

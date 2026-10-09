@@ -55,7 +55,7 @@ test("running in an area with several reports asks \"Are you okay?\", and no ans
   // No answer: a silent SOS, and contacts are told how it started.
   const sos = await waitForMessage((m) => m.to === sister.phone && m.body.startsWith("HerSpace SOS"), 45_000);
   expect(sos.body).toContain("didn't answer a safety check");
-  expect(sos.body).toContain("DON'T call them first");
+  expect(sos.body).toContain("DON'T call them or mention this alert");
   await expect(page).toHaveURL(/\/sos$/);
   await expect(page.getByText("Sharing your live location")).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "I'm safe, stop sharing" }).click();

@@ -1,5 +1,6 @@
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { isNative } from "./native";
+import { forLockScreen } from "./lockScreen";
 import type { Routine } from "./routines";
 
 // In the Android app, each regular journey becomes weekly system notifications at its time, so
@@ -17,7 +18,7 @@ export async function syncRoutineNotifications(routines: Routine[], text: (r: Ro
     if (perm.display !== "granted" && (await LocalNotifications.requestPermissions()).display !== "granted") return;
     const notifications = routines.flatMap((r, i) => {
       const [hour, minute] = r.time.split(":").map(Number);
-      const { title, body } = text(r);
+      const { title, body } = forLockScreen(text(r));
       // Capacitor counts weekdays from 1 (Sunday) to 7 (Saturday).
       return r.days.map((day) => ({
         id: BASE_ID + i * 10 + day,

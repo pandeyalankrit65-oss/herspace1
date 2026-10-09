@@ -30,7 +30,7 @@ test("disguised mode: a working calculator, a PIN to open the app and a silent S
   // The SOS code sends a silent alert, and the screen stays an ordinary calculator.
   await press(page, "C1357=");
   const sms = await waitForMessage((m) => m.to === mom.phone && m.body.startsWith("HerSpace SOS"));
-  expect(sms.body).toContain("DON'T call them first");
+  expect(sms.body).toContain("DON'T call them or mention this alert");
   await expect(calculator).toBeVisible();
   await expect(calculator.locator("output")).toHaveText("0");
 
@@ -71,7 +71,7 @@ test("a silent SOS asks contacts not to call, and the code phrase is explained t
   await page.getByRole("switch", { name: "Silent alert" }).click();
   await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
   const sms = await waitForMessage((m) => m.to === sister.phone && m.body.startsWith("HerSpace SOS"), 20_000);
-  expect(sms.body).toContain("DON'T call them first");
+  expect(sms.body).toContain("DON'T call them or mention this alert");
 
   await page.goto("/account");
   await page.getByRole("textbox", { name: "Code phrase" }).fill("Did you buy the red umbrella?");

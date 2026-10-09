@@ -1753,12 +1753,12 @@ const en = {
   "track.how.stopped_answering": "{name} stopped answering while HerSpace kept them company, so it sent SOS.",
   "track.sharing": "They're sharing their live location with you.",
   "track.actCall": "Call them now. If you can't reach them, call emergency services.",
-  "track.actSilent": "Don't call them first: someone may be listening. Text them instead, and if they don't reply, call emergency services.",
+  "track.actSilent": "Don't call or text them about this alert: someone may be listening or checking their phone. Follow the map, and if you think they're in danger, call emergency services.",
   "track.helpTitle": "How to help right now",
   "track.help.calm": "Take a breath. Calm, quick action helps most.",
   "track.help.ack": "Tap \"I'm on my way\" if you're going, so they know help is coming.",
   "track.help.call": "Call once or twice. If they don't answer, don't keep calling: watch the map and text them.",
-  "track.help.text": "Don't keep calling. Send one short text, like \"Got your alert. Are you safe? Reply 1 if you need help.\"",
+  "track.help.text": "Don't call or text about the alert. If you must reach them, send something ordinary that gives nothing away, like \"Are you coming for dinner?\"",
   "track.help.emergency": "If you think they're in danger right now, call {number} and say where they are. Read the place from the map, or use \"Get directions\".",
   "track.help.go": "Go to them only if you can do it safely, and take someone with you if you can. Tell their other contacts what you're doing.",
   "track.help.lost": "If the map stops updating, their phone may be off or out of signal. Start from the last place shown.",
@@ -1868,6 +1868,10 @@ const en = {
   "follow.stop": "No more check-ins about this",
   "follow.notifyTitle": "HerSpace",
   "follow.notifyBody": "Just checking in. How are you doing today?",
+
+  // Neutral notification text in disguised mode
+  "notify.discreetTitle": "Reminder",
+  "notify.discreetBody": "You have a reminder.",
 
   // Error screen
   "error.title": "Something went wrong",
