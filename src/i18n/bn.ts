@@ -1882,6 +1882,15 @@ const messages: Partial<Record<MessageKey, string>> = {
   // Warning before the only HR person deletes their account
   "account.lastHr": "{org}-এ আপনিই একমাত্র HR। অ্যাকাউন্ট মুছলে, অন্য কেউ HR টিমে না যোগ দেওয়া পর্যন্ত সেখানকার সহকর্মীদের রিপোর্ট কেউ দেখবে না। পারলে আগে কাউকে HR টিমে যোগ করুন (Corporate Connect)।",
   "account.lastHrConfirm": "বুঝেছি, তবুও আমার অ্যাকাউন্ট মুছে দাও",
+  // Quick wipe for when someone may take her phone
+  "safe.wipeCode": "মোছার কোড (ঐচ্ছিক)",
+  "safe.wipeCodeHint": "মোছার কোড তারপর \"=\" চাপলে, ক্যালকুলেটর স্বাভাবিক দেখাতে দেখাতেই চুপচাপ এই ফোন মুছে যায়।",
+  "safe.wipeCodeInvalid": "মোছার কোড 4 থেকে 8 সংখ্যার হতে হবে এবং আপনার PIN ও SOS কোড থেকে আলাদা হতে হবে।",
+  "safe.wipeTitle": "দ্রুত মুছে ফেলা",
+  "safe.wipeDesc": "কেউ আপনার ফোন নিয়ে নিতে পারে এমন হলে: HerSpace এই ফোনে যা রাখে (মুড জার্নাল, সুরক্ষা পরিকল্পনা, সেভ করা জায়গা, রিমাইন্ডার আর সেটিংস) সব মুছে ফোন থেকে লগ আউট করে দেয়। আপনার ব্যক্তিগত রেকর্ড, রিপোর্ট আর পরিচিতরা সার্ভারে নিরাপদ থাকে, নিরাপদ কোথাও আবার লগ ইন করলে পাবেন।",
+  "safe.wipeButton": "এখনই এই ফোন মুছে দাও",
+  "safe.wipeConfirm": "এই ফোনে এটা ফেরানো যাবে না। অফলাইনে সেভ করা এবং এখনও না পাঠানো রিপোর্ট হারিয়ে যাবে। ছদ্মবেশী মোড চালু থাকবে।",
+  "safe.wipeNow": "এখনই মুছুন",
 };
 
 export default messages;

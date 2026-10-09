@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calculator, ClipboardList, House, KeyRound, LogOut, MessageSquareLock, NotebookPen } from "lucide-react";
+import { Calculator, ClipboardList, Eraser, House, KeyRound, LogOut, MessageSquareLock, NotebookPen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { hashCode, readQuickExit, saveDisguise, saveQuickExit, useDisguise } from "@/lib/disguise";
 import { neutraliseScheduledNotifications } from "@/lib/lockScreen";
+import { wipePhone } from "@/lib/wipe";
 
 const CODE = /^\d{4,8}$/;
 
@@ -23,6 +24,9 @@ const SafetyAtHome = () => {
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
   const [sosCode, setSosCode] = useState("");
+  const [wipeCode, setWipeCode] = useState("");
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [wiping, setWiping] = useState(false);
   const [error, setError] = useState("");
   const [quickExit, setQuickExit] = useState(readQuickExit);
   const [phrase, setPhrase] = useState("");
@@ -44,13 +48,20 @@ const SafetyAtHome = () => {
     if (!CODE.test(pin)) return setError(t("safe.pinInvalid"));
     if (pin !== pin2) return setError(t("safe.pinMismatch"));
     if (sosCode && (!CODE.test(sosCode) || sosCode === pin)) return setError(t("safe.sosCodeInvalid"));
+    if (wipeCode && (!CODE.test(wipeCode) || wipeCode === pin || wipeCode === sosCode)) return setError(t("safe.wipeCodeInvalid"));
     // Stays open for now; it locks next time the app opens or after a minute away.
     unlock();
-    saveDisguise({ enabled: true, pinHash: await hashCode(pin), sosCodeHash: sosCode ? await hashCode(sosCode) : null });
+    saveDisguise({
+      enabled: true,
+      pinHash: await hashCode(pin),
+      sosCodeHash: sosCode ? await hashCode(sosCode) : null,
+      wipeCodeHash: wipeCode ? await hashCode(wipeCode) : null,
+    });
     void neutraliseScheduledNotifications();
     setPin("");
     setPin2("");
     setSosCode("");
+    setWipeCode("");
     toast({ title: t("safe.disguiseOn"), description: t("safe.disguiseOnDesc") });
   };
 
@@ -110,7 +121,7 @@ const SafetyAtHome = () => {
               </div>
             </div>
           ) : (
-            <form onSubmit={enableDisguise} className="grid gap-3 sm:grid-cols-3">
+            <form onSubmit={enableDisguise} className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="disguise-pin">{t("safe.pin")}</Label>
                 <Input id="disguise-pin" inputMode="numeric" type="password" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} maxLength={8} />
@@ -123,16 +134,53 @@ const SafetyAtHome = () => {
                 <Label htmlFor="disguise-sos">{t("safe.sosCode")}</Label>
                 <Input id="disguise-sos" inputMode="numeric" type="password" autoComplete="off" value={sosCode} onChange={(e) => setSosCode(e.target.value.replace(/\D/g, ""))} maxLength={8} />
               </div>
-              <p className="text-xs text-muted-foreground sm:col-span-3">{t("safe.pinHint")}</p>
+              <div className="space-y-1">
+                <Label htmlFor="disguise-wipe">{t("safe.wipeCode")}</Label>
+                <Input id="disguise-wipe" inputMode="numeric" type="password" autoComplete="off" value={wipeCode} onChange={(e) => setWipeCode(e.target.value.replace(/\D/g, ""))} maxLength={8} />
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">{t("safe.pinHint")} {t("safe.wipeCodeHint")}</p>
               {error && (
-                <p role="alert" className="text-sm text-destructive sm:col-span-3">
+                <p role="alert" className="text-sm text-destructive sm:col-span-2">
                   {error}
                 </p>
               )}
-              <Button type="submit" variant="hero" className="gap-2 sm:col-span-3 sm:w-fit">
+              <Button type="submit" variant="hero" className="gap-2 sm:col-span-2 sm:w-fit">
                 <KeyRound className="h-4 w-4" /> {t("safe.turnOn")}
               </Button>
             </form>
+          )}
+        </section>
+
+        {/* Quick wipe */}
+        <section className="space-y-3 border-t pt-5">
+          <h3 className="flex items-center gap-2 font-semibold">
+            <Eraser className="h-4 w-4 text-primary" /> {t("safe.wipeTitle")}
+          </h3>
+          <p className="text-sm text-muted-foreground">{t("safe.wipeDesc")}</p>
+          {!confirmWipe ? (
+            <Button variant="outline" onClick={() => setConfirmWipe(true)}>
+              {t("safe.wipeButton")}
+            </Button>
+          ) : (
+            <div role="alert" className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              <p>{t("safe.wipeConfirm")}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="destructive"
+                  disabled={wiping}
+                  onClick={async () => {
+                    setWiping(true);
+                    await wipePhone();
+                    window.location.replace("/");
+                  }}
+                >
+                  {t("safe.wipeNow")}
+                </Button>
+                <Button variant="ghost" onClick={() => setConfirmWipe(false)}>
+                  {t("common.cancel")}
+                </Button>
+              </div>
+            </div>
           )}
         </section>
 

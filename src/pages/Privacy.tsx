@@ -70,6 +70,7 @@ const PrivacyEn = () => (
           If you turn on noticing stress in your voice, your voice is compared on your device with your own calm voice; only four numbers describing your usual pitch and loudness are kept there, and no sound is recorded or sent.
           If you turn on "Ask if I'm okay" for journeys, clues (your pace, reports in the area, and a scream or stress in your voice if you turned those on) are checked on your device and not sent; only if you don't answer the check does a silent SOS go to your contacts, saying it started because you didn't answer.
           After an SOS or a report, the day and kind of event are kept on your device for a few days so the app can ask how you're doing; they're never sent, and are deleted after the last check-in, when you stop them, or when you log out.
+          Quick wipe (Safety at home, or a wipe code in the disguised calculator) removes all of this from your device at once and signs it out; what's kept on our server is not affected.
         </li>
         <li>
           <strong>Corporate Connect (only if you join a workplace):</strong> which workplace you belong to, whether you're on its HR team, and the reports you send to your HR team with the conversation that follows. Each report is anonymous to HR unless you choose to share your name. If your HR team turns on Slack, Teams or email alerts, those alerts say only that a report or message arrived, never what it says or who sent it.

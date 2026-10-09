@@ -12,7 +12,7 @@ const QUICK_EXIT_KEY = "herspace_quick_exit";
 // Going to the background for longer than this locks the app again.
 const RELOCK_AFTER_MS = 60_000;
 
-export type DisguiseSettings = { enabled: boolean; pinHash: string; sosCodeHash?: string | null };
+export type DisguiseSettings = { enabled: boolean; pinHash: string; sosCodeHash?: string | null; wipeCodeHash?: string | null };
 
 export async function hashCode(code: string): Promise<string> {
   const data = new TextEncoder().encode(`herspace-disguise:${code}`);

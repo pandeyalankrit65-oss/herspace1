@@ -3,6 +3,9 @@ import { addConfirmedContact, signUp, waitForMessage, openSosSettings } from "./
 
 test.use({ permissions: ["geolocation"], geolocation: { latitude: 26.8467, longitude: 80.9462 } });
 
+// HerSpace's keys on the phone; null while the page reloads after a wipe.
+const herspaceKeys = (page: Page) => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("herspace")).sort()).catch(() => null);
+
 async function press(page: Page, keys: string) {
   for (const k of keys) await page.getByRole("button", { name: k, exact: true }).click();
 }
@@ -82,4 +85,44 @@ test("a silent SOS asks contacts not to call, and the code phrase is explained t
   await expect(page.getByText("Code phrase saved. 1 contact was told what it means.", { exact: true })).toBeVisible();
   const told = await waitForMessage((m) => m.to === sister.phone && m.body.includes("code phrase"));
   expect(told.body).toContain('"Did you buy the red umbrella?"');
+});
+
+test("quick wipe: a wipe code in the calculator removes everything HerSpace keeps on the phone, and it's still a calculator", async ({ page }) => {
+  await signUp(page, "Rekha");
+  // Things only on the phone: a safety plan and a saved place.
+  await page.evaluate(() => {
+    localStorage.setItem("herspace_safety_plan", JSON.stringify({ notes: "Bag at Sunita's" }));
+    localStorage.setItem("herspace_places", JSON.stringify([{ id: "1", label: "Sunita's", lat: 26.85, lng: 80.95 }]));
+  });
+  await page.goto("/account");
+  await page.getByLabel("PIN (4 to 8 digits)").fill("2468");
+  await page.getByLabel("PIN again").fill("2468");
+  await page.getByLabel("Wipe code (optional)").fill("9090");
+  await page.getByRole("button", { name: "Turn on disguised mode" }).click();
+  await page.getByRole("button", { name: "Lock now" }).click();
+
+  const calculator = page.getByRole("main", { name: "Calculator" });
+  await press(page, "9090=");
+  // Still an ordinary calculator, and nothing of HerSpace's left but the disguise itself.
+  await expect(calculator).toBeVisible();
+  await expect.poll(() => herspaceKeys(page)).not.toContain("herspace_safety_plan");
+  const left = await herspaceKeys(page);
+  expect(left).toContain("herspace_disguise");
+  expect(left).not.toContain("herspace_places");
+  expect(left).not.toContain("herspace_user");
+  // The PIN opens the app, signed out.
+  await press(page, "2468=");
+  await expect(calculator).toHaveCount(0);
+  expect((await page.request.get("/api/auth/me")).status()).toBe(401);
+});
+
+test("quick wipe from Safety at home asks first, then signs the phone out", async ({ page }) => {
+  await signUp(page, "Mala");
+  await page.evaluate(() => localStorage.setItem("herspace_mood_journal", JSON.stringify([{ mood: 2 }])));
+  await page.goto("/account");
+  await page.getByRole("button", { name: "Wipe this phone now" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Reports saved offline and not yet sent will be lost" })).toBeVisible();
+  await page.getByRole("button", { name: "Wipe now" }).click();
+  await expect.poll(() => herspaceKeys(page)).not.toContain("herspace_mood_journal");
+  expect((await page.request.get("/api/auth/me")).status()).toBe(401);
 });

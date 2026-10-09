@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { hashCode, type DisguiseSettings } from "@/lib/disguise";
 import { api } from "@/lib/api";
+import { wipePhone } from "@/lib/wipe";
 
 // A real, working calculator that hides HerSpace. PIN then "=" opens the app; the optional
 // SOS code then "=" sends a silent alert and shows nothing unusual.
@@ -84,6 +85,12 @@ const Calculator = ({ settings, onUnlock }: { settings: DisguiseSettings; onUnlo
         // Silent SOS: no sound, no vibration, nothing on screen beyond a normal result.
         clear();
         currentCoords().then((coords) => api("/api/sos", { body: { coords, silent: true } }).catch(() => {}));
+        return;
+      }
+      if (settings.wipeCodeHash && hash === settings.wipeCodeHash) {
+        // Quick wipe: everything HerSpace keeps on the phone goes; it's still just a calculator.
+        clear();
+        void wipePhone().then(() => window.location.replace("/"));
         return;
       }
     }

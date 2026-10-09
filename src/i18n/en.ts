@@ -1996,6 +1996,16 @@ const en = {
   "account.lastHr": "You're the only HR person at {org}. If you delete your account, reports from your colleagues there won't be seen by anyone until someone else joins the HR team. If you can, add someone to the HR team first (Corporate Connect).",
   "account.lastHrConfirm": "I understand, delete my account anyway",
 
+  // Quick wipe for when someone may take her phone
+  "safe.wipeCode": "Wipe code (optional)",
+  "safe.wipeCodeHint": "A wipe code, then \"=\", quietly wipes this phone while the calculator looks normal.",
+  "safe.wipeCodeInvalid": "The wipe code must be 4 to 8 digits and different from your PIN and SOS code.",
+  "safe.wipeTitle": "Quick wipe",
+  "safe.wipeDesc": "If someone may take your phone: removes everything HerSpace keeps on it (your mood journal, safety plan, saved places, reminders and settings) and signs it out. Your private record, reports and contacts stay safe on the server for when you sign in again somewhere safe.",
+  "safe.wipeButton": "Wipe this phone now",
+  "safe.wipeConfirm": "This can't be undone on this phone. Reports saved offline and not yet sent will be lost. Disguised mode stays on.",
+  "safe.wipeNow": "Wipe now",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",
