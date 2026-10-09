@@ -3,10 +3,12 @@
 // No answer within ANSWER_MS sends a silent SOS: that handles freezing and "am I overreacting?",
 // but it never alerts anyone on a guess alone, only on her silence after being asked.
 
-export type Clue = "scream" | "stress" | "running" | "risky_area" | "risky_area_dark" | "long_stop";
+export type Clue = "scream" | "stress" | "running" | "risky_area" | "risky_area_dark" | "long_stop" | "off_route";
 
 const WEIGHT: Record<Clue, number> = {
   scream: 3,
+  // A ride clearly heading away from where she's going: enough to ask by itself.
+  off_route: 3,
   stress: 2,
   running: 2,
   risky_area_dark: 2,

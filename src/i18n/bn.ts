@@ -1832,6 +1832,14 @@ const messages: Partial<Record<MessageKey, string>> = {
   "record.deleteDesc": "এর সবকিছু চিরতরে মুছে যাবে, আর ফেরানো যাবে না।",
   "record.deleteType": "নিশ্চিত করতে DELETE লিখুন",
   "record.deleteAll": "সব মুছে দাও",
+  // A ride heading away from her destination
+  "offRoute.title": "মনে হচ্ছে আপনার গাড়ি {place} থেকে দূরে যাচ্ছে",
+  "offRoute.text": "কিছুক্ষণ ধরে এটা আরও দূরে যাচ্ছে। এটা আপনার মেনে নেওয়া অন্য রাস্তা না হলে, ড্রাইভারকে ফিরতে বলুন, বা সাহায্য নিন। আপনার পরিচিতরা দেখতে পাচ্ছেন আপনি কোথায় আছেন।",
+  "offRoute.detour": "অন্য রাস্তা, আমি ঠিক আছি",
+  "offRoute.sos": "SOS",
+  "offRoute.notifyTitle": "আপনার গাড়ি কি ঠিক পথে যাচ্ছে?",
+  "offRoute.notifyBody": "মনে হচ্ছে এটা {place} থেকে দূরে যাচ্ছে।",
+  "check.why.offRoute": "আপনার গাড়ি গন্তব্য থেকে দূরে যাচ্ছে",
 };
 
 export default messages;

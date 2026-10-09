@@ -146,7 +146,7 @@ const Walk = () => {
     if (share) {
       return (
         <>
-          <LiveLocation share={share} onEnded={ended} onFix={check.onFix} />
+          <LiveLocation share={share} onEnded={ended} onFix={check.onFix} onOffRoute={() => check.clue("off_route")} />
           <SafetyCheckToggle on={checkSetting.on} setOn={checkSetting.setOn} />
           {checkSetting.on && <MicClues onClue={check.clue} />}
           <StayWithMe name={user?.name.split(" ")[0] ?? ""} />

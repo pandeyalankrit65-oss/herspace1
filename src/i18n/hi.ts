@@ -1939,6 +1939,15 @@ const hi: Record<MessageKey, string> = {
   "record.deleteType": "पुष्टि के लिए DELETE लिखें",
   "record.deleteAll": "सब कुछ मिटाएँ",
 
+  // A ride heading away from her destination
+  "offRoute.title": "लगता है आपकी गाड़ी {place} से दूर जा रही है",
+  "offRoute.text": "कुछ देर से यह और दूर जा रही है। अगर यह आपकी मानी हुई दूसरी राह नहीं है, तो ड्राइवर से वापस मुड़ने को कहें, या मदद लें। आपके संपर्क देख सकते हैं कि आप कहाँ हैं।",
+  "offRoute.detour": "दूसरा रास्ता है, मैं ठीक हूं",
+  "offRoute.sos": "SOS",
+  "offRoute.notifyTitle": "क्या आपकी गाड़ी सही रास्ते पर है?",
+  "offRoute.notifyBody": "लगता है यह {place} से दूर जा रही है।",
+  "check.why.offRoute": "आपकी गाड़ी आपकी मंज़िल से दूर जा रही है",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

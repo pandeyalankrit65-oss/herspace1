@@ -1938,6 +1938,15 @@ const en = {
   "record.deleteType": "Type DELETE to confirm",
   "record.deleteAll": "Delete everything",
 
+  // A ride heading away from her destination
+  "offRoute.title": "Your ride seems to be heading away from {place}",
+  "offRoute.text": "It's been going further away for a while. If this isn't a detour you agreed to, ask the driver to turn back, or get help. Your contacts can see where you are.",
+  "offRoute.detour": "It's a detour, I'm fine",
+  "offRoute.sos": "SOS",
+  "offRoute.notifyTitle": "Is your ride going the right way?",
+  "offRoute.notifyBody": "It seems to be heading away from {place}.",
+  "check.why.offRoute": "your ride heading away from where you're going",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

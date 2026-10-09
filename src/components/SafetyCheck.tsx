@@ -16,6 +16,7 @@ const REASON: Record<Clue, MessageKey> = {
   risky_area: "check.why.area",
   risky_area_dark: "check.why.areaDark",
   long_stop: "check.why.stop",
+  off_route: "check.why.offRoute",
 };
 
 export const SafetyCheckToggle = ({ on, setOn }: { on: boolean; setOn: (on: boolean) => void }) => {

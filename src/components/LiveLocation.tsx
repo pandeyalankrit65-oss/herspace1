@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, MapPin, Navigation, ShieldCheck } from "lucide-react";
+import { CheckCircle2, MapPin, Navigation, Phone, ShieldCheck, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,8 @@ import { savedData } from "@/lib/offline";
 import { vibrate } from "@/lib/disguise";
 import { notifyNow } from "@/lib/timerNotifications";
 import { warningAt, withinPeriod, type AreaWarning as Warning, type RiskPoint } from "@/lib/risk";
+import { OffRoute } from "@/lib/offRoute";
+import { Link } from "react-router-dom";
 
 export type ShareAck = { name: string | null; at: string };
 export type LiveShare = {
@@ -46,9 +48,12 @@ const LiveLocation = ({
   share,
   onEnded,
   onFix,
+  onOffRoute,
 }: {
   share: LiveShare;
   onEnded: () => void;
+  // A ride clearly heading away from her destination (for "Are you okay?" checks).
+  onOffRoute?: () => void;
   // Each position, with the area warning there on journeys (for "Are you okay?" checks and guidance).
   onFix?: (pos: Position, warning: Warning | null) => void;
 }) => {
@@ -65,6 +70,11 @@ const LiveLocation = ({
   const lastRef = useRef<{ at: number; coords: Position } | null>(null);
   const onFixRef = useRef(onFix);
   onFixRef.current = onFix;
+  const onOffRouteRef = useRef(onOffRoute);
+  onOffRouteRef.current = onOffRoute;
+  // Rides to a saved place: notice if it turns clearly away from it.
+  const offRouteRef = useRef(new OffRoute());
+  const [offRoute, setOffRoute] = useState(false);
   const place = useMemo(() => (walk ? journeyDestination.get(share.id) : null), [walk, share.id]);
   const nearRef = useRef(0);
   const keepSharingRef = useRef(false);
@@ -100,6 +110,12 @@ const LiveLocation = ({
     const notice = forLockScreen({ title: t("native.liveTitle"), body: t("native.liveMessage") });
     const stop = watchLocation(
       async (pos) => {
+        if (share.kind === "ride" && place && offRouteRef.current.push(metresBetween(pos, place))) {
+          setOffRoute(true);
+          vibrate([400, 200, 400, 200, 400]);
+          void notifyNow(9001, t("offRoute.notifyTitle"), t("offRoute.notifyBody", { place: place.label }), "/walk");
+          onOffRouteRef.current?.();
+        }
         if (place && !keepSharingRef.current) {
           nearRef.current = isAt(pos, place) ? nearRef.current + 1 : 0;
           if (nearRef.current >= ARRIVAL_FIXES) setArrivingAt((at) => at ?? Date.now() + ARRIVAL_COUNTDOWN_MS);
@@ -219,6 +235,36 @@ const LiveLocation = ({
       </CardHeader>
       <CardContent className="space-y-3">
         {warning && <AreaWarning warning={warning} onDismiss={() => setWarning(null)} />}
+        {offRoute && place && (
+          <div role="alert" className="space-y-2 rounded-xl border border-destructive/50 bg-destructive/10 p-3">
+            <p className="flex items-start gap-2 font-semibold">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> {t("offRoute.title", { place: place.label })}
+            </p>
+            <p className="text-sm">{t("offRoute.text")}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  offRouteRef.current.detour();
+                  setOffRoute(false);
+                }}
+              >
+                {t("offRoute.detour")}
+              </Button>
+              <Link to="/sos#fake-call">
+                <Button size="sm" variant="outline" className="gap-1.5">
+                  <Phone className="h-3.5 w-3.5" /> {t("emotion.fakeCall")}
+                </Button>
+              </Link>
+              <Link to="/sos?start=sos">
+                <Button size="sm" variant="destructive">
+                  {t("offRoute.sos")}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
         {place && arrivingAt === null && (
           <p className="flex items-center gap-2 text-sm font-medium">
             <MapPin className="h-4 w-4 shrink-0 text-primary" /> {t("places.headingTo", { place: place.label })}
