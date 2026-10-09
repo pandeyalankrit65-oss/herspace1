@@ -597,7 +597,7 @@ const messages: Partial<Record<MessageKey, string>> = {
   "legal.readTranslation": "বাংলায় পড়ুন",
   "exit.button": "বেরিয়ে যান",
   "sos.silentLabel": "নিঃশব্দ সতর্কতা",
-  "sos.silentHint": "এই ফোনে কোনো কম্পন বা শব্দ হবে না, আর কেউ শুনে ফেলতে পারে বলে আপনার পরিচিতদের কল না করে মেসেজ করতে বলা হবে।",
+  "sos.silentHint": "এই ফোনে কোনো ভাইব্রেশন বা আওয়াজ হয় না, আর কেউ শুনছে বা আপনার ফোন দেখছে এই ভেবে, পরিচিতদের বলা হয় আপনাকে কল না করতে বা মেসেজে অ্যালার্টের কথা না বলতে।",
   "safe.title": "বাড়িতে নিরাপত্তা",
   "safe.desc": "যখন কেউ আপনার ফোন দেখতে পারে বা আপনার কথা শুনে ফেলতে পারে। এই সেটিংস শুধু এই ডিভাইসে থাকে।",
   "safe.disguiseTitle": "ছদ্মবেশী মোড",
@@ -1875,6 +1875,10 @@ const messages: Partial<Record<MessageKey, string>> = {
   "smsAlert.note": "আপনার পরিচিতদের জানানো হয় যে আপনি মেসেজে পাঠিয়েছেন, তাই আপনার লোকেশন ওঁরা জানতে পারেন না। কাদের অ্যালার্ট করা হল তা জানিয়ে উত্তর আসে। ঘণ্টায় সর্বোচ্চ 3টা অ্যালার্ট।",
   // How an SOS started: by text message
   "track.how.sms": "{name} মেসেজে SOS পাঠিয়েছেন, তাই তাঁর লোকেশন জানা নেই।",
+  // SOS settings, folded away
+  "sos.settingsTitle": "SOS সেটিংস",
+  "sos.settingsOn": "চালু: {list}",
+  "sos.settingsNone": "নীরব অ্যালার্ট, রেকর্ডিং, সেফ ওয়ার্ড, ঝাঁকানো, চিৎকার আর আরও কিছু",
 };
 
 export default messages;

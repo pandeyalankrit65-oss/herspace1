@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { addConfirmedContact, failOnConsoleErrors, linkIn, signUp, waitForMessage } from "./helpers";
+import { addConfirmedContact, failOnConsoleErrors, linkIn, signUp, waitForMessage, openSosSettings } from "./helpers";
 
 // Bhopal: no other test uses these coordinates.
 const START = { latitude: 23.26, longitude: 77.41, accuracy: 10 };
@@ -11,6 +11,8 @@ test("contacts are told how to help, not to call during a silent SOS, and which 
   const friend = await addConfirmedContact(page, browser, "Friend");
 
   await page.goto("/sos");
+
+  await openSosSettings(page);
   await page.getByRole("switch", { name: "Silent alert" }).click();
   await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
   await expect(page.getByText("Sharing your live location")).toBeVisible({ timeout: 15_000 });

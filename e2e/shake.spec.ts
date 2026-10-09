@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { openSosSettings } from "./helpers";
 
 // Synthetic motion events stand in for shaking the phone.
 async function shake(page: Page, jolts: number, strength = 30) {
@@ -13,6 +14,7 @@ async function shake(page: Page, jolts: number, strength = 30) {
 test("shaking the phone starts the SOS countdown once the user turns it on", async ({ page, isMobile }) => {
   test.skip(!isMobile, "only offered on touch screens");
   await page.goto("/sos");
+  await openSosSettings(page);
   const toggle = page.getByRole("switch", { name: "Shake to start SOS" });
   await expect(toggle).not.toBeChecked();
 
@@ -33,12 +35,14 @@ test("shaking the phone starts the SOS countdown once the user turns it on", asy
 
   // The setting is remembered.
   await page.reload();
+  await openSosSettings(page);
   await expect(page.getByRole("switch", { name: "Shake to start SOS" })).toBeChecked();
 });
 
 test("the shake option isn't shown on desktop", async ({ page, isMobile }) => {
   test.skip(isMobile, "desktop only");
   await page.goto("/sos");
+  await openSosSettings(page);
   await expect(page.getByRole("button", { name: /EMERGENCY SOS/ })).toBeVisible();
   await expect(page.getByRole("switch", { name: "Shake to start SOS" })).toHaveCount(0);
 });

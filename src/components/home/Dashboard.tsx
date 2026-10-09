@@ -234,6 +234,16 @@ const Dashboard = () => {
         {TOOL_GROUPS.map((group) => (
           <section key={group.title} className="space-y-5">
             <h2 className="text-2xl font-extrabold tracking-tight md:text-3xl">{t(group.title)}</h2>
+            {/* Emergency contraception and HIV medicine work only within 72 hours: a direct way in. */}
+            {group.title === "dash.toolsAfter" && (
+              <Link
+                to="/help#after-assault"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold hover:bg-destructive/10"
+              >
+                {t("help.afterAssaultLink")}
+                <ChevronRight className="h-4 w-4 shrink-0" />
+              </Link>
+            )}
             <div className={cn("grid gap-4 sm:grid-cols-2", group.tools.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
               {group.tools.map(({ to, icon: Icon, label, text }) => (
                 <Link

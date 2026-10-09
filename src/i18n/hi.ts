@@ -658,7 +658,7 @@ const hi: Record<MessageKey, string> = {
   // Safety at home
   "exit.button": "बाहर निकलें",
   "sos.silentLabel": "चुपचाप अलर्ट",
-  "sos.silentHint": "इस फ़ोन पर न कंपन होगा न आवाज़, और आपके संपर्कों से कहा जाएगा कि कॉल करने के बजाय मैसेज करें, ताकि कोई सुन न ले।",
+  "sos.silentHint": "इस फ़ोन पर न वाइब्रेशन न आवाज़, और आपके संपर्कों से कहा जाता है कि वे आपको कॉल न करें और मैसेज में अलर्ट का ज़िक्र न करें, अगर कोई सुन रहा हो या आपका फ़ोन देख रहा हो।",
   "safe.title": "घर पर सुरक्षा",
   "safe.desc": "जब कोई आपका फ़ोन देख सकता हो या आपकी बात सुन सकता हो। ये सेटिंग केवल इसी डिवाइस पर रहती हैं।",
   "safe.disguiseTitle": "छिपा हुआ मोड",
@@ -1987,6 +1987,11 @@ const hi: Record<MessageKey, string> = {
 
   // How an SOS started: by text message
   "track.how.sms": "{name} ने मैसेज से SOS भेजा, इसलिए उनकी लोकेशन पता नहीं है।",
+
+  // SOS settings, folded away
+  "sos.settingsTitle": "SOS सेटिंग",
+  "sos.settingsOn": "चालू: {list}",
+  "sos.settingsNone": "साइलेंट अलर्ट, रिकॉर्डिंग, सेफ़ वर्ड, फ़ोन हिलाना, चीख और भी बहुत कुछ",
 
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",

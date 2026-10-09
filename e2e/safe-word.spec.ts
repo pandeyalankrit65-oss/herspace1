@@ -1,9 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+import { openSosSettings } from "./helpers";
 import { installFakeSpeech, say } from "./fake-speech";
 
 test.beforeEach(async ({ page }) => {
   await installFakeSpeech(page);
   await page.goto("/sos");
+  await openSosSettings(page);
 });
 
 async function setSafeWord(page: Page, word: string, helpWords = true) {
@@ -58,6 +60,7 @@ test("the safe word can be tested before saving, and removed", async ({ page }) 
 
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await page.reload();
+  await openSosSettings(page);
   await expect(page.getByText('Your safe word is "mango"')).toBeVisible();
   await page.getByRole("button", { name: "Change", exact: true }).click();
   await page.getByRole("button", { name: "Remove safe word" }).click();

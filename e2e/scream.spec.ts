@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openSosSettings } from "./helpers";
 
 // A stand-in microphone: silent until the test "screams", then a loud 1.5 kHz sawtooth, which
 // has a scream's loudness and its energy in the 0.7-4 kHz band.
@@ -28,6 +29,7 @@ const scream = (page: import("@playwright/test").Page, on: boolean) =>
 
 test("listening for screams: off by default, testable without starting SOS, then starts the countdown", async ({ page }) => {
   await page.goto("/sos");
+  await openSosSettings(page);
   const toggle = page.getByRole("switch", { name: "Listen for screams" });
   await expect(toggle).not.toBeChecked();
 
@@ -55,12 +57,16 @@ test("listening for screams: off by default, testable without starting SOS, then
   await scream(page, false);
   await page.getByRole("button", { name: "Cancel" }).click();
 
-  // Remembered. After a reload sound only flows once the page is tapped, and it says so.
+  // Remembered. After a reload sound only flows once the page is tapped, and it says so, even
+  // with the settings folded away.
   await page.reload();
-  await expect(page.getByRole("switch", { name: "Listen for screams" })).toBeChecked();
+  await expect(page.getByRole("button", { name: /^SOS settings/ })).toContainText("On: Listen for screams");
   await expect(page.getByText(/Tap anywhere on the page to start listening/)).toBeVisible();
   await page.getByRole("heading").first().click();
   await expect(page.getByText("Listening for screams")).toBeVisible();
   await scream(page, true);
   await expect(page.getByText("Sending alert...")).toBeVisible({ timeout: 4000 });
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await openSosSettings(page);
+  await expect(page.getByRole("switch", { name: "Listen for screams" })).toBeChecked();
 });

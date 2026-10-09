@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readOutbox, signUp, addConfirmedContact } from "./helpers";
+import { readOutbox, signUp, addConfirmedContact, openSosSettings } from "./helpers";
 
 test.use({ permissions: ["geolocation"], geolocation: { latitude: 17.385, longitude: 78.4867 } });
 
@@ -15,6 +15,7 @@ test("in hold mode, letting go early cancels and a full hold sends at once", asy
   await signUp(page, "Nila");
   const contact = await addConfirmedContact(page, browser, "Mom");
   await page.goto("/sos");
+  await openSosSettings(page);
   await page.getByRole("radio", { name: "Press and hold for 3 seconds" }).click();
   const button = page.getByRole("button", { name: /press and hold for 3 seconds/ });
   await expect(button).toContainText("Hold for 3 seconds");
@@ -32,12 +33,14 @@ test("in hold mode, letting go early cancels and a full hold sends at once", asy
 
   // The choice is remembered.
   await page.goto("/sos");
+  await openSosSettings(page);
   await expect(page.getByRole("radio", { name: "Press and hold for 3 seconds" })).toHaveAttribute("aria-checked", "true");
 });
 
 test("hold mode works from the keyboard", async ({ page, isMobile }) => {
   test.skip(isMobile, "keyboard");
   await page.goto("/sos");
+  await openSosSettings(page);
   await page.getByRole("radio", { name: "Press and hold for 3 seconds" }).click();
   await page.getByRole("button", { name: /EMERGENCY SOS/ }).focus();
   await page.keyboard.down("Space");

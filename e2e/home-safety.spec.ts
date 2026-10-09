@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { addConfirmedContact, signUp, waitForMessage } from "./helpers";
+import { addConfirmedContact, signUp, waitForMessage, openSosSettings } from "./helpers";
 
 test.use({ permissions: ["geolocation"], geolocation: { latitude: 26.8467, longitude: 80.9462 } });
 
@@ -57,6 +57,7 @@ test("quick exit leaves for an ordinary page and can't be undone with Back", asy
   await page.goto("/account");
   await page.getByRole("switch", { name: "Quick exit button" }).click();
   await page.goto("/sos");
+  await openSosSettings(page);
   await page.getByRole("button", { name: "Exit", exact: true }).click();
   await expect(page).toHaveURL(/google\.com\/search\?q=weather/);
   await page.goBack();
@@ -68,6 +69,8 @@ test("a silent SOS asks contacts not to call, and the code phrase is explained t
   const sister = await addConfirmedContact(page, browser, "Sister");
 
   await page.goto("/sos");
+
+  await openSosSettings(page);
   await page.getByRole("switch", { name: "Silent alert" }).click();
   await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
   const sms = await waitForMessage((m) => m.to === sister.phone && m.body.startsWith("HerSpace SOS"), 20_000);

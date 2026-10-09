@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { openSosSettings } from "./helpers";
 
 // A stand-in microphone: a voice-like tone whose pitch and loudness the test controls.
 test.beforeEach(async ({ page }) => {
@@ -31,6 +32,7 @@ const voice = (page: Page, hz: number, level: number) =>
 test("voice stress (experiment): learns her calm voice, then asks if she's okay, and never sends SOS by itself", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/sos");
+  await openSosSettings(page);
   await page.getByRole("switch", { name: /Notice stress in my voice/ }).click();
   await page.getByRole("button", { name: "Learn my calm voice" }).click();
   await expect(page.getByText("Keep talking normally...")).toBeVisible();
@@ -51,6 +53,7 @@ test("voice stress (experiment): learns her calm voice, then asks if she's okay,
   // The baseline is remembered on the phone. After a reload the browser needs a tap before any
   // sound flows, and the page says so instead of pretending to listen.
   await page.reload();
+  await openSosSettings(page);
   await expect(page.getByText(/Tap anywhere on the page to start listening/).first()).toBeVisible();
   await page.getByRole("heading").first().click();
   await expect(page.getByText("Listening for stress in your voice")).toBeVisible();

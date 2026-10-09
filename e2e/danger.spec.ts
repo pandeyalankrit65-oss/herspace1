@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { addConfirmedContact, signUp } from "./helpers";
+import { addConfirmedContact, signUp, openSosSettings } from "./helpers";
 
 // A fake microphone (Chrome's test tone) so audio recording can run for real.
 test.use({
@@ -13,6 +13,7 @@ test("audio is recorded in pieces during an SOS, and only the user can play it b
   await signUp(page, "Leela");
   await addConfirmedContact(page, browser, "Mom");
   await page.goto("/sos");
+  await openSosSettings(page);
   await page.getByRole("switch", { name: "Record audio during SOS" }).click();
   await page.getByRole("button", { name: /EMERGENCY SOS/ }).click();
   await expect(page.getByText("Alert sent to 1 contact")).toBeVisible({ timeout: 15_000 });
@@ -30,6 +31,7 @@ test("audio is recorded in pieces during an SOS, and only the user can play it b
 
 test("the loud alarm fills the screen until stopped", async ({ page }) => {
   await page.goto("/sos");
+  await openSosSettings(page);
   await page.getByRole("button", { name: "Loud alarm" }).click();
   const alarm = page.getByRole("alertdialog", { name: "Alarm sounding" });
   await expect(alarm).toBeVisible();

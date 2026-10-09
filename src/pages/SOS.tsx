@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { AlertCircle, Footprints, Siren, Phone, MapPin, MessageSquare, Mic, MicOff, CheckCircle2, XCircle, Timer, Vibrate, ChevronRight, Users, BellOff } from "lucide-react";
+import { AlertCircle, BellOff, CheckCircle2, ChevronDown, ChevronRight, Footprints, MapPin, MessageSquare, Mic, MicOff, Phone, Settings2, Siren, Timer, Users, Vibrate, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -11,6 +11,7 @@ import { isNative } from "@/lib/native";
 import { offlineContacts, useOnline } from "@/lib/offline";
 import LiveLocation, { type LiveShare } from "@/components/LiveLocation";
 import GuideToSafety from "@/components/GuideToSafety";
+import ListeningStatus from "@/components/ListeningStatus";
 import { followUpAfter } from "@/lib/followUpNotifications";
 import FakeCall from "@/components/FakeCall";
 import type { Contact } from "./Contacts";
@@ -273,6 +274,16 @@ const SOS = () => {
     void sendSOS();
   }, HOLD_SECONDS * 1000);
   const holdMode = sosMode.mode === "hold";
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOn = [
+    silent && t("sos.silentLabel"),
+    holdMode && t("sos.modeHold", { seconds: HOLD_SECONDS }),
+    user && recordAudio && t("rec.settingLabel"),
+    safeWord.word && t("safeWord.title"),
+    shake.enabled && t("sos.shakeLabel"),
+    scream.enabled && t("scream.label"),
+    stress.enabled && t("stress.label"),
+  ].filter(Boolean) as string[];
   const VOICE_ERRORS = {
     unsupported: isNative ? "sos.voiceUnsupportedApp" : "sos.voiceUnsupportedDesc",
     blocked: "sos.micBlockedDesc",
@@ -459,26 +470,6 @@ const SOS = () => {
                   {t(VOICE_ERRORS[voice.error], { error: voice.errorDetail })}
                 </p>
               )}
-              {voice.supported && <SafeWordSettings settings={{ word: safeWord.word, helpWords: safeWord.helpWords }} onSave={safeWord.save} />}
-              <fieldset className="mx-auto max-w-md rounded-xl border bg-muted/40 p-3 text-left">
-                <legend className="px-1 text-sm font-semibold">{t("sos.modeLabel")}</legend>
-                <div className="grid grid-cols-2 gap-2" role="radiogroup">
-                  {(["tap", "hold"] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      role="radio"
-                      aria-checked={sosMode.mode === m}
-                      onClick={() => sosMode.setMode(m)}
-                      className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
-                        sosMode.mode === m ? "border-primary bg-card font-semibold shadow-sm" : "border-transparent text-muted-foreground hover:bg-card"
-                      }`}
-                    >
-                      {m === "tap" ? t("sos.modeTap") : t("sos.modeHold", { seconds: HOLD_SECONDS })}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
               {recorder.status === "recording" && (
                 <div role="status" className="mx-auto flex max-w-md items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-left text-sm">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-destructive motion-safe:animate-pulse" />
@@ -496,49 +487,96 @@ const SOS = () => {
               <div className="flex justify-center">
                 <LoudAlarm startSignal={signal?.action === "alarm" ? signal.at : undefined} />
               </div>
-              {user && (
-                <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
-                  <Mic className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <div className="min-w-0 flex-1">
-                    <label htmlFor="record-toggle" className="text-sm font-semibold">
-                      {t("rec.settingLabel")}
-                    </label>
-                    <p className="text-xs text-muted-foreground">{t("rec.settingHint")}</p>
+              {/* Listeners that are on say so here, even with the settings folded away: "tap to start
+                  listening" must never be hidden. */}
+              {!settingsOpen && <ListeningStatus scream={scream} stress={stress} />}
+              {/* Set-once choices, folded away so the emergency actions stand alone. */}
+              <section className="mx-auto max-w-md text-left">
+                <button
+                  type="button"
+                  aria-expanded={settingsOpen}
+                  aria-controls="sos-settings"
+                  onClick={() => setSettingsOpen((o) => !o)}
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border bg-muted/40 p-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <Settings2 className="h-4 w-4 text-primary" /> {t("sos.settingsTitle")}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {settingsOn.length ? t("sos.settingsOn", { list: settingsOn.join(", ") }) : t("sos.settingsNone")}
+                    </span>
+                  </span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`} />
+                </button>
+                {settingsOpen && (
+                  <div id="sos-settings" className="mt-3 space-y-4">
+                  {voice.supported && <SafeWordSettings settings={{ word: safeWord.word, helpWords: safeWord.helpWords }} onSave={safeWord.save} />}
+                  <fieldset className="mx-auto max-w-md rounded-xl border bg-muted/40 p-3 text-left">
+                    <legend className="px-1 text-sm font-semibold">{t("sos.modeLabel")}</legend>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup">
+                      {(["tap", "hold"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          role="radio"
+                          aria-checked={sosMode.mode === m}
+                          onClick={() => sosMode.setMode(m)}
+                          className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                            sosMode.mode === m ? "border-primary bg-card font-semibold shadow-sm" : "border-transparent text-muted-foreground hover:bg-card"
+                          }`}
+                        >
+                          {m === "tap" ? t("sos.modeTap") : t("sos.modeHold", { seconds: HOLD_SECONDS })}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                  {user && (
+                    <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
+                      <Mic className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <label htmlFor="record-toggle" className="text-sm font-semibold">
+                          {t("rec.settingLabel")}
+                        </label>
+                        <p className="text-xs text-muted-foreground">{t("rec.settingHint")}</p>
+                      </div>
+                      <Switch
+                        id="record-toggle"
+                        checked={recordAudio}
+                        onCheckedChange={(on) => {
+                          setRecordAudio(on);
+                          saveRecordSetting(on);
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
+                    <BellOff className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <label htmlFor="silent-toggle" className="text-sm font-semibold">
+                        {t("sos.silentLabel")}
+                      </label>
+                      <p className="text-xs text-muted-foreground">{t("sos.silentHint")}</p>
+                    </div>
+                    <Switch id="silent-toggle" checked={silent} onCheckedChange={setSilent} />
                   </div>
-                  <Switch
-                    id="record-toggle"
-                    checked={recordAudio}
-                    onCheckedChange={(on) => {
-                      setRecordAudio(on);
-                      saveRecordSetting(on);
-                    }}
-                  />
-                </div>
-              )}
-              <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
-                <BellOff className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <label htmlFor="silent-toggle" className="text-sm font-semibold">
-                    {t("sos.silentLabel")}
-                  </label>
-                  <p className="text-xs text-muted-foreground">{t("sos.silentHint")}</p>
-                </div>
-                <Switch id="silent-toggle" checked={silent} onCheckedChange={setSilent} />
-              </div>
-              {shake.supported && (
-                <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
-                  <Vibrate className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <div className="min-w-0 flex-1">
-                    <label htmlFor="shake-toggle" className="text-sm font-semibold">
-                      {t("sos.shakeLabel")}
-                    </label>
-                    <p className="text-xs text-muted-foreground">{t("sos.shakeHint")}</p>
+                  {shake.supported && (
+                    <div className="mx-auto flex max-w-md items-start gap-3 rounded-xl border bg-muted/40 p-3 text-left">
+                      <Vibrate className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <label htmlFor="shake-toggle" className="text-sm font-semibold">
+                          {t("sos.shakeLabel")}
+                        </label>
+                        <p className="text-xs text-muted-foreground">{t("sos.shakeHint")}</p>
+                      </div>
+                      <Switch id="shake-toggle" checked={shake.enabled} onCheckedChange={shake.setEnabled} />
+                    </div>
+                  )}
+                  <ScreamSettings scream={scream} />
+                  <VoiceStressSettings stress={stress} />
                   </div>
-                  <Switch id="shake-toggle" checked={shake.enabled} onCheckedChange={shake.setEnabled} />
-                </div>
-              )}
-              <ScreamSettings scream={scream} />
-              <VoiceStressSettings stress={stress} />
+                )}
+              </section>
               <StressPrompt stress={stress} onSos={() => startCountdown("stress")} />
             </CardContent>
           </Card>

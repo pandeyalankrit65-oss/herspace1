@@ -657,7 +657,7 @@ const en = {
   // Safety at home
   "exit.button": "Exit",
   "sos.silentLabel": "Silent alert",
-  "sos.silentHint": "No vibration or sound on this phone, and your contacts are asked to text rather than call, in case someone is listening.",
+  "sos.silentHint": "No vibration or sound on this phone, and your contacts are asked not to call you or mention the alert in a text, in case someone is listening or checking your phone.",
   "safe.title": "Safety at home",
   "safe.desc": "For when someone may check your phone or overhear you. These settings stay on this device.",
   "safe.disguiseTitle": "Disguised mode",
@@ -1986,6 +1986,11 @@ const en = {
 
   // How an SOS started: by text message
   "track.how.sms": "{name} sent SOS by text message, so their location isn't known.",
+
+  // SOS settings, folded away
+  "sos.settingsTitle": "SOS settings",
+  "sos.settingsOn": "On: {list}",
+  "sos.settingsNone": "Silent alert, recording, safe word, shake, screams and more",
 
   // Error screen
   "error.title": "Something went wrong",

@@ -81,3 +81,9 @@ export function failOnConsoleErrors(page: Page) {
   });
   return () => expect(errors, "console errors").toEqual([]);
 }
+
+// The SOS page folds its settings (silent alert, safe word, screams...) away; opens them.
+export async function openSosSettings(page: Page) {
+  const button = page.getByRole("button", { name: /^SOS settings/ });
+  if ((await button.getAttribute("aria-expanded")) !== "true") await button.click();
+}
