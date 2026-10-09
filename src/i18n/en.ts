@@ -1992,6 +1992,10 @@ const en = {
   "sos.settingsOn": "On: {list}",
   "sos.settingsNone": "Silent alert, recording, safe word, shake, screams and more",
 
+  // Warning before the only HR person deletes their account
+  "account.lastHr": "You're the only HR person at {org}. If you delete your account, reports from your colleagues there won't be seen by anyone until someone else joins the HR team. If you can, add someone to the HR team first (Corporate Connect).",
+  "account.lastHrConfirm": "I understand, delete my account anyway",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

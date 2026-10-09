@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import LoadingRows from "@/components/LoadingRows";
@@ -47,9 +48,13 @@ const Account = () => {
   const [deletePassword, setDeletePassword] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [lastHr, setLastHr] = useState<string | null>(null);
+  // Just deleted: going home, not to the login page.
+  const deletedRef = useRef(false);
+  const [lastHrConfirmed, setLastHrConfirmed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/login?next=/account", { replace: true });
+    if (!loading && !user && !deletedRef.current) navigate("/login?next=/account", { replace: true });
   }, [loading, user, navigate]);
 
   useEffect(() => {
@@ -103,12 +108,15 @@ const Account = () => {
     e.preventDefault();
     setDeleting(true);
     try {
-      await api("/api/account", { method: "DELETE", body: { password: deletePassword } });
+      await api("/api/account", { method: "DELETE", body: { password: deletePassword, confirmLastHr: lastHrConfirmed } });
+      deletedRef.current = true;
+      navigate("/", { replace: true });
       clearSession();
       toast({ title: t("account.deletedTitle"), description: t("account.deletedDesc") });
-      navigate("/");
     } catch (err) {
-      toast({ title: t("account.deleteFailed"), description: (err as Error).message, variant: "destructive" });
+      // The only HR person at a workplace: explain, and let her confirm.
+      if (err instanceof ApiError && err.status === 409 && typeof err.data?.lastHr === "string") setLastHr(err.data.lastHr);
+      else toast({ title: t("account.deleteFailed"), description: (err as Error).message, variant: "destructive" });
     } finally {
       setDeleting(false);
     }
@@ -278,8 +286,17 @@ const Account = () => {
                     onChange={(e) => setDeletePassword(e.target.value)}
                     required
                   />
+                  {lastHr && (
+                    <div role="alert" className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm">
+                      <p>{t("account.lastHr", { org: lastHr })}</p>
+                      <label className="flex items-start gap-2">
+                        <Checkbox checked={lastHrConfirmed} onCheckedChange={(v) => setLastHrConfirmed(v === true)} className="mt-0.5" />
+                        {t("account.lastHrConfirm")}
+                      </label>
+                    </div>
+                  )}
                   <div className="flex gap-2">
-                    <Button type="submit" variant="destructive" disabled={deleting}>
+                    <Button type="submit" variant="destructive" disabled={deleting || Boolean(lastHr && !lastHrConfirmed)}>
                       {deleting ? t("account.deleting") : t("account.deleteConfirm")}
                     </Button>
                     <Button

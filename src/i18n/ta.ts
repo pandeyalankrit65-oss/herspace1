@@ -1879,6 +1879,9 @@ const messages: Partial<Record<MessageKey, string>> = {
   "sos.settingsTitle": "SOS அமைப்புகள்",
   "sos.settingsOn": "இயக்கத்தில்: {list}",
   "sos.settingsNone": "அமைதியான எச்சரிக்கை, பதிவு, பாதுகாப்புச் சொல், அசைத்தல், அலறல் மற்றும் பல",
+  // Warning before the only HR person deletes their account
+  "account.lastHr": "{org} இல் நீங்கள் மட்டுமே HR நபர். உங்கள் கணக்கை நீக்கினால், வேறு யாராவது HR குழுவில் சேரும் வரை அங்குள்ள உங்கள் சக ஊழியர்களின் புகார்களை யாரும் பார்க்க மாட்டார்கள். முடிந்தால், முதலில் யாரையாவது HR குழுவில் சேருங்கள் (Corporate Connect).",
+  "account.lastHrConfirm": "புரிகிறது, இருந்தாலும் என் கணக்கை நீக்கு",
 };
 
 export default messages;

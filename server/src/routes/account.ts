@@ -241,12 +241,27 @@ accountRouter.get('/export', (req, res) => {
 });
 
 accountRouter.delete('/', passwordLimiter, (req, res) => {
-  const body = parse(z.object({ password: z.string().min(1).max(200) }), req, res);
+  const body = parse(z.object({ password: z.string().min(1).max(200), confirmLastHr: z.boolean().optional() }), req, res);
   if (!body) return;
   const userId = req.user!.id;
   if (!checkPassword(userId, body.password)) return res.status(401).json({ error: 'Password is incorrect.' });
+  // The only HR person at a workplace with employees: their reports would go unread. Deleting is
+  // still her right, so it's allowed once she has confirmed she understands.
+  const hr = db
+    .prepare(
+      `SELECT o.id, o.name,
+         (SELECT COUNT(*) FROM org_members WHERE org_id = o.id AND role = 'hr' AND user_id != ?) AS otherHr,
+         (SELECT COUNT(*) FROM org_members WHERE org_id = o.id) AS members
+       FROM org_members m JOIN organizations o ON o.id = m.org_id WHERE m.user_id = ? AND m.role = 'hr'`
+    )
+    .get(userId, userId) as { id: number; name: string; otherHr: number; members: number } | undefined;
+  if (hr && hr.otherHr === 0 && hr.members > 1 && !body.confirmLastHr) {
+    return res.status(409).json({ error: `You're the only HR person at ${hr.name}.`, lastHr: hr.name });
+  }
   db.exec('BEGIN');
   try {
+    // A workplace with no one else in it goes with her account, as when leaving it.
+    if (hr && hr.members === 1) db.prepare('DELETE FROM organizations WHERE id = ?').run(hr.id);
     // Personal data goes with the account. Anonymous reports were never linked to it.
     deleteReports('r.user_id = ?', userId);
     deleteSosEvents('user_id = ?', userId);

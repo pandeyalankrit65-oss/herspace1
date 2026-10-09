@@ -1035,6 +1035,25 @@ describe('Corporate Connect', () => {
     return { hr, employee, code: created.data.joinCode as string };
   }
 
+  test('the only HR person is warned before deleting her account, and can still delete it', async () => {
+    const { hr, employee } = await workplace();
+    const refused = await call('/account', { token: hr.token, method: 'DELETE', body: { password: 'password123' } });
+    assert.equal(refused.status, 409);
+    assert.equal(refused.data.lastHr, 'Acme');
+    assert.equal((await call('/auth/me', { token: hr.token })).status, 200, 'nothing deleted yet');
+    assert.equal((await call('/account', { token: hr.token, method: 'DELETE', body: { password: 'password123', confirmLastHr: true } })).status, 200);
+    // The workplace stays for its employees; it just has no HR team now.
+    assert.equal((await call('/workplace', { token: employee.token })).data.org.name, 'Acme');
+  });
+
+  test('a workplace with no one else in it goes with the HR account', async () => {
+    const hr = await newUser('Solo');
+    verifyEmail(hr.email);
+    const created = await call('/workplace/orgs', { token: hr.token, body: { name: 'Solo Ltd', emailDomain: 'example.com' } });
+    assert.equal((await call('/account', { token: hr.token, method: 'DELETE', body: { password: 'password123' } })).status, 200);
+    assert.equal((db.prepare('SELECT COUNT(*) AS n FROM organizations WHERE id = ?').get(created.data.org.id) as { n: number }).n, 0);
+  });
+
   test('HR sets up a workplace; employees join with its code and are verified by email domain', async () => {
     const someone = await newUser('Sona');
     const bad = await call('/workplace/orgs', { token: someone.token, body: { name: 'Fake Corp', emailDomain: 'acme-real.com' } });

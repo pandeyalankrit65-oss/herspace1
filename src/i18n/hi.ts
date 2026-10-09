@@ -1993,6 +1993,10 @@ const hi: Record<MessageKey, string> = {
   "sos.settingsOn": "चालू: {list}",
   "sos.settingsNone": "साइलेंट अलर्ट, रिकॉर्डिंग, सेफ़ वर्ड, फ़ोन हिलाना, चीख और भी बहुत कुछ",
 
+  // Warning before the only HR person deletes their account
+  "account.lastHr": "आप {org} में अकेली HR व्यक्ति हैं। अगर आप अपना खाता मिटाती हैं, तो वहाँ आपके सहकर्मियों की रिपोर्ट कोई नहीं देखेगा जब तक कोई और HR टीम में न जुड़े। हो सके तो पहले किसी को HR टीम में जोड़ें (कॉर्पोरेट कनेक्ट)।",
+  "account.lastHrConfirm": "मैं समझती हूं, फिर भी मेरा खाता मिटाएँ",
+
   // Error screen
   "error.title": "कुछ गड़बड़ हो गई",
   "error.desc": "इस पेज में कोई गड़बड़ी हुई। अगर आप खतरे में हैं, तो अभी मदद के लिए कॉल करें।",

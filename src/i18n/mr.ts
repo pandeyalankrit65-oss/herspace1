@@ -1879,6 +1879,9 @@ const messages: Partial<Record<MessageKey, string>> = {
   "sos.settingsTitle": "SOS सेटिंग्ज",
   "sos.settingsOn": "सुरू: {list}",
   "sos.settingsNone": "सायलेंट अलर्ट, रेकॉर्डिंग, सेफ वर्ड, फोन हलवणे, किंकाळी आणि बरेच काही",
+  // Warning before the only HR person deletes their account
+  "account.lastHr": "{org} मध्ये तुम्ही एकट्याच HR व्यक्ती आहात. तुम्ही खाते हटवल्यास, दुसरे कोणी HR टीममध्ये सामील होईपर्यंत तिथल्या तुमच्या सहकाऱ्यांच्या तक्रारी कोणीही पाहणार नाही. शक्य असल्यास आधी कोणाला तरी HR टीममध्ये जोडा (Corporate Connect).",
+  "account.lastHrConfirm": "मला समजले, तरीही माझे खाते हटवा",
 };
 
 export default messages;

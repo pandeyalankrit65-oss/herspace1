@@ -65,3 +65,31 @@ test("Corporate Connect: an employee reports to HR anonymously and they talk it 
   await expect(page.getByText("Shown once there are at least 3 reports")).toBeVisible();
   await employeeContext.close();
 });
+
+test("the only HR person is warned before deleting their account, and can still delete it", async ({ page, browser }) => {
+  const hr = await signUp(page, "Hari");
+  await verifyEmail(page, hr.email);
+  await page.goto("/corporate");
+  await page.getByLabel("Organisation name").fill("Lone HR Pvt Ltd");
+  await page.getByRole("button", { name: "Set up workplace" }).click();
+  const code = (await page.getByLabel("Workplace code").first().textContent())!.trim();
+  const colleagueContext = await browser.newContext();
+  const colleague = await colleagueContext.newPage();
+  await signUp(colleague, "Chitra");
+  await colleague.goto("/corporate");
+  await colleague.getByLabel("Workplace code").fill(code);
+  await colleague.getByRole("button", { name: "Join", exact: true }).click();
+  await expect(colleague.getByRole("button", { name: "Send to HR" })).toBeVisible();
+
+  await page.goto("/account");
+  await page.getByRole("button", { name: "Delete my account" }).click();
+  await page.getByLabel("Password").last().fill("password123");
+  await page.getByRole("button", { name: "Permanently delete" }).click();
+  const warning = page.getByRole("alert").filter({ hasText: "You're the only HR person at Lone HR Pvt Ltd" });
+  await expect(warning).toBeVisible();
+  await expect(page.getByRole("button", { name: "Permanently delete" })).toBeDisabled();
+  await warning.getByText("I understand, delete my account anyway").click();
+  await page.getByRole("button", { name: "Permanently delete" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await colleagueContext.close();
+});
