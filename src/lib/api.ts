@@ -11,8 +11,8 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const headers: Record<string, string> = { "X-Requested-With": "HerSpace" };
+export async function api<T>(path: string, options: { method?: string; body?: unknown; headers?: Record<string, string> } = {}): Promise<T> {
+  const headers: Record<string, string> = { "X-Requested-With": "HerSpace", ...options.headers };
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
 
   let res: Response;

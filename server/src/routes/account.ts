@@ -10,6 +10,7 @@ import { perUser } from '../rateLimit';
 import crypto from 'crypto';
 import { deleteReports, reportPhotos } from './reports';
 import { handOverCircles } from './circles';
+import { deleteRecord } from './record';
 
 // Account self-service: password change, data export and deletion (DPDP Act rights).
 export const accountRouter = Router();
@@ -249,6 +250,7 @@ accountRouter.delete('/', passwordLimiter, (req, res) => {
     // Personal data goes with the account. Anonymous reports were never linked to it.
     deleteReports('r.user_id = ?', userId);
     deleteSosEvents('user_id = ?', userId);
+    deleteRecord(userId);
     handOverCircles(userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId); // cascades to sessions, contacts, resets
     db.exec('COMMIT');

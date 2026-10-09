@@ -1548,3 +1548,85 @@ describe('security fixes', () => {
     }
   });
 });
+
+describe('private record', () => {
+  // The server only sees what the phone sends: base64 salts, proofs and ciphertext.
+  const b64 = (s: string) => Buffer.from(s).toString('base64');
+  const wrapped = (secret: string) => ({ salt: b64(`salt-${secret}`), proof: b64(`proof-${secret}`), wrappedKey: { iv: b64('iv-123456789'), ciphertext: b64(`key-for-${secret}`) } });
+  async function rec(path: string, session: string, { body, method, record, raw }: { body?: unknown; method?: string; record?: string; raw?: Buffer } = {}) {
+    const headers: Record<string, string> = { Cookie: `herspace_session=${session}`, 'X-Requested-With': 'HerSpace' };
+    if (record) headers['X-Record-Token'] = record;
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    if (raw) {
+      headers['Content-Type'] = 'application/octet-stream';
+      headers['X-Record-IV'] = b64('iv-for-file1'); // 12 bytes, like a real AES-GCM IV
+    }
+    const res = await fetch(`${base}/record${path}`, {
+      method: method || (body !== undefined || raw ? 'POST' : 'GET'),
+      headers,
+      body: raw ? new Uint8Array(raw) : body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    const type = res.headers.get('content-type') ?? '';
+    return { status: res.status, data: (type.includes('json') ? await res.json() : Buffer.from(await res.arrayBuffer())) as any }; // eslint-disable-line @typescript-eslint/no-explicit-any
+  }
+
+  test('only opens with the PIN proof, locks after five wrong tries, and keeps only ciphertext', async () => {
+    const { token } = await newUser('Meena');
+    assert.deepEqual((await rec('', token)).data, { exists: false });
+    const created = await rec('', token, { body: { byPin: wrapped('pin'), byRecovery: wrapped('recovery') } });
+    assert.equal(created.status, 201);
+    const open = created.data.token as string;
+    assert.equal((await rec('', token, { body: { byPin: wrapped('pin'), byRecovery: wrapped('recovery') } })).status, 409);
+
+    const entry = await rec('/entries', token, { record: open, body: { iv: b64('iv-123456789'), ciphertext: b64('encrypted entry') } });
+    assert.equal(entry.status, 201);
+    const file = await rec(`/entries/${entry.data.id}/files`, token, { record: open, raw: Buffer.from('encrypted photo bytes') });
+    assert.equal(file.status, 201);
+    assert.equal(Buffer.from((await rec(`/files/${file.data.id}`, token, { record: open })).data).toString(), 'encrypted photo bytes');
+
+    // Locked: nothing without the token, even logged in as her.
+    await rec('/lock', token, { record: open, body: {} });
+    assert.equal((await rec('/entries', token, { record: open, body: { iv: b64('iv-123456789'), ciphertext: b64('x') } })).status, 401);
+    assert.equal((await rec(`/files/${file.data.id}`, token)).status, 401);
+
+    // Wrong PINs: four say how many tries are left, the fifth locks it, and then even the right one waits.
+    for (const left of [4, 3, 2, 1]) {
+      const wrong = await rec('/unlock', token, { body: { proof: b64('proof-guess') } });
+      assert.equal(wrong.status, 401);
+      assert.equal(wrong.data.triesLeft, left);
+    }
+    const fifth = await rec('/unlock', token, { body: { proof: b64('proof-guess') } });
+    assert.equal(fifth.status, 429);
+    assert.ok(fifth.data.lockedUntil);
+    assert.equal((await rec('/unlock', token, { body: { proof: b64('proof-pin') } })).status, 429);
+    assert.ok((await rec('', token)).data.lockedUntil);
+
+    // Later, the right PIN opens it and returns the wrapped key and the encrypted entry.
+    db.prepare("UPDATE record_keys SET locked_until = '2000-01-01T00:00:00Z'").run();
+    const unlocked = await rec('/unlock', token, { body: { proof: b64('proof-pin') } });
+    assert.equal(unlocked.status, 200);
+    assert.deepEqual(unlocked.data.wrappedKey, wrapped('pin').wrappedKey);
+    assert.equal(unlocked.data.entries[0].ciphertext, b64('encrypted entry'));
+    assert.equal(unlocked.data.entries[0].files.length, 1);
+  });
+
+  test('the recovery code opens it and sets a new PIN; deleting the account deletes it', async () => {
+    const { token } = await newUser('Gita');
+    await rec('', token, { body: { byPin: wrapped('pin'), byRecovery: wrapped('recovery') } });
+    const recovered = await rec('/recover', token, { body: { proof: b64('proof-recovery') } });
+    assert.equal(recovered.status, 200);
+    assert.deepEqual(recovered.data.wrappedKey, wrapped('recovery').wrappedKey);
+    assert.equal((await rec('/pin', token, { record: recovered.data.token, method: 'PUT', body: wrapped('newpin') })).status, 200);
+    assert.equal((await rec('/unlock', token, { body: { proof: b64('proof-pin') } })).status, 401);
+    const reopened = await rec('/unlock', token, { body: { proof: b64('proof-newpin') } });
+    assert.equal(reopened.status, 200);
+
+    const entry = await rec('/entries', token, { record: reopened.data.token, body: { iv: b64('iv-123456789'), ciphertext: b64('entry') } });
+    await rec(`/entries/${entry.data.id}/files`, token, { record: reopened.data.token, raw: Buffer.from('bytes') });
+    const userId = (db.prepare('SELECT user_id AS id FROM record_keys ORDER BY rowid DESC LIMIT 1').get() as { id: number }).id;
+    assert.equal((await call('/account', { token, method: 'DELETE', body: { password: 'password123' } })).status, 200);
+    for (const table of ['record_keys', 'record_entries', 'record_files', 'record_sessions']) {
+      assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE user_id = ?`).get(userId) as { n: number }).n, 0, table);
+    }
+  });
+});

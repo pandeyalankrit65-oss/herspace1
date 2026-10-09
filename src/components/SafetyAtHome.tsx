@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calculator, ClipboardList, House, KeyRound, LogOut, MessageSquareLock } from "lucide-react";
+import { Calculator, ClipboardList, House, KeyRound, LogOut, MessageSquareLock, NotebookPen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +80,13 @@ const SafetyAtHome = () => {
           <span>
             <span className="block font-semibold">{t("plan.linkTitle")}</span>
             <span className="block text-sm text-muted-foreground">{t("plan.linkText")}</span>
+          </span>
+        </Link>
+        <Link to="/record" className="flex items-start gap-3 rounded-xl bg-primary/5 p-3 ring-1 ring-primary/20 hover:bg-primary/10">
+          <NotebookPen className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <span>
+            <span className="block font-semibold">{t("record.linkTitle")}</span>
+            <span className="block text-sm text-muted-foreground">{t("record.linkText")}</span>
           </span>
         </Link>
         {/* Disguised mode */}

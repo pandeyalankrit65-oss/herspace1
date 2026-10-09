@@ -395,6 +395,46 @@ const migrations: string[] = [
   ALTER TABLE location_shares ADD COLUMN speed REAL;
   ALTER TABLE location_shares ADD COLUMN heading REAL;
   `,
+  // Private record (abuse at home). Encrypted on her phone: the server keeps ciphertext, and the
+  // record key wrapped by her PIN and by her recovery code, with hashed proofs to check before
+  // handing those out. Wrong tries lock it for a while.
+  `
+  CREATE TABLE record_keys (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    pin_salt TEXT NOT NULL,
+    pin_proof_hash TEXT NOT NULL,
+    pin_wrapped TEXT NOT NULL,
+    recovery_salt TEXT NOT NULL,
+    recovery_proof_hash TEXT NOT NULL,
+    recovery_wrapped TEXT NOT NULL,
+    failed INTEGER NOT NULL DEFAULT 0,
+    locked_until TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE record_sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL
+  );
+  CREATE TABLE record_entries (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    iv TEXT NOT NULL,
+    ciphertext TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX record_entries_user ON record_entries(user_id);
+  CREATE TABLE record_files (
+    id INTEGER PRIMARY KEY,
+    entry_id INTEGER NOT NULL REFERENCES record_entries(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    iv TEXT NOT NULL,
+    file TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  `,
 ];
 
 function migrate() {

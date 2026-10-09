@@ -6,6 +6,7 @@ import { emailConfigured, smsConfigured, voiceCallsEnabled } from './messaging';
 import { supportReply } from './chat';
 import { callerReply } from './fakeCall';
 import { draftReport } from './reportDraft';
+import { recordRouter } from './routes/record';
 import { rateLimit } from './rateLimit';
 import { parse } from './util';
 import { NEARBY_RADIUS_M, nearbyPlaces, searchPlaces } from './geo';
@@ -55,6 +56,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/account', accountRouter);
 app.use('/api/contacts', contactsRouter);
+app.use('/api/record', recordRouter);
 app.use('/api/contact-invites', contactInvitesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/sos', sosRouter);

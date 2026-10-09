@@ -39,9 +39,10 @@ export function stripJpegMetadata(input: Buffer): Buffer | null {
   return null;
 }
 
-// Stored files: report photos (.jpg) and SOS audio recordings (.webm/.ogg/.m4a).
-const FILE_NAME = /^[a-f0-9]{32}\.(jpg|webm|ogg|m4a)$/;
-export type StoredExt = 'jpg' | 'webm' | 'ogg' | 'm4a';
+// Stored files: report photos (.jpg), SOS audio recordings (.webm/.ogg/.m4a) and the private
+// record's encrypted files (.bin, which the server can't read).
+const FILE_NAME = /^[a-f0-9]{32}\.(jpg|webm|ogg|m4a|bin)$/;
+export type StoredExt = 'jpg' | 'webm' | 'ogg' | 'm4a' | 'bin';
 
 export function saveFile(data: Buffer, ext: StoredExt): string {
   const dir = uploadDir();
