@@ -52,9 +52,9 @@ test("voice stress (experiment): learns her calm voice, then asks if she's okay,
 
   // The baseline is remembered on the phone. After a reload the browser needs a tap before any
   // sound flows, and the page says so instead of pretending to listen.
+  // Checked with the settings folded: opening them is itself a tap, which would start the sound.
   await page.reload();
-  await openSosSettings(page);
-  await expect(page.getByText(/Tap anywhere on the page to start listening/).first()).toBeVisible();
+  await expect(page.getByText(/Tap anywhere on the page to start listening/)).toBeVisible();
   await page.getByRole("heading").first().click();
   await expect(page.getByText("Listening for stress in your voice")).toBeVisible();
 });
