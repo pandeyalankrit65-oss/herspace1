@@ -10,6 +10,20 @@ const WEB_PORT = 4174;
 const OSM_PORT = 3102;
 const tmp = path.resolve("e2e/.tmp");
 
+// Each run gets its own folder; old ones would pile up. Before a new run (main process only:
+// workers inherit E2E_RUN_DIR), keep the newest few, and anything under an hour old in case
+// another run is still using it.
+const KEEP_RUNS = 5;
+if (!process.env.E2E_RUN_DIR && fs.existsSync(tmp)) {
+  const runs = fs
+    .readdirSync(tmp)
+    .filter((name) => /^run-\d+$/.test(name))
+    .sort((a, b) => Number(b.slice(4)) - Number(a.slice(4)));
+  for (const name of runs.slice(KEEP_RUNS)) {
+    if (Date.now() - Number(name.slice(4)) > 60 * 60 * 1000) fs.rmSync(path.join(tmp, name), { recursive: true, force: true });
+  }
+}
+
 // Set once in the main process; worker processes inherit these values.
 process.env.E2E_RUN_DIR ??= path.join(tmp, `run-${Date.now()}`);
 process.env.E2E_OUTBOX ??= path.join(process.env.E2E_RUN_DIR, "outbox.jsonl");
