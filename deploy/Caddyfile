@@ -1,0 +1,39 @@
+# HerSpace behind Caddy (https://caddyserver.com), which gets and renews the HTTPS certificate
+# by itself. Replace herspace.example with your domain, point its DNS at this machine, then:
+#   npm run build                      (the web app, into dist/)
+#   cd server && npm run build && npm start   (with server/.env from deploy/server.env.example)
+#   caddy run --config deploy/Caddyfile
+# Then: cd server && npm run launch-check -- --url https://herspace.example
+
+herspace.example {
+	encode zstd gzip
+
+	# What the page can't set for itself. The app's own Content-Security-Policy is in index.html;
+	# this one only adds frame-ancestors, and browsers apply both.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Content-Security-Policy "frame-ancestors 'none'"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	# The API (server/), on this machine. Set TRUST_PROXY=1 in server/.env so rate limits see
+	# each person's own address rather than Caddy's.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	handle {
+		root * /srv/herspace/dist
+		# Always checked for updates, so a fix reaches phones on their next visit.
+		@fresh path /index.html /sw.js /precache-manifest.json /manifest.webmanifest
+		header @fresh Cache-Control "no-cache"
+		# File names change with their content, so they can be kept for a year.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}

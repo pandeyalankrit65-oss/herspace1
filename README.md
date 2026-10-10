@@ -283,11 +283,15 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 
 ## Before a real launch
 
+**Check it:** `npm run launch-check` in `server/` lists every setting that's missing or unsafe (an SOS that wouldn't send, sign-up that can't email, links pointing at localhost), and `npm run launch-check -- --url https://your.site` also checks the live site: HTTPS, the host's headers, the page's Content-Security-Policy and the API. It exits with an error while anything must still be fixed, and the server logs the same problems when it starts in production.
+
+**Set it up:** `deploy/Caddyfile` serves the app and API on one HTTPS address with the right headers and caching (Caddy gets the certificate itself), and `deploy/server.env.example` is a production `server/.env` with only the accounts' keys left to fill in.
+
 - Serve over HTTPS. Geolocation and the microphone require it outside `localhost`.
 - Test SOS end to end with real phones in the countries you support. Twilio trial accounts can only text verified numbers. For Indian numbers, business SMS requires TRAI DLT registration (sender ID and message templates), or messages are silently dropped.
 - Set `VITE_CONTACT_EMAIL`, and have a lawyer review the Privacy Policy and Terms of Use. They describe the app accurately, but they are not legal advice.
 - Moderate map reports. Anyone can submit one, so false reports are possible.
-- Security headers on the web host: a Content-Security-Policy, `frame-ancestors 'none'` (or `X-Frame-Options: DENY`) so HerSpace can't be embedded in another site to trick people into tapping things, and HSTS. The API already sends `nosniff` and `no-referrer`; the web pages are served by the host, so these have to be set there.
+- Security headers. The web build carries its own **Content-Security-Policy** (in `index.html`, added by `vite.config.ts`): scripts only from HerSpace itself, so an injected script is refused; every browser test runs with it, and `e2e/csp.spec.ts` fails if it blocks anything the app needs. The host must add what a page can't: HSTS, and `frame-ancestors 'none'` (or `X-Frame-Options: DENY`) so HerSpace can't be embedded in another site to trick people into tapping things. `deploy/Caddyfile` does both.
 - Set `TRUST_PROXY` to the number of proxies in front of the API. Rate limits on SOS, logins and verification codes use the client's IP address, and without it everyone appears to come from the proxy.
 - In Twilio, turn on **Geo Permissions** for SMS and voice and allow only the countries you need (India, and wherever users' contacts live). Verification codes and contact invites are rate-limited per account, IP and number, but premium-rate numbers abroad are the usual target of SMS-pumping fraud.
 - Keep `server/data` (the database and uploads, including SOS audio and report photos) on persistent storage with regular backups, and test restoring one.
