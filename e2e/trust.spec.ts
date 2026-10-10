@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { signUp, verifyEmail, waitForMessage } from "./helpers";
+import { signUp, waitForMessage } from "./helpers";
 
 // A location no other test uses.
 test.use({ permissions: ["geolocation"], geolocation: { latitude: 23.0225, longitude: 72.5714 } });
@@ -14,11 +14,8 @@ async function report(page: Page, description: string) {
 }
 
 test("verified reporting: confirmed email, copied reports held, confirmations, and pausing an account by code name", async ({ page, browser }, testInfo) => {
-  // Confirming an email through the emailed link.
+  // Signing up goes through an emailed link, so the address is confirmed from the start.
   const asha = await signUp(page, "Asha");
-  await page.goto("/account");
-  await expect(page.getByText(`We sent a link to ${asha.email}`)).toBeVisible();
-  await verifyEmail(page, asha.email);
   await page.goto("/account");
   await expect(page.getByText(`${asha.email} is confirmed.`)).toBeVisible();
 
@@ -37,8 +34,7 @@ test("verified reporting: confirmed email, copied reports held, confirmations, a
   // A moderator with a confirmed email backs up Asha's report: "I saw this too".
   const modContext = await browser.newContext();
   const mod = await modContext.newPage();
-  const moderator = await signUp(mod, "Moderator", `trust-mod-${testInfo.project.name}@example.com`);
-  await verifyEmail(mod, moderator.email);
+  await signUp(mod, "Moderator", `trust-mod-${testInfo.project.name}@example.com`);
   const ashaReport = (await (await page.request.get("/api/reports")).json()).reports.find((r: { description: string }) => r.description === text);
   const confirmed = await mod.request.post(`/api/reports/${ashaReport.id}/confirm`, { headers: { "X-Requested-With": "HerSpace" } });
   expect((await confirmed.json()).confirmations).toBe(1);

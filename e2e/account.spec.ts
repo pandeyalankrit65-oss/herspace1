@@ -56,3 +56,46 @@ test("password reset by email", async ({ page }) => {
   await page.getByRole("main").getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
+
+test("sign-up looks the same whether or not the email has an account, and only the inbox can finish it", async ({ page, browser }) => {
+  const { email } = await signUp(page, "Kavya");
+
+  // Someone else tries her email: the page says the same as for a new one, and she gets a note.
+  const otherContext = await browser.newContext();
+  const other = await otherContext.newPage();
+  await other.goto("/signup");
+  await other.getByLabel("Name").fill("Someone");
+  await other.getByLabel("Email").fill(email);
+  await other.getByRole("button", { name: "Continue" }).click();
+  await expect(other.getByRole("heading", { name: "Check your email" })).toBeVisible();
+  await expect(other.getByText(`If ${email} is new to HerSpace`)).toBeVisible();
+  const note = await waitForMessage((m) => m.channel === "email" && m.to === email && m.subject === "You already have a HerSpace account");
+  expect(note.body).toContain("nothing has changed");
+  await otherContext.close();
+
+  // A new address, with a page to come back to: the link finishes it and goes there.
+  const fresh = uniqueEmail("fresh");
+  const newContext = await browser.newContext();
+  const newcomer = await newContext.newPage();
+  await newcomer.goto("/signup?next=%2Fsafety-plan");
+  await newcomer.getByLabel("Name").fill("Nila");
+  await newcomer.getByLabel("Email").fill(fresh);
+  await newcomer.getByRole("button", { name: "Continue" }).click();
+  await expect(newcomer.getByRole("link", { name: "SOS" }).last()).toBeVisible();
+  const invite = await waitForMessage((m) => m.channel === "email" && m.to === fresh && m.subject === "Finish creating your HerSpace account");
+  const link = linkIn(invite.body, "/finish-signup/");
+  await newcomer.goto(link);
+  await expect(newcomer.getByText(`Choose a password for ${fresh}.`)).toBeVisible();
+  await newcomer.getByLabel("Password", { exact: true }).fill("password123");
+  await newcomer.getByLabel("Password again").fill("password456");
+  await newcomer.getByRole("button", { name: "Create account" }).click();
+  await expect(newcomer.getByRole("alert")).toBeVisible();
+  await newcomer.getByLabel("Password again").fill("password123");
+  await newcomer.getByRole("button", { name: "Create account" }).click();
+  await expect(newcomer).toHaveURL(/\/safety-plan$/);
+
+  // The link only works once.
+  await newcomer.goto(link);
+  await expect(newcomer.getByText("This link has expired or has already been used.")).toBeVisible();
+  await newContext.close();
+});

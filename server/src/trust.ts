@@ -96,8 +96,9 @@ export function holdReasons(report: { userId: number | null; description: string
     const here = { lat: report.lat, lng: report.lng };
     if (lastHour.some((r) => r.lat !== null && r.lng !== null && km(here, { lat: r.lat, lng: r.lng }) > FAR_KM)) reasons.push('far_apart');
   }
+  // New accounts confirm their email when signing up, but anyone can open a throwaway inbox.
+  if (isDisposable(a.email)) reasons.push('disposable_email');
   if (!a.email_verified_at) {
-    if (isDisposable(a.email)) reasons.push('disposable_email');
     const young = Date.now() - new Date(a.created_at).getTime() < 24 * HOUR_MS;
     const today = (db.prepare('SELECT COUNT(*) AS n FROM reports WHERE user_id = ? AND created_at > ?').get(a.id, since(24 * HOUR_MS)) as { n: number }).n;
     if (young && today + 1 >= 3) reasons.push('new_unverified');
@@ -130,6 +131,6 @@ export function accountSignals(userId: number): { signals: AccountSignal[]; stat
   if (stats.held > 0) signals.push('held_reports');
   if (stats.removed >= 2) signals.push('removed_reports');
   if (stats.flaggers >= 5) signals.push('flagged_reports');
-  if (!a.email_verified_at && isDisposable(a.email)) signals.push('disposable_email');
+  if (isDisposable(a.email)) signals.push('disposable_email');
   return { signals, stats };
 }

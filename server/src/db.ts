@@ -486,6 +486,19 @@ const migrations: string[] = [
     PRIMARY KEY (org_id, year)
   );
   `,
+  // Sign-ups waiting for the emailed link. The account (and its password) is only created once
+  // the link is opened, so sign-up can't reveal whether an email already has an account, and
+  // nobody can create an account with someone else's address.
+  `
+  CREATE TABLE pending_signups (
+    token_hash TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    next TEXT,
+    expires_at TEXT NOT NULL
+  );
+  CREATE INDEX pending_signups_email ON pending_signups(email);
+  `,
 ];
 
 function migrate() {
@@ -518,6 +531,7 @@ export function purgeExpiredData() {
   const sosCutoff = new Date(Date.now() - SOS_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM password_resets WHERE expires_at < ?').run(now);
+  db.prepare('DELETE FROM pending_signups WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM phone_codes WHERE expires_at < ?').run(now);
   deleteSosEvents('created_at < ?', sosCutoff);
   // Finished shares are kept a day so a contact opening the link late sees "ended", not "not found".

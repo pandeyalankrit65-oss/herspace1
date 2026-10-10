@@ -33,11 +33,17 @@ export const uniqueEmail = (tag: string) => `${tag}.${Date.now()}.${++counter}@e
 // A different Indian mobile number per test, so contacts never collide.
 export const uniquePhone = () => `+9198${String(Date.now()).slice(-6)}${String(++counter % 100).padStart(2, "0")}`;
 
+// Signs up as a person would: name and email, then the emailed link to choose a password.
 export async function signUp(page: Page, name = "Asha", email = uniqueEmail("user")) {
   await page.goto("/signup");
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
+  const message = await waitForMessage((m) => m.channel === "email" && m.to === email && m.subject === "Finish creating your HerSpace account");
+  await page.goto(linkIn(message.body, "/finish-signup/"));
+  await page.getByLabel("Password", { exact: true }).fill("password123");
+  await page.getByLabel("Password again").fill("password123");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/contacts$/);
   return { name, email };

@@ -33,6 +33,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const FinishSignup = lazy(() => import("./pages/FinishSignup"));
 const Account = lazy(() => import("./pages/Account"));
 const Moderation = lazy(() => import("./pages/Moderation"));
 const Help = lazy(() => import("./pages/Help"));
@@ -78,6 +79,7 @@ const App = () => (
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/finish-signup/:token" element={<FinishSignup />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/moderation" element={<Moderation />} />
                 <Route path="/help" element={<Help />} />

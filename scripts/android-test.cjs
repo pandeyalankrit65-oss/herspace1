@@ -227,10 +227,16 @@ function preflight() {
     // --- Account with a confirmed contact ---
     const phone = `+9198${String(Date.now()).slice(-8)}`;
     await section("sign up", async () => {
+      // Name and email, then the emailed link to choose a password.
+      const email = `android.${Date.now()}@example.com`;
       await go("/signup");
       await page.getByLabel("Name").fill("Asha");
-      await page.getByLabel("Email").fill(`android.${Date.now()}@example.com`);
-      await page.getByLabel("Password").fill("password123");
+      await page.getByLabel("Email").fill(email);
+      await page.getByRole("button", { name: "Continue" }).click();
+      const finish = await waitFor(async () => outbox().reverse().find((m) => m.to === email && m.body.includes("/finish-signup/")));
+      await go(new URL(finish.body.match(/\S*\/finish-signup\/\S+/)[0]).pathname);
+      await page.getByLabel("Password", { exact: true }).fill("password123");
+      await page.getByLabel("Password again").fill("password123");
       await page.getByRole("button", { name: "Create account" }).click();
       check("sign up", !!(await waitFor(async () => page.url().endsWith("/contacts"))));
       await page.getByRole("button", { name: "Add Contact" }).click();

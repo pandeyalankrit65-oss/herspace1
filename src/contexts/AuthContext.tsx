@@ -24,7 +24,6 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   // For flows where the server has already started a session (password reset).
   signedIn: (user: User) => void;
@@ -85,14 +84,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [signedIn]
   );
 
-  const signup = useCallback(
-    async (name: string, email: string, password: string) => {
-      const res = await api<AuthResponse>("/api/auth/signup", { body: { name, email, password } });
-      signedIn(res.user);
-    },
-    [signedIn]
-  );
-
   const logout = useCallback(async () => {
     await api("/api/auth/logout", { method: "POST" }).catch(() => {});
     // Only on a real logout: clearSession also runs for every signed-out visit, and must not
@@ -107,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [clearSession]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, signedIn, clearSession }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, signedIn, clearSession }}>
       {children}
     </AuthContext.Provider>
   );

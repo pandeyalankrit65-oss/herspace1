@@ -14,6 +14,7 @@ import { takeAiBudget } from '../aiBudget';
 import { contactCode, processStaleRides } from '../routes/location';
 import { formatAddress, parsePlaces } from '../geo';
 import { keyedHash } from '../util';
+import { unsentLinks } from '../routes/auth';
 
 let server: Server;
 let base: string;
@@ -48,19 +49,66 @@ async function call(
 let counter = 0;
 // Stands in for clicking the emailed link (the test server sends no email).
 const verifyEmail = (email: string) => db.prepare('UPDATE users SET email_verified_at = ? WHERE email = ?').run(new Date().toISOString(), email);
+// New accounts start confirmed; accounts made before that didn't.
+const olderAccount = (email: string) => db.prepare('UPDATE users SET email_verified_at = NULL WHERE email = ?').run(email);
+
+// Signs up as a person would: name and email, then the emailed link to choose a password.
+async function signUp(name: string, email: string, next?: string) {
+  unsentLinks.delete(email);
+  assert.equal((await call('/auth/signup', { body: { name, email, next } })).status, 202);
+  const link = unsentLinks.get(email)!;
+  assert.match(link, /\/finish-signup\//);
+  return call('/auth/signup/finish', { body: { token: link.split('/finish-signup/')[1], name, password: 'password123' } });
+}
 
 async function newUser(name = 'Asha') {
   const email = `user${++counter}@example.com`;
-  const res = await call('/auth/signup', { body: { name, email, password: 'password123' } });
+  const res = await signUp(name, email);
   assert.equal(res.status, 201);
   return { token: res.token as string, email };
 }
 
 describe('auth', () => {
-  test('rejects short passwords and duplicate emails', async () => {
-    assert.equal((await call('/auth/signup', { body: { name: 'A', email: 'short@example.com', password: '123' } })).status, 400);
+  test('sign-up never reveals whether an email has an account, and only the inbox can finish it', async () => {
     const { email } = await newUser();
-    assert.equal((await call('/auth/signup', { body: { name: 'B', email, password: 'password123' } })).status, 409);
+    // The same answer for a taken email and a new one; the owner is told instead.
+    const taken = await call('/auth/signup', { body: { name: 'Someone', email } });
+    const fresh = await call('/auth/signup', { body: { name: 'Someone', email: 'brand-new@example.com' } });
+    assert.deepEqual([taken.status, taken.data], [202, { checkEmail: true }]);
+    assert.deepEqual([fresh.status, fresh.data], [taken.status, taken.data]);
+    assert.equal(taken.token, undefined, 'nobody is signed in');
+    assert.match(unsentLinks.get(email)!, /\/login$/);
+
+    // Nothing exists until the link is used; then the email is already confirmed.
+    assert.equal((await call('/auth/login', { body: { email: 'brand-new@example.com', password: 'password123' } })).status, 401);
+    const token = unsentLinks.get('brand-new@example.com')!.split('/finish-signup/')[1];
+    assert.deepEqual((await call('/auth/signup/pending', { body: { token } })).data, { name: 'Someone', email: 'brand-new@example.com' });
+    assert.equal((await call('/auth/signup/finish', { body: { token, name: 'Seema', password: '123' } })).status, 400, 'short password');
+    const done = await call('/auth/signup/finish', { body: { token, name: 'Seema', password: 'password123' } });
+    assert.equal(done.status, 201);
+    assert.equal(done.data.user.name, 'Seema');
+    assert.equal(done.data.user.emailVerified, true);
+    assert.equal((await call('/auth/me', { token: done.token })).data.user.email, 'brand-new@example.com');
+    assert.equal((await call('/auth/signup/finish', { body: { token, name: 'Seema', password: 'password123' } })).status, 400, 'used up');
+    assert.equal((await call('/auth/signup/finish', { body: { token: 'not-a-real-token', name: 'X', password: 'password123' } })).status, 400);
+  });
+
+  test('two sign-ups for one email: the first link used wins, the other then says to log in', async () => {
+    const email = 'twice@example.com';
+    await call('/auth/signup', { body: { name: 'A', email } });
+    const first = unsentLinks.get(email)!.split('/finish-signup/')[1];
+    await call('/auth/signup', { body: { name: 'A', email } });
+    const second = unsentLinks.get(email)!.split('/finish-signup/')[1];
+    assert.equal((await call('/auth/signup/finish', { body: { token: second, name: 'A', password: 'password123' } })).status, 201);
+    const late = await call('/auth/signup/finish', { body: { token: first, name: 'A', password: 'other-password' } });
+    assert.equal(late.status, 400, 'the other link stops working');
+  });
+
+  test('sign-up keeps only a path in this app to go to next', async () => {
+    assert.equal((await call('/auth/signup', { body: { name: 'A', email: 'next1@example.com', next: 'https://evil.example' } })).status, 400);
+    assert.equal((await call('/auth/signup', { body: { name: 'A', email: 'next2@example.com', next: '//evil.example' } })).status, 400);
+    const res = await signUp('A', 'next3@example.com', '/circles/join/abc');
+    assert.equal(res.data.next, '/circles/join/abc');
   });
 
   test('login, me and logout', async () => {
@@ -76,7 +124,7 @@ describe('auth', () => {
   });
 
   test('session cookie is HttpOnly and SameSite', async () => {
-    const res = await call('/auth/signup', { body: { name: 'C', email: 'cookie@example.com', password: 'password123' } });
+    const res = await signUp('C', 'cookie@example.com');
     assert.match(res.setCookie!, /HttpOnly/);
     assert.match(res.setCookie!, /SameSite=Lax/);
     assert.match(res.setCookie!, /Path=\//);
@@ -701,7 +749,7 @@ describe('moderation', () => {
     assert.equal((await call('/moderation/reports', { token: reporter.token })).status, 403);
     assert.equal((await call('/moderation/reports')).status, 401);
 
-    const signup = await call('/auth/signup', { body: { name: 'Mod', email: 'moderator@example.com', password: 'password123' } });
+    const signup = await signUp('Mod', 'moderator@example.com');
     assert.equal(signup.data.user.moderator, true);
     const mod = signup.token as string;
     const queue = await call('/moderation/reports', { token: mod });
@@ -1491,11 +1539,11 @@ describe('verified community reporting', () => {
 
   test('email verification: a link proves the address, and makes domain memberships verified', async () => {
     const user = await newUser('Vani');
+    olderAccount(user.email);
     assert.equal((await call('/auth/me', { token: user.token })).data.user.emailVerified, false);
     // Without a confirmed email, a domain can't be claimed and the member isn't verified.
     assert.equal((await call('/workplace/orgs', { token: user.token, body: { name: 'Vani Co', emailDomain: 'example.com' } })).status, 403);
     const hr = await newUser('Hira');
-    verifyEmail(hr.email);
     const { data } = await call('/workplace/orgs', { token: hr.token, body: { name: 'Hira Co', emailDomain: 'example.com' } });
     await call('/workplace/join', { token: user.token, body: { code: data.joinCode } });
     assert.equal((await call('/workplace', { token: user.token })).data.org.verified, false);
@@ -1519,6 +1567,7 @@ describe('verified community reporting', () => {
     assert.equal((await onMap(anon.data.id)).trust, 'anonymous');
 
     const reporter = await newUser('Rekha');
+    olderAccount(reporter.email);
     const fromAccount = await mapReport(reporter.token);
     assert.equal((await onMap(fromAccount.data.id)).trust, 'account');
     assert.equal((await onMap(fromAccount.data.id, reporter.token)).mine, true, 'your own point is marked as yours');
@@ -1530,6 +1579,7 @@ describe('verified community reporting', () => {
 
     assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: reporter.token, method: 'POST' })).status, 400, 'not your own');
     const witness = await newUser('Wafa');
+    olderAccount(witness.email);
     assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: witness.token, method: 'POST' })).status, 403, 'email not confirmed');
     verifyEmail(witness.email);
     assert.equal((await call(`/reports/${verified.data.id}/confirm`, { token: witness.token, method: 'POST' })).data.confirmations, 1);
@@ -1568,7 +1618,7 @@ describe('verified community reporting', () => {
   });
 
   test('a new unverified throwaway account is held; moderators review accounts by pseudonym and can pause them from the map only', async () => {
-    const res = await call('/auth/signup', { body: { name: 'Temp', email: `fake${Date.now()}@mailinator.com`, password: 'password123' } });
+    const res = await signUp('Temp', `fake${Date.now()}@mailinator.com`);
     const throwaway = res.token as string;
     const held = await mapReport(throwaway);
     assert.equal(held.data.held, true);
@@ -1663,8 +1713,7 @@ describe('security fixes', () => {
   });
 
   test('ADMIN_EMAILS grants nothing in production', async () => {
-    const signup = await call('/auth/signup', { body: { name: 'Admin', email: 'moderator@example.com', password: 'password123' } });
-    const token = signup.token ?? (await call('/auth/login', { body: { email: 'moderator@example.com', password: 'password123' } })).token;
+    const token = (await call('/auth/login', { body: { email: 'moderator@example.com', password: 'password123' } })).token;
     assert.equal((await call('/auth/me', { token })).data.user.moderator, true, 'dev/test: granted');
     const before = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';

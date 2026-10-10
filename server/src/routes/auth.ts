@@ -32,6 +32,23 @@ const resetAccountLimiter = rateLimit({
 const DUMMY_HASH = hashPassword('not-a-real-password');
 const RESET_TOKEN_MINUTES = 60;
 const VERIFY_TOKEN_HOURS = 48;
+const SIGNUP_TOKEN_HOURS = 24;
+
+// Dev and tests only, when email isn't set up: the last link each address would have been sent.
+export const unsentLinks = new Map<string, string>();
+
+// Sends an email, or in development (no email set up) logs the link instead.
+async function sendOrLog(to: string, subject: string, text: string, link: string) {
+  if (!emailConfigured()) {
+    if (process.env.NODE_ENV !== 'production') {
+      unsentLinks.set(to, link);
+      if (process.env.NODE_ENV !== 'test') console.log(`[auth] Email not configured. "${subject}" for ${to}: ${link}`);
+    }
+    return;
+  }
+  const result = await sendEmail(to, subject, text);
+  if (result.status === 'failed') console.error(`[auth] "${subject}" email failed:`, result.error);
+}
 
 // Emails a link that proves the address is theirs. Verified addresses are what make someone
 // "verified" in a workplace or circle on that email domain, and a verified reporter on the map.
@@ -48,16 +65,12 @@ async function sendVerification(userId: number) {
     new Date(Date.now() + VERIFY_TOKEN_HOURS * 60 * 60 * 1000).toISOString()
   );
   const link = `${appUrl()}/verify-email/${token}`;
-  if (!emailConfigured()) {
-    if (process.env.NODE_ENV !== 'production') console.log(`[auth] Email not configured. Verification link for ${user.email}: ${link}`);
-    return;
-  }
-  const result = await sendEmail(
+  await sendOrLog(
     user.email,
     'Confirm your email for HerSpace',
-    `Hi ${user.name},\n\nPlease confirm this is your email address:\n${link}\n\nThe link works for ${VERIFY_TOKEN_HOURS} hours. If you didn't sign up for HerSpace, you can ignore this email.`
+    `Hi ${user.name},\n\nPlease confirm this is your email address:\n${link}\n\nThe link works for ${VERIFY_TOKEN_HOURS} hours. If you didn't sign up for HerSpace, you can ignore this email.`,
+    link
   );
-  if (result.status === 'failed') console.error('[auth] Verification email failed:', result.error);
 }
 
 // Marks the email as theirs, and with it any workplace or circle membership on its domain.
@@ -72,25 +85,98 @@ export function markEmailVerified(userId: number) {
 
 const emailSchema = z.string().trim().toLowerCase().email();
 
-const signupSchema = z.object({
-  name: z.string().trim().min(1).max(100),
-  email: emailSchema,
-  password: passwordSchema,
+const nameSchema = z.string().trim().min(1).max(100);
+// Where to go after signing up: a path in this app, never another site.
+const nextSchema = z
+  .string()
+  .max(300)
+  .regex(/^\/(?!\/)[^\\\s]*$/)
+  .optional();
+
+const signupAccountLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  key: emailKey('signup'),
+  message: 'An email was sent recently. Please check your inbox and spam folder.',
 });
 
-authRouter.post('/signup', authLimiter, (req, res) => {
-  const body = parse(signupSchema, req, res);
+// Step 1: name and email. The answer is the same whether or not the email has an account, so
+// nobody (an abusive partner, say) can use sign-up to find out whether she uses HerSpace. Either
+// way the inbox gets the next step: a link to finish signing up, or a note that she already has
+// an account.
+authRouter.post('/signup', authLimiter, signupAccountLimiter, (req, res) => {
+  const body = parse(z.object({ name: nameSchema, email: emailSchema, next: nextSchema }), req, res);
   if (!body) return;
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(body.email);
-  if (existing) return res.status(409).json({ error: 'An account with this email already exists.' });
+  if (!emailConfigured() && process.env.NODE_ENV === 'production') {
+    console.error('[auth] Sign-up attempted but email is not configured (RESEND_API_KEY / EMAIL_FROM).');
+    return res.status(503).json({ error: "Sign-up isn't available right now. Please try again later." });
+  }
+  const existing = db.prepare('SELECT name FROM users WHERE email = ?').get(body.email) as { name: string } | undefined;
+  if (existing) {
+    const link = `${appUrl()}/login`;
+    void sendOrLog(
+      body.email,
+      'You already have a HerSpace account',
+      `Hi ${existing.name},\n\nSomeone, probably you, tried to sign up for HerSpace with this email. You already have an account, so you can log in:\n${link}\n\nForgot your password? Reset it here: ${appUrl()}/forgot-password\n\nIf this wasn't you, you can ignore this email: nothing has changed.`,
+      link
+    );
+  } else {
+    const token = randomToken();
+    db.prepare('INSERT INTO pending_signups (token_hash, name, email, next, expires_at) VALUES (?, ?, ?, ?, ?)').run(
+      sha256(token),
+      body.name,
+      body.email,
+      body.next ?? null,
+      new Date(Date.now() + SIGNUP_TOKEN_HOURS * 60 * 60 * 1000).toISOString()
+    );
+    const link = `${appUrl()}/finish-signup/${token}`;
+    void sendOrLog(
+      body.email,
+      'Finish creating your HerSpace account',
+      `Hi ${body.name},\n\nOpen this link to choose a password and finish creating your account:\n${link}\n\nThe link works for ${SIGNUP_TOKEN_HOURS} hours. If you didn't sign up for HerSpace, you can ignore this email: no account is created.`,
+      link
+    );
+  }
+  res.status(202).json({ checkEmail: true });
+});
 
+type PendingRow = { name: string; email: string; next: string | null; expires_at: string };
+const pendingSignup = (token: string) => {
+  const row = db.prepare('SELECT name, email, next, expires_at FROM pending_signups WHERE token_hash = ?').get(sha256(token)) as PendingRow | undefined;
+  return row && new Date(row.expires_at) > new Date() ? row : undefined;
+};
+const EXPIRED_SIGNUP = 'This link is invalid or has expired. Please sign up again.';
+const tokenSchema = z.string().min(10).max(200);
+
+// For the "choose a password" page: who is signing up.
+authRouter.post('/signup/pending', authLimiter, (req, res) => {
+  const body = parse(z.object({ token: tokenSchema }), req, res);
+  if (!body) return;
+  const row = pendingSignup(body.token);
+  if (!row) return res.status(400).json({ error: EXPIRED_SIGNUP });
+  res.json({ name: row.name, email: row.email });
+});
+
+// Step 2, from the emailed link: she chooses the password here, so nobody else can set one for
+// her address. The account is created with its email already confirmed.
+authRouter.post('/signup/finish', authLimiter, (req, res) => {
+  const body = parse(z.object({ token: tokenSchema, name: nameSchema, password: passwordSchema }), req, res);
+  if (!body) return;
+  const row = pendingSignup(body.token);
+  if (!row) return res.status(400).json({ error: EXPIRED_SIGNUP });
+  // Only the inbox's owner gets this far, so saying so reveals nothing.
+  if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(row.email)) {
+    db.prepare('DELETE FROM pending_signups WHERE email = ?').run(row.email);
+    return res.status(409).json({ error: 'This email already has an account. Please log in.' });
+  }
+  const stamp = now();
   const result = db
-    .prepare('INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)')
-    .run(body.name, body.email, hashPassword(body.password), now());
+    .prepare('INSERT INTO users (name, email, password_hash, created_at, email_verified_at) VALUES (?, ?, ?, ?, ?)')
+    .run(body.name, row.email, hashPassword(body.password), stamp, stamp);
+  db.prepare('DELETE FROM pending_signups WHERE email = ?').run(row.email);
   const id = Number(result.lastInsertRowid);
   startSession(res, id);
-  void sendVerification(id);
-  res.status(201).json({ user: publicUser(id) });
+  res.status(201).json({ user: publicUser(id), next: row.next });
 });
 
 authRouter.post('/login', authLimiter, loginAccountLimiter, (req, res) => {

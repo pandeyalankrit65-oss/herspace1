@@ -1,11 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { signUp, verifyEmail, waitForMessage } from "./helpers";
+import { signUp, waitForMessage } from "./helpers";
 
 test("Corporate Connect: an employee reports to HR anonymously and they talk it through", async ({ page, browser }) => {
   // HR sets up the workplace; test accounts are @example.com, so that's HR's own domain.
-  const hema = await signUp(page, "Hema");
-  // A workplace domain needs an email the person has proved is theirs.
-  await verifyEmail(page, hema.email);
+  // Test accounts are @example.com, and signing up proved the address is hers.
+  await signUp(page, "Hema");
   await page.goto("/corporate");
   await page.getByLabel("Organisation name").fill("Acme Textiles");
   await page.getByLabel("Work email domain (optional)").fill("example.com");
@@ -24,7 +23,6 @@ test("Corporate Connect: an employee reports to HR anonymously and they talk it 
   const employeeContext = await browser.newContext();
   const employee = await employeeContext.newPage();
   const esha = await signUp(employee, "Esha");
-  await verifyEmail(employee, esha.email);
   await employee.goto("/corporate");
   await employee.getByLabel("Workplace code").fill(code.toLowerCase());
   await employee.getByRole("button", { name: "Join", exact: true }).click();
@@ -67,8 +65,7 @@ test("Corporate Connect: an employee reports to HR anonymously and they talk it 
 });
 
 test("the only HR person is warned before deleting their account, and can still delete it", async ({ page, browser }) => {
-  const hr = await signUp(page, "Hari");
-  await verifyEmail(page, hr.email);
+  await signUp(page, "Hari");
   await page.goto("/corporate");
   await page.getByLabel("Organisation name").fill("Lone HR Pvt Ltd");
   await page.getByRole("button", { name: "Set up workplace" }).click();
@@ -96,8 +93,7 @@ test("the only HR person is warned before deleting their account, and can still 
 });
 
 test("Internal Committee: the committee is checked against the POSH Act, a report becomes a formal complaint with its deadlines, and the annual report", async ({ page, browser }) => {
-  const hr = await signUp(page, "Indira");
-  await verifyEmail(page, hr.email);
+  await signUp(page, "Indira");
   await page.goto("/corporate");
   await page.getByLabel("Organisation name").fill("Posh Textiles");
   await page.getByRole("button", { name: "Set up workplace" }).click();
