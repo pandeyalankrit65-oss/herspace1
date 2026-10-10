@@ -6,6 +6,7 @@ import { requireAuth } from '../auth';
 import { postWebhook, sendEmail, validWebhook } from '../messaging';
 import { perUser, rateLimit } from '../rateLimit';
 import { appUrl, keyedHash, now, parse } from '../util';
+import { addDays } from '../posh';
 
 // Corporate Connect: a workplace's employees report harassment to HR, anonymously unless they
 // choose otherwise, and HR follows up through a message thread without learning who it is.
@@ -58,7 +59,7 @@ function requireMember(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-function requireHr(req: Request, res: Response, next: NextFunction) {
+export function requireHr(req: Request, res: Response, next: NextFunction) {
   const m = membership(req.user!.id);
   if (!m || m.role !== 'hr') return res.status(403).json({ error: 'Only your workplace HR team can do this.' });
   req.member = m;
@@ -167,7 +168,18 @@ const reportView = (r: ReportRow) => ({
   createdAt: r.created_at,
   updatedAt: r.updated_at,
   messages: messagesFor(r.id).map((msg) => ({ fromHr: Boolean(msg.fromHr), body: msg.body, at: msg.at })),
+  formal: formalCase(r.id),
 });
+
+// Whether the Internal Committee is handling it as a formal POSH complaint, and the date the law
+// gives it to finish the inquiry: she can see her complaint is moving and when to expect an outcome.
+function formalCase(reportId: number) {
+  const c = db.prepare('SELECT received_on AS receivedOn, conciliation, closed_on AS closedOn FROM posh_cases WHERE report_id = ?').get(reportId) as
+    | { receivedOn: string; conciliation: number; closedOn: string | null }
+    | undefined;
+  if (!c) return null;
+  return { receivedOn: c.receivedOn, inquiryBy: addDays(c.receivedOn, 90), conciliation: Boolean(c.conciliation), closed: Boolean(c.closedOn) };
+}
 
 // HR hears that something came in, never what or from whom: the details stay in HerSpace.
 // Sent in the background so a slow Slack or mail server never holds up the employee.

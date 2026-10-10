@@ -448,6 +448,44 @@ const migrations: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  // POSH Internal Committee tools: the committee's members, formal cases with their legal dates
+  // (from a HerSpace report, or a complaint made another way), and awareness workshops per year.
+  // Cases stay if the report goes with its author's account: the committee must keep its records.
+  `
+  CREATE TABLE ic_members (
+    id INTEGER PRIMARY KEY,
+    org_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    woman INTEGER NOT NULL,
+    term_start TEXT NOT NULL,
+    term_end TEXT NOT NULL
+  );
+  CREATE INDEX ic_members_org ON ic_members(org_id);
+  CREATE TABLE posh_cases (
+    id INTEGER PRIMARY KEY,
+    org_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    report_id INTEGER UNIQUE REFERENCES workplace_reports(id) ON DELETE SET NULL,
+    category TEXT NOT NULL,
+    received_on TEXT NOT NULL,
+    conciliation INTEGER NOT NULL DEFAULT 0,
+    notice_sent_on TEXT,
+    reply_received_on TEXT,
+    inquiry_completed_on TEXT,
+    report_submitted_on TEXT,
+    action_taken_on TEXT,
+    action TEXT,
+    closed_on TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX posh_cases_org ON posh_cases(org_id);
+  CREATE TABLE posh_workshops (
+    org_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (org_id, year)
+  );
+  `,
 ];
 
 function migrate() {

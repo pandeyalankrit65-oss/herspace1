@@ -162,6 +162,13 @@ const EmployeeView = ({ onLeave }: { onLeave: () => void }) => {
                   </div>
                   <StatusPill status={r.status} />
                 </header>
+                {r.formal && !r.formal.closed && (
+                  <p className="rounded-lg bg-primary/5 p-2 text-sm">
+                    {r.formal.conciliation
+                      ? t("work.formalConciliation", { date: day(r.formal.receivedOn) })
+                      : t("work.formal", { date: day(r.formal.receivedOn), by: day(r.formal.inquiryBy) })}
+                  </p>
+                )}
                 <p className="whitespace-pre-wrap text-muted-foreground">{r.description}</p>
                 <Thread reportId={r.id} messages={r.messages} asHr={false} onSent={load} />
               </article>

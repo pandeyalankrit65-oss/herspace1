@@ -20,6 +20,8 @@ export type WorkplaceReport = {
   updatedAt: string;
   messages: Message[];
   reporter?: { name: string; email: string } | null;
+  // Handled by the Internal Committee as a formal POSH complaint.
+  formal?: { receivedOn: string; inquiryBy: string; conciliation: boolean; closed: boolean } | null;
 };
 export type Insights = {
   total: number;

@@ -72,6 +72,7 @@ test("the only HR person is warned before deleting their account, and can still 
   await page.goto("/corporate");
   await page.getByLabel("Organisation name").fill("Lone HR Pvt Ltd");
   await page.getByRole("button", { name: "Set up workplace" }).click();
+  await expect(page.getByRole("heading", { name: "Your workplace code" })).toBeVisible();
   const code = (await page.getByLabel("Workplace code").first().textContent())!.trim();
   const colleagueContext = await browser.newContext();
   const colleague = await colleagueContext.newPage();
@@ -92,4 +93,59 @@ test("the only HR person is warned before deleting their account, and can still 
   await page.getByRole("button", { name: "Permanently delete" }).click();
   await expect(page).toHaveURL(/\/$/);
   await colleagueContext.close();
+});
+
+test("Internal Committee: the committee is checked against the POSH Act, a report becomes a formal complaint with its deadlines, and the annual report", async ({ page, browser }) => {
+  const hr = await signUp(page, "Indira");
+  await verifyEmail(page, hr.email);
+  await page.goto("/corporate");
+  await page.getByLabel("Organisation name").fill("Posh Textiles");
+  await page.getByRole("button", { name: "Set up workplace" }).click();
+  await expect(page.getByRole("heading", { name: "Your workplace code" })).toBeVisible();
+  const code = (await page.getByLabel("Workplace code").first().textContent())!.trim();
+  expect(code).toMatch(/^[A-Z2-9]{4} [A-Z2-9]{4}$/);
+
+  const staffContext = await browser.newContext();
+  const staff = await staffContext.newPage();
+  await signUp(staff, "Sana");
+  await staff.goto("/corporate");
+  await staff.getByLabel("Workplace code").fill(code);
+  await staff.getByRole("button", { name: "Join", exact: true }).click();
+  await expect(staff.getByRole("button", { name: "Send to HR" })).toBeVisible();
+  await staff.getByLabel("What happened", { exact: true }).selectOption("harassment");
+  await staff.getByLabel("Describe what happened").fill("My team lead keeps touching my shoulder after I asked him to stop.");
+  await staff.getByRole("button", { name: "Send to HR" }).click();
+  await expect(staff.getByText("HR can reply here without knowing who you are.").first()).toBeVisible();
+
+  // The committee: a Presiding Officer and one employee member isn't enough.
+  await page.reload();
+  await page.getByRole("tab", { name: "Internal Committee" }).click();
+  await expect(page.getByRole("alert")).toContainText("There's no Presiding Officer.");
+  for (const name of ["Indira", "Arun"]) {
+    await page.getByRole("button", { name: "Add a member" }).click();
+    await page.getByLabel("Name").last().fill(name);
+  }
+  await page.getByLabel("Role").last().selectOption("employee");
+  await page.getByRole("checkbox", { name: "Woman" }).last().click();
+  await page.getByRole("button", { name: "Save committee" }).click();
+  const problems = page.getByRole("alert");
+  await expect(problems).toContainText("At least two employee members are needed.");
+  await expect(problems).toContainText("An external member (from an NGO or with legal knowledge) is needed.");
+  await expect(problems).not.toContainText("Presiding Officer");
+
+  // Her report becomes a formal complaint; the first deadline is 7 days on.
+  await page.getByLabel("Complaint", { exact: true }).selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  const formal = page.getByRole("article", { name: /Complaint received on/ });
+  await expect(formal.getByRole("status")).toContainText("Copy to the respondent by");
+  await formal.getByLabel("Copy sent to the respondent").fill(new Date().toLocaleDateString("en-CA"));
+  await expect(formal.getByRole("status")).toContainText("Respondent's reply by");
+
+  // She sees it's being handled formally, and by when.
+  await staff.reload();
+  await expect(staff.getByText(/handling this as a formal POSH complaint.*the inquiry must be completed by/)).toBeVisible();
+
+  await expect(page.getByText(/Internal Committee annual report, Posh Textiles/)).toBeVisible();
+  await expect(page.locator("dl")).toContainText("Complaints received1");
+  await staffContext.close();
 });

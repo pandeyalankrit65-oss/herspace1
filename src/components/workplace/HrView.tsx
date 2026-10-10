@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, EyeOff, Inbox, RefreshCw, Settings as SettingsIcon, UserRound } from "lucide-react";
+import { BarChart3, EyeOff, Inbox, RefreshCw, Scale, Settings as SettingsIcon, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n";
 import CodeBox from "@/components/CodeBox";
 import { api } from "@/lib/api";
 import Thread, { CategoryLabel } from "./Thread";
+import InternalCommittee from "./InternalCommittee";
 import { STATUSES, statusKey, type Insights, type Settings, type Status, type WorkplaceReport } from "./types";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString([], { dateStyle: "medium" });
@@ -398,12 +399,15 @@ const HrView = ({ onLeave }: { onLeave: () => void }) => {
   const { t } = useI18n();
   return (
     <Tabs defaultValue="reports" className="space-y-6">
-      <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl p-1.5 sm:inline-flex sm:w-auto">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-1.5 sm:inline-flex sm:w-auto print:hidden">
         <TabsTrigger value="reports" className="gap-2 rounded-xl px-3 py-2 sm:px-4">
           <Inbox className="h-4 w-4" /> {t("work.tabReports")}
         </TabsTrigger>
         <TabsTrigger value="insights" className="gap-2 rounded-xl px-3 py-2 sm:px-4">
           <BarChart3 className="h-4 w-4" /> {t("work.tabInsights")}
+        </TabsTrigger>
+        <TabsTrigger value="committee" className="gap-2 rounded-xl px-3 py-2 sm:px-4">
+          <Scale className="h-4 w-4" /> {t("work.tabCommittee")}
         </TabsTrigger>
         <TabsTrigger value="settings" className="gap-2 rounded-xl px-3 py-2 sm:px-4">
           <SettingsIcon className="h-4 w-4" /> {t("work.tabSettings")}
@@ -414,6 +418,9 @@ const HrView = ({ onLeave }: { onLeave: () => void }) => {
       </TabsContent>
       <TabsContent value="insights">
         <InsightsTab />
+      </TabsContent>
+      <TabsContent value="committee">
+        <InternalCommittee />
       </TabsContent>
       <TabsContent value="settings">
         <SettingsTab onLeave={onLeave} />

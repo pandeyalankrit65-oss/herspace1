@@ -1058,6 +1058,57 @@ describe('Corporate Connect', () => {
     return { hr, employee, code: created.data.joinCode as string };
   }
 
+  test('Internal Committee tools: only HR, a report becomes a formal case with POSH dates, and the annual report', async () => {
+    const { hr, employee } = await workplace();
+    const filed = await report(employee.token);
+    const reportId = filed.data.id as number;
+    assert.equal((await call('/workplace/ic', { token: employee.token })).status, 403, 'employees cannot see it');
+
+    const members = [
+      { name: 'Asha', role: 'presiding', woman: true, termStart: '2025-01-01', termEnd: '2027-12-31' },
+      { name: 'Ravi', role: 'employee', woman: false, termStart: '2025-01-01', termEnd: '2027-12-31' },
+    ];
+    const saved = await call('/workplace/ic/members', { token: hr.token, method: 'PUT', body: { members } });
+    assert.deepEqual(saved.data.problems.map((p: { problem: string }) => p.problem).sort(), ['few_employee_members', 'no_external']);
+
+    const received = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const created = await call('/workplace/ic/cases', { token: hr.token, body: { reportId, receivedOn: received } });
+    assert.equal(created.status, 201);
+    assert.equal((await call('/workplace/ic/cases', { token: hr.token, body: { reportId, receivedOn: received } })).status, 409);
+    // Two days on: "today" allows for time zones ahead of UTC, like India.
+    const tomorrow = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    assert.equal((await call(`/workplace/ic/cases/${created.data.id}`, { token: hr.token, method: 'PATCH', body: { noticeSentOn: tomorrow } })).status, 400);
+
+    // She sees it's a formal complaint, and by when the inquiry must finish.
+    const mine = (await call('/workplace/reports/mine', { token: employee.token })).data.reports.find((r: { id: number }) => r.id === reportId);
+    assert.equal(mine.formal.receivedOn, received);
+    assert.equal(mine.formal.closed, false);
+    let ic = (await call('/workplace/ic', { token: hr.token })).data;
+    assert.equal(ic.cases[0].category, 'harassment');
+    assert.equal(ic.cases[0].next.step, 'notice');
+    assert.equal(ic.cases[0].next.overdue, true, '100 days on, nothing has been done');
+
+    assert.equal((await call(`/workplace/ic/cases/${created.data.id}`, { token: hr.token, method: 'PATCH', body: { noticeSentOn: received, replyReceivedOn: received } })).status, 200);
+    ic = (await call('/workplace/ic', { token: hr.token })).data;
+    assert.equal(ic.cases[0].next.step, 'inquiry');
+    assert.equal(ic.cases[0].next.overdue, true, 'the 90-day inquiry is late');
+
+    // Another workplace's HR can't reach it.
+    const other = await newUser('Olga');
+    verifyEmail(other.email);
+    await call('/workplace/orgs', { token: other.token, body: { name: 'Other Co' } });
+    assert.equal((await call(`/workplace/ic/cases/${created.data.id}`, { token: other.token, method: 'PATCH', body: { closedOn: received } })).status, 404);
+    assert.equal((await call('/workplace/ic/cases', { token: other.token, body: { reportId, receivedOn: received } })).status, 404);
+
+    const year = Number(received.slice(0, 4));
+    await call(`/workplace/ic/workshops/${year}`, { token: hr.token, method: 'PUT', body: { count: 2 } });
+    const annual = (await call(`/workplace/ic/annual/${year}`, { token: hr.token })).data;
+    assert.equal(annual.organisation, 'Acme');
+    assert.equal(annual.received, 1);
+    assert.equal(annual.workshops, 2);
+    assert.equal(annual.members.length, 2);
+  });
+
   test('the only HR person is warned before deleting her account, and can still delete it', async () => {
     const { hr, employee } = await workplace();
     const refused = await call('/account', { token: hr.token, method: 'DELETE', body: { password: 'password123' } });

@@ -20,6 +20,7 @@ import { locationSharesRouter, trackRouter } from './routes/location';
 import { checkInsRouter } from './routes/checkins';
 import { moderationRouter } from './routes/moderation';
 import { workplaceRouter } from './routes/workplace';
+import { icRouter } from './routes/internalCommittee';
 import { circlesRouter } from './routes/circles';
 import { partnerModerationRouter, partnersRouter } from './routes/partners';
 
@@ -145,6 +146,7 @@ app.post('/api/reports/draft', draftLimiter, async (req, res) => {
 
 app.use('/api/moderation/partners', partnerModerationRouter);
 app.use('/api/moderation', moderationRouter);
+app.use('/api/workplace/ic', icRouter);
 app.use('/api/workplace', workplaceRouter);
 app.use('/api/circles', circlesRouter);
 app.use('/api/partners', partnersRouter);
