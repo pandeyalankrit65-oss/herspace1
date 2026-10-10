@@ -19,6 +19,8 @@ export const HELPLINES: Helpline[] = [
   { number: "1930", label: { en: "Cybercrime helpline", hi: "साइबर अपराध हेल्पलाइन", ta: "சைபர் குற்ற உதவி எண்", bn: "সাইবার অপরাধ হেল্পলাইন", mr: "सायबर गुन्हे हेल्पलाइन" } },
   { number: "7827170170", label: { en: "National Commission for Women (WhatsApp)", hi: "राष्ट्रीय महिला आयोग (WhatsApp)", ta: "தேசிய மகளிர் ஆணையம் (WhatsApp)", bn: "জাতীয় মহিলা কমিশন (WhatsApp)", mr: "राष्ट्रीय महिला आयोग (WhatsApp)" } },
   { number: "15100", label: { en: "Free legal aid (NALSA)", hi: "मुफ़्त कानूनी सहायता (NALSA)", ta: "இலவச சட்ட உதவி (NALSA)", bn: "বিনামূল্যে আইনি সাহায্য (NALSA)", mr: "मोफत कायदेशीर मदत (NALSA)" } },
+  { number: "139", label: { en: "Rail Madad: trouble on a train or at a station", hi: "रेल मदद: ट्रेन या स्टेशन पर परेशानी", ta: "ரயில் மதத்: ரயிலில் அல்லது நிலையத்தில் பிரச்சினை", bn: "রেল মদদ: ট্রেনে বা স্টেশনে সমস্যা", mr: "रेल मदद: ट्रेनमध्ये किंवा स्टेशनवर अडचण" } },
+  { number: "1800113090", label: { en: "Indians working abroad, or about to (free, 24 hours)", hi: "विदेश में काम करने वाले या जाने वाले भारतीय (मुफ़्त, 24 घंटे)", ta: "வெளிநாட்டில் வேலை செய்யும் அல்லது செல்லவிருக்கும் இந்தியர்கள் (இலவசம், 24 மணிநேரம்)", bn: "বিদেশে কর্মরত বা যেতে চলা ভারতীয়রা (বিনামূল্যে, 24 ঘণ্টা)", mr: "परदेशात काम करणारे किंवा जाणारे भारतीय (मोफत, 24 तास)" } },
   { number: "14416", label: { en: "Tele-MANAS mental health", hi: "टेली-मानस मानसिक स्वास्थ्य", ta: "டெலி-மனஸ் மனநலம்", bn: "টেলি-মানস মানসিক স্বাস্থ্য", mr: "टेली-मानस मानसिक आरोग्य" } },
   { number: "1098", label: { en: "Childline (under 18)", hi: "चाइल्डलाइन (18 से कम उम्र)", ta: "சைல்ட்லைன் (18 வயதுக்குக் கீழ்)", bn: "চাইল্ডলাইন (18 বছরের কম)", mr: "चाइल्डलाइन (18 वर्षांखालील)" } },
 ];
@@ -93,6 +95,57 @@ const en: HelpSection[] = [
     links: [
       { label: "cybercrime.gov.in", href: "https://cybercrime.gov.in" },
       { label: "StopNCII.org", href: "https://stopncii.org" },
+    ],
+  },
+  {
+    id: "forced-marriage",
+    title: "Forced marriage",
+    intro: "You have the right to decide whether, when and whom you marry.",
+    points: [
+      "A marriage without your free consent can be challenged. Pressure, threats or locking you in are crimes, even by family.",
+      "If you're under 18, a child marriage can be stopped: call 1098 or 112.",
+      "If you're threatened for choosing your own partner, the police must protect you; the Supreme Court said so in 2018. Call 112, or 181 for advice.",
+      "Keep your ID, certificates and phone safe, or copies with someone you trust, and agree a code phrase with a friend.",
+      "Call 181 to reach your district's One Stop Centre for shelter, counselling and legal help.",
+    ],
+  },
+  {
+    id: "acid-burns",
+    title: "Acid attack or burns",
+    intro: "Act fast: the first minutes matter most.",
+    points: [
+      "Rinse with plenty of cool running water for at least 20 minutes. Take off clothes and jewellery the acid touched, unless they're stuck to the skin.",
+      "Don't put on cream, oil, toothpaste or ice. Call 108 or 112 and go to the nearest hospital.",
+      "Every hospital, government or private, must treat acid attack survivors free of charge, and give a certificate for compensation (Supreme Court, 2015).",
+      "Survivors are entitled to compensation from the state. Free legal aid (15100) can help you claim it.",
+      "Acid attack is a serious crime: report it to the police, or file a Zero FIR at any station.",
+    ],
+  },
+  {
+    id: "jobs-abroad",
+    title: "Job offers abroad and trafficking",
+    points: [
+      "Only use recruiting agents registered with the Ministry of External Affairs: check them on emigrate.gov.in, pay only the legal fee, and get a receipt.",
+      "Be careful of high pay without an interview, a tourist visa for a job, or anyone asking to keep your passport.",
+      "Leave copies of your passport, visa and contract with family, with your employer's address.",
+      "If you're stuck abroad or your passport is taken, contact the Indian embassy, or call 1800 11 3090 (free in India, 24 hours, 11 languages).",
+      "In India, report trafficking or a fake agent to the police (112); women can also call 181.",
+    ],
+    links: [
+      { label: "eMigrate: check a recruiting agent", href: "https://emigrate.gov.in" },
+      { label: "MADAD: help for Indians abroad", href: "https://madad.gov.in" },
+    ],
+  },
+  {
+    id: "lgbtq",
+    title: "For LGBTQ+ women",
+    intro: "HerSpace is for you too: SOS, contacts, reports, circles and the support chat all work the same.",
+    points: [
+      "Consensual same-sex relationships are not a crime in India (Supreme Court, 2018).",
+      "The Transgender Persons (Protection of Rights) Act, 2019 protects transgender people from discrimination, including at work, in healthcare and in renting a home.",
+      "If family or anyone threatens or hurts you for who you are or whom you love, that's abuse: you can ask the police for protection (112), and courts have ordered it for couples.",
+      "Outed or threatened online: save the evidence and report it on cybercrime.gov.in or 1930.",
+      "Call 181 for advice, or 14416 (Tele-MANAS) if you'd like to talk to someone.",
     ],
   },
   {
@@ -185,6 +238,57 @@ const hi: HelpSection[] = [
     links: [
       { label: "cybercrime.gov.in", href: "https://cybercrime.gov.in" },
       { label: "StopNCII.org", href: "https://stopncii.org" },
+    ],
+  },
+  {
+    id: "forced-marriage",
+    title: "ज़बरदस्ती शादी",
+    intro: "शादी करनी है या नहीं, कब और किससे, यह तय करने का हक़ आपका है।",
+    points: [
+      "आपकी आज़ाद मर्ज़ी के बिना हुई शादी को चुनौती दी जा सकती है। दबाव डालना, धमकाना या बंद करके रखना अपराध है, परिवार करे तब भी।",
+      "अगर आपकी उम्र 18 से कम है, तो बाल विवाह रोका जा सकता है: 1098 या 112 पर कॉल करें।",
+      "अपना साथी ख़ुद चुनने पर धमकी मिले, तो पुलिस को आपकी रक्षा करनी होगी; सुप्रीम कोर्ट ने 2018 में यही कहा। 112 पर, या सलाह के लिए 181 पर कॉल करें।",
+      "अपने पहचान पत्र, प्रमाण पत्र और फ़ोन सुरक्षित रखें, या उनकी कॉपी किसी भरोसेमंद के पास रखें, और किसी दोस्त के साथ कोड वाक्य तय करें।",
+      "आश्रय, काउंसलिंग और कानूनी मदद के लिए अपने ज़िले के वन स्टॉप सेंटर तक पहुँचने के लिए 181 पर कॉल करें।",
+    ],
+  },
+  {
+    id: "acid-burns",
+    title: "एसिड हमला या जलना",
+    intro: "जल्दी करें: पहले कुछ मिनट सबसे अहम हैं।",
+    points: [
+      "कम से कम 20 मिनट तक ढेर सारे ठंडे बहते पानी से धोएँ। जिन कपड़ों और गहनों पर एसिड लगा हो उन्हें उतार दें, जब तक वे त्वचा से चिपके न हों।",
+      "क्रीम, तेल, टूथपेस्ट या बर्फ़ न लगाएँ। 108 या 112 पर कॉल करें और नज़दीकी अस्पताल जाएँ।",
+      "हर अस्पताल, सरकारी या निजी, को एसिड हमले से बची महिलाओं का मुफ़्त इलाज करना होगा और मुआवज़े के लिए प्रमाण पत्र देना होगा (सुप्रीम कोर्ट, 2015)।",
+      "पीड़ितों को राज्य से मुआवज़ा पाने का हक़ है। मुफ़्त कानूनी सहायता (15100) इसे पाने में मदद कर सकती है।",
+      "एसिड हमला गंभीर अपराध है: पुलिस में रिपोर्ट करें, या किसी भी थाने में ज़ीरो FIR दर्ज कराएँ।",
+    ],
+  },
+  {
+    id: "jobs-abroad",
+    title: "विदेश में नौकरी के ऑफ़र और तस्करी",
+    points: [
+      "सिर्फ़ विदेश मंत्रालय में पंजीकृत भर्ती एजेंट से ही बात करें: उन्हें emigrate.gov.in पर जाँचें, सिर्फ़ कानूनी फ़ीस दें और रसीद लें।",
+      "बिना इंटरव्यू के ज़्यादा तनख़्वाह, नौकरी के लिए टूरिस्ट वीज़ा, या पासपोर्ट अपने पास रखने को कहने वाले से सावधान रहें।",
+      "अपने पासपोर्ट, वीज़ा और कॉन्ट्रैक्ट की कॉपी परिवार के पास छोड़ें, नियोक्ता के पते के साथ।",
+      "अगर आप विदेश में फँस जाएँ या पासपोर्ट ले लिया जाए, तो भारतीय दूतावास से संपर्क करें, या 1800 11 3090 पर कॉल करें (भारत में मुफ़्त, 24 घंटे, 11 भाषाएँ)।",
+      "भारत में तस्करी या फ़र्ज़ी एजेंट की रिपोर्ट पुलिस (112) में करें; महिलाएँ 181 पर भी कॉल कर सकती हैं।",
+    ],
+    links: [
+      { label: "eMigrate: भर्ती एजेंट जाँचें", href: "https://emigrate.gov.in" },
+      { label: "MADAD: विदेश में भारतीयों की मदद", href: "https://madad.gov.in" },
+    ],
+  },
+  {
+    id: "lgbtq",
+    title: "LGBTQ+ महिलाओं के लिए",
+    intro: "HerSpace आपके लिए भी है: SOS, संपर्क, रिपोर्ट, सर्कल और सपोर्ट चैट सब वैसे ही काम करते हैं।",
+    points: [
+      "आपसी सहमति से समलैंगिक संबंध भारत में अपराध नहीं है (सुप्रीम कोर्ट, 2018)।",
+      "ट्रांसजेंडर व्यक्ति (अधिकारों का संरक्षण) अधिनियम, 2019 ट्रांसजेंडर लोगों को भेदभाव से बचाता है, जिसमें नौकरी, इलाज और घर किराए पर लेना शामिल है।",
+      "अगर परिवार या कोई भी आपको आपकी पहचान या आपके प्यार की वजह से धमकाए या चोट पहुँचाए, तो यह हिंसा है: आप पुलिस से सुरक्षा माँग सकती हैं (112), और अदालतों ने जोड़ों को यह सुरक्षा दिलाई है।",
+      "ऑनलाइन पहचान उजागर की गई या धमकी मिली: सबूत सेव करें और cybercrime.gov.in या 1930 पर रिपोर्ट करें।",
+      "सलाह के लिए 181 पर कॉल करें, या किसी से बात करनी हो तो 14416 (टेली-मानस) पर।",
     ],
   },
   {
