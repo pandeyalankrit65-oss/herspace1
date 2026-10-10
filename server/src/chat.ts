@@ -31,7 +31,7 @@ export type Lang = 'en' | 'hi' | 'ta' | 'bn' | 'mr';
 
 const FALLBACK: Record<Lang, Record<'selfHarm' | 'danger' | 'panic' | 'default', string>> = {
   en: {
-    selfHarm: `I'm really glad you told me. Please reach out to a crisis line or call ${EMERGENCY_NUMBER} right now, since you deserve support from a real person in this moment. I'm still here with you.`,
+    selfHarm: `I'm really glad you told me. Please reach out to a crisis line like Tele-MANAS (14416) or call ${EMERGENCY_NUMBER} right now, since you deserve support from a real person in this moment. I'm still here with you.`,
     danger: `Your safety comes first. If you're in immediate danger, please call ${EMERGENCY_NUMBER} or press the SOS button now. If you're safe for the moment, I'm here to help you think through next steps.`,
     panic: "I'm here. Let's try a short grounding exercise: name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell and 1 you can taste. Would you like to try it together?",
     default: 'Thank you for sharing that with me. Your feelings are valid. Would you like to talk about what happened, or would some coping ideas help more right now?',
