@@ -57,7 +57,8 @@ test("running in an area with several reports asks \"Are you okay?\", and no ans
   expect(sos.body).toContain("didn't answer a safety check");
   expect(sos.body).toContain("DON'T call them or mention this alert");
   await expect(page).toHaveURL(/\/sos$/);
-  await expect(page.getByText("Sharing your live location")).toBeVisible({ timeout: 15_000 });
+  // Finding the position alone can take 8 seconds on a slow runner.
+  await expect(page.getByText("Sharing your live location")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "I'm safe, stop sharing" }).click();
   assertNoErrors();
 });

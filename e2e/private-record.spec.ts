@@ -42,8 +42,10 @@ test("the private record is encrypted on the phone, opens only with her PIN or r
   // Locked: a wrong PIN says so; the right one opens it, decrypted, with the photo.
   await page.getByRole("button", { name: "Lock now" }).click();
   await expect(page.getByText("He threw a plate at me")).toHaveCount(0);
+  await expect(page.getByText("Your record is locked")).toBeVisible();
   await page.getByLabel("PIN", { exact: true }).fill("111111");
-  await page.getByRole("button", { name: "Open" }).click();
+  await expect(page.getByLabel("PIN", { exact: true })).toHaveValue("111111");
+  await page.getByRole("button", { name: "Open", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("That's not right");
   await page.getByLabel("PIN", { exact: true }).fill("482916");
   await page.getByRole("button", { name: "Open" }).click();

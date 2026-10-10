@@ -8,9 +8,11 @@ test("a daily check-in: turned on from the timer page, a reminder on home near t
 
   await page.goto("/timer");
   const card = page.locator("#daily-check-in");
-  await card.getByLabel("Say I'm fine by").fill("10:00");
+  // An hour before now: tomorrow's deadline is then about a day away, whatever time the test runs.
+  const deadline = new Date(Date.now() - 60 * 60 * 1000).toTimeString().slice(0, 5);
+  await card.getByLabel("Say I'm fine by").fill(deadline);
   await card.getByRole("button", { name: "Turn on" }).click();
-  await expect(card).toContainText("On: say you're fine by 10:00 each day.");
+  await expect(card).toContainText(`On: say you're fine by ${deadline} each day.`);
   const next = await page.evaluate(() => fetch("/api/daily-checkin").then((r) => r.json()).then((d) => d.nextDueAt as string));
 
   // Not on home yet (it's a day away); two hours before the deadline it is.
