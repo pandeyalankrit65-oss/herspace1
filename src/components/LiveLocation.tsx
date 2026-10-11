@@ -51,7 +51,8 @@ const LiveLocation = ({
   onOffRoute,
 }: {
   share: LiveShare;
-  onEnded: () => void;
+  // With the id of the share that ended, so the page can ignore one it no longer shows.
+  onEnded: (shareId: number) => void;
   // A ride clearly heading away from her destination (for "Are you okay?" checks).
   onOffRoute?: () => void;
   // Each position, with the area warning there on journeys (for "Are you okay?" checks and guidance).
@@ -148,7 +149,7 @@ const LiveLocation = ({
           // A reply for a share this panel no longer shows (an SOS replaced the journey) must not
           // end the new one.
           if (cancelled) return;
-          if (err instanceof ApiError && (err.status === 410 || err.status === 404)) onEnded();
+          if (err instanceof ApiError && (err.status === 410 || err.status === 404)) onEnded(share.id);
           else setError("live.updateFailed");
         }
       },
@@ -193,7 +194,7 @@ const LiveLocation = ({
       await api(`/api/location-shares/${share.id}/stop`, { body: walk ? { arrived: true } : {} });
       journeyDestination.set(share.id, null);
       toast(walk ? { title: t("live.arrivedTitle"), description: t("live.arrivedDesc") } : { title: t("live.safeTitle"), description: t("live.safeDesc") });
-      onEnded();
+      onEnded(share.id);
     } catch (err) {
       toast({ title: t("live.stopFailed"), description: (err as Error).message, variant: "destructive" });
       setArrivingAt(null);

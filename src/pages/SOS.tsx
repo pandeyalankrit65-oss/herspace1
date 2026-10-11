@@ -144,11 +144,20 @@ const SOS = () => {
   const [recordAudio, setRecordAudio] = useState(readRecordSetting);
   const recorder = useSosRecorder();
   const { start: startRecording, stop: stopRecording } = recorder;
-  // "I'm safe" also ends the recording.
-  const endLiveShare = useCallback(() => {
-    stopRecording();
-    setLiveShare(null);
-  }, [stopRecording]);
+  // "I'm safe" also ends the recording. Only for the share shown now: an SOS sent during a journey
+  // replaces the journey's share, and a late "ended" reply about the journey must not hide the
+  // SOS's (with its "I'm safe" button).
+  const liveShareRef = useRef(liveShare);
+  liveShareRef.current = liveShare;
+  const endLiveShare = useCallback(
+    (id: number) => {
+      if (liveShareRef.current?.id !== id) return;
+      liveShareRef.current = null;
+      stopRecording();
+      setLiveShare((current) => (current?.id === id ? null : current));
+    },
+    [stopRecording]
+  );
   // What started this alert (button, scream, no answer...): contacts are told, so they know how serious it is.
   const triggerRef = useRef<SosTrigger>("button");
   const sendSOS = useCallback(async (options: { silent?: boolean } = {}) => {
@@ -161,7 +170,10 @@ const SOS = () => {
     try {
       const res = await api<SosResult>("/api/sos", { body: { coords, silent: silent || options.silent, trigger } });
       setResult(res);
-      if (res.share) setLiveShare(res.share);
+      if (res.share) {
+        liveShareRef.current = res.share;
+        setLiveShare(res.share);
+      }
       // "How are you doing?" tomorrow, and a few days later.
       followUpAfter("sos", { title: t("follow.notifyTitle"), body: t("follow.notifyBody") });
       // Evidence: record audio in short pieces that upload as they go.
