@@ -104,12 +104,15 @@ test("quick wipe: a wipe code in the calculator removes everything HerSpace keep
   const calculator = page.getByRole("main", { name: "Calculator" });
   await press(page, "9090=");
   // Still an ordinary calculator, and nothing of HerSpace's left but the disguise itself.
+  // The page reloads after the wipe, so storage is read until it settles (null mid-reload).
+  await expect
+    .poll(async () => {
+      const left = await herspaceKeys(page);
+      return left && { disguise: left.includes("herspace_disguise"), plan: left.includes("herspace_safety_plan"), places: left.includes("herspace_places"), user: left.includes("herspace_user") };
+    })
+    .toEqual({ disguise: true, plan: false, places: false, user: false });
+  await expect(page).toHaveURL(/\/$/);
   await expect(calculator).toBeVisible();
-  await expect.poll(() => herspaceKeys(page)).not.toContain("herspace_safety_plan");
-  const left = await herspaceKeys(page);
-  expect(left).toContain("herspace_disguise");
-  expect(left).not.toContain("herspace_places");
-  expect(left).not.toContain("herspace_user");
   // The PIN opens the app, signed out.
   await press(page, "2468=");
   await expect(calculator).toHaveCount(0);
