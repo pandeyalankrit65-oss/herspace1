@@ -11,6 +11,7 @@ import { useI18n } from "@/i18n";
 import { api } from "@/lib/api";
 import { hashCode, readQuickExit, saveDisguise, saveQuickExit, useDisguise } from "@/lib/disguise";
 import { neutraliseScheduledNotifications } from "@/lib/lockScreen";
+import { appIconSupported, isCalculatorIcon, setCalculatorIcon } from "@/lib/appIcon";
 import { wipePhone } from "@/lib/wipe";
 
 const CODE = /^\d{4,8}$/;
@@ -32,6 +33,20 @@ const SafetyAtHome = () => {
   const [phrase, setPhrase] = useState("");
   const [savedPhrase, setSavedPhrase] = useState<string | null>(null);
   const [savingPhrase, setSavingPhrase] = useState(false);
+  const [calculatorIcon, setCalculatorIconState] = useState(false);
+
+  useEffect(() => {
+    void isCalculatorIcon().then(setCalculatorIconState);
+  }, [settings]);
+
+  const changeIcon = async (on: boolean) => {
+    try {
+      setCalculatorIconState(await setCalculatorIcon(on));
+      toast({ title: on ? t("safe.iconOnDone") : t("safe.iconOffDone") });
+    } catch (err) {
+      toast({ title: t("safe.iconFailed"), description: (err as Error).message, variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     api<{ phrase: string | null }>("/api/account/code-phrase")
@@ -111,6 +126,17 @@ const SafetyAtHome = () => {
           {settings ? (
             <div className="space-y-3 rounded-xl border border-success/40 bg-success/10 p-3">
               <p className="text-sm font-semibold">{t("safe.disguiseActive")}</p>
+              {appIconSupported && (
+                <div className="flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="calculator-icon" className="text-sm font-semibold">
+                      {t("safe.iconLabel")}
+                    </label>
+                    <p className="text-xs text-muted-foreground">{t("safe.iconHint")}</p>
+                  </div>
+                  <Switch id="calculator-icon" checked={calculatorIcon} onCheckedChange={changeIcon} />
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="hero" onClick={lock}>
                   {t("safe.lockNow")}

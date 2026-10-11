@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { onAppVisibility } from "./appVisibility";
+import { setCalculatorIcon } from "./appIcon";
 
 // Disguised mode: for someone whose phone may be checked by an abuser. HerSpace opens as a
 // working calculator; typing the PIN and "=" opens the real app. An optional second code
@@ -38,6 +39,8 @@ export function saveDisguise(settings: DisguiseSettings | null) {
     // Storage blocked: disguise can't be kept on this device.
   }
   window.dispatchEvent(new Event("herspace-disguise"));
+  // Turning disguised mode off brings back HerSpace's own icon too.
+  if (!settings) void setCalculatorIcon(false).catch(() => {});
 }
 
 const isUnlocked = () => {

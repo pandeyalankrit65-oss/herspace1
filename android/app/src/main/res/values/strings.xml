@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">HerSpace</string>
     <string name="title_activity_main">HerSpace</string>
+    <!-- The app's name on the home screen in disguised mode -->
+    <string name="calculator_name">Calculator</string>
     <string name="package_name">app.herspace</string>
     <string name="custom_url_scheme">app.herspace</string>
 

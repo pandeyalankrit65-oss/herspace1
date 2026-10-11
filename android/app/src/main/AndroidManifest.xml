@@ -19,11 +19,6 @@
             android:launchMode="singleTask"
             android:exported="true">
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
             <!-- herspace://sos, herspace://timer ... used by the app shortcuts -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -32,10 +27,37 @@
                 <data android:scheme="herspace" />
             </intent-filter>
 
+        </activity>
+
+        <!-- The app's entry in the launcher. Disguised mode can swap it for the calculator below
+             (AppIconPlugin); only one is enabled at a time. -->
+        <activity-alias
+            android:name=".LauncherHerSpace"
+            android:targetActivity=".MainActivity"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <!-- Long-press the app icon: "Emergency SOS" and "Safety timer" -->
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity-alias>
 
-        </activity>
+        <!-- No shortcuts here: a long-press must not show "Emergency SOS". -->
+        <activity-alias
+            android:name=".LauncherCalculator"
+            android:targetActivity=".MainActivity"
+            android:label="@string/calculator_name"
+            android:icon="@mipmap/ic_calculator"
+            android:roundIcon="@mipmap/ic_calculator"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+    <string name="calculator_name">कैलकुलेटर</string>
     <string name="shortcut_sos_short">SOS</string>
     <string name="shortcut_sos_long">आपातकालीन SOS</string>
     <string name="shortcut_timer_short">सुरक्षा टाइमर</string>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Before Android 8, which has no adaptive icons. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/calculator_icon_background"/>
+    <item android:drawable="@drawable/ic_calculator_foreground"/>
+</layer-list>

@@ -2109,6 +2109,13 @@ const en = {
   "smsAlert.missedOn": "On: a call from {phone} to {number} alerts your confirmed contacts. It hangs up at once, and you get a text saying who was alerted.",
   "smsAlert.missedFailed": "Couldn't change alert by missed call",
 
+  // Disguised mode: calculator icon (Android)
+  "safe.iconLabel": "Calculator icon on the home screen",
+  "safe.iconHint": "The app's icon and name become \"Calculator\", in the app list and recent apps too. Android removes the HerSpace icon from your home screen, so add Calculator back from the app list. Android's settings and notification headers may still say HerSpace.",
+  "safe.iconOnDone": "The icon is now Calculator. Add it to your home screen from the app list.",
+  "safe.iconOffDone": "HerSpace's own icon is back. Add it to your home screen from the app list.",
+  "safe.iconFailed": "Couldn't change the icon",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

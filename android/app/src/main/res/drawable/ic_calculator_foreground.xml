@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calculator icon for disguised mode (108dp adaptive-icon canvas; the safe zone is the middle 66dp). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#37474F" android:pathData="M38,30h32a4,4 0,0 1,4 4v40a4,4 0,0 1,-4 4h-32a4,4 0,0 1,-4 -4v-40a4,4 0,0 1,4 -4z" />
+    <path android:fillColor="#B2DFDB" android:pathData="M39,35h30v10h-30z" />
+    <path android:fillColor="#ECEFF1" android:pathData="M39,50h7v6h-7zM50.5,50h7v6h-7zM62,50h7v6h-7zM39,60h7v6h-7zM50.5,60h7v6h-7zM39,70h7v4h-7zM50.5,70h7v4h-7z" />
+    <path android:fillColor="#FF8A65" android:pathData="M62,60h7v14h-7z" />
+</vector>

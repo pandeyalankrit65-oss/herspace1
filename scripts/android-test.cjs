@@ -2,7 +2,7 @@
 // (Chrome DevTools Protocol over adb) and checks native behaviour through adb: SOS with audio
 // recording, battery and emergency info, photos, the evidence pack's print dialog, automatic
 // arrival, a ride heading the wrong way, the safe word and voice commands, the fake call's voice,
-// follow-up notifications (and their text hidden by disguised mode), the private record's
+// follow-up notifications (and their text hidden by disguised mode), the calculator icon, the private record's
 // encryption and lock, and offline reports.
 //
 // Usage:  npm run test:android            (the app must already be installed)
@@ -510,7 +510,16 @@ function preflight() {
       await press(["2", "4", "6", "8", "="]);
       await waitFor(async () => !(await visible(calc)), 8000);
       await go("/account");
+      // The home-screen icon and name become a calculator, and the app keeps running.
+      const launcher = () => adb("shell cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER --components app.herspace");
+      await page.getByLabel("Calculator icon on the home screen").click();
+      const swapped = await waitFor(async () => /LauncherCalculator/.test(launcher()) && !/LauncherHerSpace/.test(launcher()), 10000);
+      check("the launcher shows a Calculator instead of HerSpace", !!swapped, launcher().trim().replace(/\s+/g, " "));
+      check("the app is still open after the swap", !!(await waitFor(() => visible(page.getByLabel("Calculator icon on the home screen")), 8000)));
+      shot("7b-calculator-icon");
       await page.getByRole("button", { name: "Turn off", exact: true }).click();
+      const restored = await waitFor(async () => /LauncherHerSpace/.test(launcher()) && !/LauncherCalculator/.test(launcher()), 10000);
+      check("turning disguised mode off brings HerSpace's icon back", !!restored, launcher().trim().replace(/\s+/g, " "));
       await go("/sos");
       await page.getByRole("button", { name: "I'm safe, stop sharing" }).click().catch(() => {});
     });
