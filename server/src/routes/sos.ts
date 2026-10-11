@@ -3,7 +3,7 @@ import { photoPath, saveFile, type StoredExt } from '../photos';
 import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth, User } from '../auth';
-import { incomingSmsUrl, placeCall, sendSms, SendResult, smsConfigured, statusCallbackUrl, validTwilioSignature, voiceCallsEnabled } from '../messaging';
+import { incomingCallUrl, incomingSmsUrl, placeCall, sendSms, SendResult, smsConfigured, statusCallbackUrl, validTwilioSignature, voiceCallsEnabled } from '../messaging';
 import { perUser, rateLimit } from '../rateLimit';
 import { coordsSchema, now, parse } from '../util';
 import { listContacts } from './contacts';
@@ -51,7 +51,7 @@ export type AlertOptions = {
   daily?: { deadline: string };
 };
 
-export const SOS_TRIGGERS = ['button', 'hold', 'voice', 'safe_word', 'shake', 'scream', 'no_answer', 'code_phrase', 'stress', 'stopped_answering', 'sms'] as const;
+export const SOS_TRIGGERS = ['button', 'hold', 'voice', 'safe_word', 'shake', 'scream', 'no_answer', 'code_phrase', 'stress', 'stopped_answering', 'sms', 'missed_call'] as const;
 export type SosTrigger = (typeof SOS_TRIGGERS)[number];
 
 // Told to contacts after the alert: how it started, when it wasn't a plain press of SOS.
@@ -65,6 +65,7 @@ const TRIGGER_TEXT: Partial<Record<SosTrigger, string>> = {
   stress: ' They chose to send it after their phone noticed stress in their voice.',
   stopped_answering: ' It started automatically: they stopped answering check-ins while being kept company by the app.',
   sms: " They sent it by text message, so their location isn't known.",
+  missed_call: " They sent it with a missed call to HerSpace's number, so their location isn't known.",
 };
 
 const fmtTime = (iso: string) => new Date(iso).toUTCString();
@@ -101,8 +102,9 @@ export async function triggerAlert(user: User | undefined, coords: z.infer<typeo
   const time = new Date(createdAt).toUTCString();
   // Real alerts from a logged-in user get a live-location link that keeps updating; each contact
   // gets their own copy of it, so their "I'm on my way" says who is coming.
-  // No live link when her phone can't share (a missed daily check-in, or a text from a basic phone).
-  const share = user && !isTest && !options.daily && options.trigger !== 'sms' ? createShare(user.id, { sosId, coords }) : undefined;
+  // No live link when her phone can't share (a missed daily check-in, or a text or missed call
+  // from a basic phone).
+  const share = user && !isTest && !options.daily && options.trigger !== 'sms' && options.trigger !== 'missed_call' ? createShare(user.id, { sosId, coords }) : undefined;
   const messageFor = (link?: string) => buildMessage(link ? ` Live location: ${link}` : '');
   const checkIn = options.checkIn;
   const reply = options.silent
@@ -334,4 +336,38 @@ twilioRouter.post('/sms', express.urlencoded({ extended: false }), async (req, r
   const result = await triggerAlert(user, undefined, { trigger: 'sms' });
   const sent = result.deliveries.filter((d) => d.channel === 'sms' && d.status !== 'failed' && d.status !== 'not_confirmed').length;
   reply(res, sent ? `HerSpace: ${sent} emergency contact${sent === 1 ? ' was' : 's were'} alerted. In danger, call 112.` : "HerSpace: you have no confirmed contacts to alert. Call 112.");
+});
+
+// A call to HerSpace's number from her verified phone, when she turned on alerts by missed call:
+// the call is rejected (so it costs her nothing and works without data or balance for a text),
+// her contacts are alerted, and she gets a text saying who was. Calls from anyone else are just
+// rejected. At most 3 alerts an hour.
+const REJECT = '<Response><Reject reason="busy"/></Response>';
+twilioRouter.post('/voice', express.urlencoded({ extended: false }), (req, res) => {
+  const url = incomingCallUrl();
+  const params = req.body as Record<string, string>;
+  if (!url || !validTwilioSignature(req.header('X-Twilio-Signature'), url, params)) return res.status(403).send('Invalid signature');
+  // Answer Twilio at once: the alert takes a few seconds, and the call shouldn't ring meanwhile.
+  res.type('text/xml').send(REJECT);
+  const user = db
+    .prepare('SELECT id, name, email, phone FROM users WHERE phone = ? AND phone_verified_at IS NOT NULL AND missed_call_sos = 1')
+    .get(params.From ?? '') as (User & { phone: string }) | undefined;
+  if (!user) return;
+  const recent = (
+    db
+      .prepare("SELECT COUNT(*) AS n FROM sos_events WHERE user_id = ? AND trigger = 'missed_call' AND created_at > ?")
+      .get(user.id, new Date(Date.now() - 60 * 60 * 1000).toISOString()) as { n: number }
+  ).n;
+  if (recent >= 3) return;
+  triggerAlert(user, undefined, { trigger: 'missed_call' })
+    .then((result) => {
+      const sent = result.deliveries.filter((d) => d.channel === 'sms' && d.status !== 'failed' && d.status !== 'not_confirmed').length;
+      return sendSms(
+        user.phone,
+        sent
+          ? `HerSpace: your missed call alerted ${sent} emergency contact${sent === 1 ? '' : 's'}. In danger, call 112.`
+          : 'HerSpace: you have no confirmed contacts to alert. Call 112.'
+      );
+    })
+    .catch((err) => console.error('[SOS] Missed-call alert failed:', err));
 });

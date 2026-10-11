@@ -1816,6 +1816,70 @@ describe('private record', () => {
   });
 });
 
+describe('alert by missed call', () => {
+  test('a call from her verified phone alerts her contacts only once she turned it on', async () => {
+    const saved = { token: process.env.TWILIO_AUTH_TOKEN, url: process.env.PUBLIC_API_URL };
+    process.env.TWILIO_AUTH_TOKEN = 'test-auth-token';
+    process.env.PUBLIC_API_URL = 'https://herspace.example';
+    const { createHmac } = await import('node:crypto');
+    const ring = async (params: Record<string, string>, sign = true) => {
+      const data = 'https://herspace.example/api/twilio/voice' + Object.keys(params).sort().map((k) => k + params[k]).join('');
+      const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
+      if (sign) headers['X-Twilio-Signature'] = createHmac('sha1', 'test-auth-token').update(data).digest('base64');
+      const res = await fetch(`${base}/twilio/voice`, { method: 'POST', headers, body: new URLSearchParams(params).toString() });
+      return { status: res.status, body: await res.text() };
+    };
+    const alerts = (userId: number) =>
+      (db.prepare("SELECT COUNT(*) AS n FROM sos_events WHERE user_id = ? AND trigger = 'missed_call'").get(userId) as { n: number }).n;
+    const settle = () => new Promise((r) => setTimeout(r, 300));
+    try {
+      const { token } = await userWithConfirmedContact('Kamala');
+      const me = await call('/auth/me', { token });
+      const id = me.data.user.id;
+      assert.equal(me.data.user.missedCallSos, false);
+      const phone = '+919822223333';
+
+      assert.equal((await call('/account/missed-call', { token, method: 'PUT', body: { on: true } })).status, 400, 'needs a verified phone');
+      db.prepare('UPDATE users SET phone = ?, phone_verified_at = ? WHERE id = ?').run(phone, new Date().toISOString(), id);
+
+      // Off by default: the call is rejected and nobody is alerted.
+      const off = await ring({ From: phone, CallSid: 'CA1' });
+      assert.match(off.body, /<Reject reason="busy"\/>/);
+      await settle();
+      assert.equal(alerts(id), 0);
+
+      assert.equal((await call('/account/missed-call', { token, method: 'PUT', body: { on: true } })).status, 200);
+      assert.equal((await call('/auth/me', { token })).data.user.missedCallSos, true);
+      assert.equal((await ring({ From: phone, CallSid: 'CA2' }, false)).status, 403);
+      assert.match((await ring({ From: '+919800000000', CallSid: 'CA3' })).body, /Reject/);
+      await settle();
+      assert.equal(alerts(id), 0, 'other numbers alert no one');
+
+      await ring({ From: phone, CallSid: 'CA4' });
+      await settle();
+      assert.equal(alerts(id), 1);
+      const sos = db.prepare("SELECT id FROM sos_events WHERE user_id = ? AND trigger = 'missed_call'").get(id) as { id: number };
+      assert.equal((db.prepare("SELECT COUNT(*) AS n FROM sos_deliveries WHERE sos_id = ? AND channel = 'sms'").get(sos.id) as { n: number }).n, 1);
+      assert.equal((db.prepare('SELECT COUNT(*) AS n FROM location_shares WHERE sos_id = ?').get(sos.id) as { n: number }).n, 0, 'no live link');
+
+      await ring({ From: phone, CallSid: 'CA5' });
+      await ring({ From: phone, CallSid: 'CA6' });
+      await ring({ From: phone, CallSid: 'CA7' });
+      await settle();
+      assert.equal(alerts(id), 3, 'at most 3 an hour');
+
+      // Removing the phone number turns it off.
+      await call('/account/phone', { token, method: 'DELETE' });
+      assert.equal((await call('/auth/me', { token })).data.user.missedCallSos, false);
+    } finally {
+      process.env.TWILIO_AUTH_TOKEN = saved.token;
+      process.env.PUBLIC_API_URL = saved.url;
+      if (saved.token === undefined) delete process.env.TWILIO_AUTH_TOKEN;
+      if (saved.url === undefined) delete process.env.PUBLIC_API_URL;
+    }
+  });
+});
+
 describe('alert by text message', () => {
   test("a HELP text from her verified phone alerts her contacts; other numbers and words don't", async () => {
     const saved = { token: process.env.TWILIO_AUTH_TOKEN, url: process.env.PUBLIC_API_URL };

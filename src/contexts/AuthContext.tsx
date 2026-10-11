@@ -16,6 +16,8 @@ export type User = {
   emailVerified?: boolean;
   // Paused from the Safe Map by a moderator; SOS and everything else still work.
   mapSuspended?: boolean;
+  // A missed call from her verified phone to HerSpace's number alerts her contacts.
+  missedCallSos?: boolean;
 };
 
 type AuthResponse = { user: User };

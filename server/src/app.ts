@@ -79,7 +79,8 @@ app.get('/api/nearby', nearbyLimiter, async (req, res) => {
   res.json({ available: places !== null, radius: NEARBY_RADIUS_M, places: places ?? [] });
 });
 
-// HerSpace's number for alerts by text message, only when incoming texts are set up.
+// HerSpace's number for alerts by text message or missed call, only when incoming texts and calls
+// are set up (both webhooks live under PUBLIC_API_URL).
 app.get('/api/sms-alert', (_req, res) => {
   res.json({ number: smsConfigured() && incomingSmsUrl() ? process.env.TWILIO_FROM_NUMBER ?? null : null });
 });

@@ -2103,6 +2103,12 @@ const en = {
   "finish.exists": "This email already has an account. Log in, or reset your password if you've forgotten it.",
   "finish.again": "Sign up again",
 
+  // Alert by missed call
+  "smsAlert.missedLabel": "Alert by missed call",
+  "smsAlert.missedHint": "Ring HerSpace's number from your verified phone and it alerts your contacts. It hangs up at once, so it needs no balance or data. Off until you turn it on, since a call is easy to make by accident.",
+  "smsAlert.missedOn": "On: a call from {phone} to {number} alerts your confirmed contacts. It hangs up at once, and you get a text saying who was alerted.",
+  "smsAlert.missedFailed": "Couldn't change alert by missed call",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

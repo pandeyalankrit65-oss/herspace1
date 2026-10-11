@@ -128,8 +128,18 @@ accountRouter.put('/emergency-info', (req, res) => {
   res.json({ info: empty ? null : body.info, share: body.share && !empty });
 });
 
+// Alert by missed call. Needs her verified number, since only calls from it count.
+accountRouter.put('/missed-call', (req, res) => {
+  const body = parse(z.object({ on: z.boolean() }), req, res);
+  if (!body) return;
+  const row = db.prepare('SELECT phone_verified_at FROM users WHERE id = ?').get(req.user!.id) as { phone_verified_at: string | null };
+  if (body.on && !row.phone_verified_at) return res.status(400).json({ error: 'Verify your phone number first.' });
+  db.prepare('UPDATE users SET missed_call_sos = ? WHERE id = ?').run(body.on ? 1 : 0, req.user!.id);
+  res.json({ on: body.on });
+});
+
 accountRouter.delete('/phone', (req, res) => {
-  db.prepare('UPDATE users SET phone = NULL, phone_verified_at = NULL WHERE id = ?').run(req.user!.id);
+  db.prepare('UPDATE users SET phone = NULL, phone_verified_at = NULL, missed_call_sos = 0 WHERE id = ?').run(req.user!.id);
   db.prepare('DELETE FROM phone_codes WHERE user_id = ?').run(req.user!.id);
   res.json({ success: true });
 });

@@ -38,6 +38,7 @@ const publicApiUrl = () => process.env.PUBLIC_API_URL?.replace(/\/$/, '');
 export const statusCallbackUrl = () => (publicApiUrl() ? `${publicApiUrl()}/api/twilio/status` : undefined);
 // Where Twilio sends texts that arrive at HerSpace's number (set this as the number's webhook).
 export const incomingSmsUrl = () => (publicApiUrl() ? `${publicApiUrl()}/api/twilio/sms` : undefined);
+export const incomingCallUrl = () => (publicApiUrl() ? `${publicApiUrl()}/api/twilio/voice` : undefined);
 
 async function twilioPost(resource: 'Messages' | 'Calls', params: Record<string, string>): Promise<SendResult> {
   if (!smsConfigured()) return { status: 'not_configured' };

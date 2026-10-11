@@ -15,6 +15,8 @@ export type User = {
   emailVerified: boolean;
   // Suspended from the Safe Map by a moderator. SOS and everything else still work.
   mapSuspended: boolean;
+  // A missed call from her verified phone to HerSpace's number alerts her contacts.
+  missedCallSos: boolean;
 };
 
 // Moderators review flagged Safe Map reports. In production the role is granted only in the
@@ -29,7 +31,7 @@ const isModerator = (email: string, role: string) => role === 'moderator' || adm
 
 // The user object sent to the browser.
 export function publicUser(id: number): User {
-  const row = db.prepare('SELECT id, name, email, role, phone, email_verified_at, suspended_at FROM users WHERE id = ?').get(id) as {
+  const row = db.prepare('SELECT id, name, email, role, phone, email_verified_at, suspended_at, missed_call_sos FROM users WHERE id = ?').get(id) as {
     id: number;
     name: string;
     email: string;
@@ -37,6 +39,7 @@ export function publicUser(id: number): User {
     phone: string | null;
     email_verified_at: string | null;
     suspended_at: string | null;
+    missed_call_sos: number;
   };
   return {
     id: row.id,
@@ -46,6 +49,7 @@ export function publicUser(id: number): User {
     phone: row.phone,
     emailVerified: Boolean(row.email_verified_at),
     mapSuspended: Boolean(row.suspended_at),
+    missedCallSos: Boolean(row.missed_call_sos),
   };
 }
 
@@ -130,7 +134,7 @@ export function loadUser(req: Request, _res: Response, next: NextFunction) {
   if (token) {
     const row = db
       .prepare(
-        `SELECT u.id, u.name, u.email, u.role, u.phone, u.email_verified_at, u.suspended_at, s.expires_at FROM sessions s
+        `SELECT u.id, u.name, u.email, u.role, u.phone, u.email_verified_at, u.suspended_at, u.missed_call_sos, s.expires_at FROM sessions s
          JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`
       )
       .get(sha256(token)) as
@@ -142,6 +146,7 @@ export function loadUser(req: Request, _res: Response, next: NextFunction) {
           phone: string | null;
           email_verified_at: string | null;
           suspended_at: string | null;
+          missed_call_sos: number;
           expires_at: string;
         }
       | undefined;
@@ -154,6 +159,7 @@ export function loadUser(req: Request, _res: Response, next: NextFunction) {
         phone: row.phone,
         emailVerified: Boolean(row.email_verified_at),
         mapSuspended: Boolean(row.suspended_at),
+        missedCallSos: Boolean(row.missed_call_sos),
       };
     }
   }

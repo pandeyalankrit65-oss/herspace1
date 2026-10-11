@@ -499,6 +499,11 @@ const migrations: string[] = [
   );
   CREATE INDEX pending_signups_email ON pending_signups(email);
   `,
+  // Alert by missed call: a call from her verified phone to HerSpace's number alerts her
+  // contacts. Off until she turns it on, since a call is easy to make by accident.
+  `
+  ALTER TABLE users ADD COLUMN missed_call_sos INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 function migrate() {
