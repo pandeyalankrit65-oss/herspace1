@@ -14,6 +14,8 @@ import type { MessageKey } from "@/i18n/en";
 import LoadingRows from "@/components/LoadingRows";
 import { ShieldCheck, Users } from "lucide-react";
 import ReportPhotos from "@/components/ReportPhotos";
+import ReportMediaList from "@/components/ReportMediaList";
+import type { ReportMedia } from "@/lib/media";
 import PhoneVerification from "@/components/PhoneVerification";
 import SmsAlert from "@/components/SmsAlert";
 import EmailVerification from "@/components/EmailVerification";
@@ -32,6 +34,7 @@ type Report = {
   date: string | null;
   createdAt: string;
   photos?: number[];
+  media?: ReportMedia[];
 };
 
 const Account = () => {
@@ -208,6 +211,7 @@ const Account = () => {
                   </p>
                   <p className="text-sm whitespace-pre-wrap">{r.description}</p>
                   <ReportPhotos reportId={r.id} photos={r.photos ?? []} />
+                  <ReportMediaList reportId={r.id} media={r.media} />
                   <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
                     <Link to={`/complaint?report=${r.id}`} className="text-sm font-semibold text-primary underline underline-offset-2">
                       {t("account.writeComplaint")}

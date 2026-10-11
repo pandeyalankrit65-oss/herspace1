@@ -46,7 +46,7 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 | **Evidence, alarm, nearest help** | **Audio evidence** (opt-in, SOS page): after an alert, the phone records in 10-second pieces, each a complete file, uploaded as it goes (up to 15 minutes), so it survives the phone being taken. Only the user can play it (`/account`); deleted with the alert after 90 days. **Loud alarm**: a siren and a red/black screen alternating under 3 times a second (the seizure-safety limit). **Nearest help** on the map: the closest police station, hospital or pharmacy with walking directions. |
 | **Setup checklist** | Signed-in users see "Get ready for an emergency" on the home and SOS pages until they have added a contact, the contact has confirmed, a test alert has been sent and location access is allowed. |
 | **Emergency contacts** (`/contacts`) | Up to 10 contacts, stored on your account. Each contact gets an invite link and must **agree** before they receive alerts. This stops SOS from being used to spam strangers, and means they know what an alert means. The invite can be sent by SMS automatically or shared by the user over SMS or WhatsApp. A **test alert** checks that messages actually arrive. |
-| **Incident reports** (`/report`) | You can submit anonymously, in which case no account is linked, even if you're logged in. You can also add your current location to the Safe Map, and up to 3 photos. Photos are redrawn in the browser before upload, which drops EXIF data (GPS position, camera, time); the server strips any remaining metadata again. They never appear on the map: only the reporter (if not anonymous) and moderators can view them. |
+| **Incident reports** (`/report`) | You can submit anonymously, in which case no account is linked, even if you're logged in. You can also add your current location to the Safe Map, and up to 3 photos. Photos are redrawn in the browser before upload, which drops EXIF data (GPS position, camera, time); the server strips any remaining metadata again. They never appear on the map: only the reporter (if not anonymous) and moderators can view them. **Audio and video:** up to 2 recordings of 50 MB each (MP4, MOV, M4A, 3GP, WebM, Ogg or MP3, checked by their first bytes, not the type the browser claims). A phone camera writes where a video was filmed into the MP4's `udta` and `meta` boxes; the server renames them to `free`, which players skip, so the file stays playable with no location in it. Played from the account page (fetched only when she presses Play, with seeking), downloadable, never on the map, listed in the evidence pack and the complaint letter ("available on request"), saved with offline reports, and deleted with the report. |
 | **Safe Map & help nearby** (`/map`) | An OpenStreetMap/Leaflet map of reported incidents. Locations are rounded to about 1 km, and only the incident type and date are shown. Descriptions and identities never appear on the map. After "Show my location", it also shows police stations, hospitals and pharmacies within 3 km (from OpenStreetMap's Overpass API, queried by the server with the position rounded to ~1 km), with directions and a call button where a number is known. |
 | **AI support chat** (`/support`) | A supportive companion powered by Claude (`claude-opus-5`), prompted to put safety first and point to emergency help. If no Anthropic credentials are configured, it switches to simple scripted replies and the UI says so. |
 | **Safe Map moderation** (`/moderation`) | Anyone can flag a point as false or abusive. Points flagged by 3 different people are hidden. Moderators get a review queue of flagged points showing the report and its photos, never who sent it, and can keep a point on the map, remove it, or send it back to review. |
@@ -72,7 +72,6 @@ HerSpace won 1st prize at the AI Hackathon 2025. It is still a prototype. The se
 
 - **Safe word, voice trigger and scream detection in the background**: today they listen only while the SOS page is open with the screen on. Listening with the screen off or the app closed needs an Android foreground service with microphone access (a permanent notification, battery use, and Google Play's rules for background microphone use), ideally with on-device recognition so audio never leaves the phone.
 - Other triggers that work with the screen off or the app closed: shake, lock-screen widget, power-button presses (needs an accessibility service, which Play Store policy restricts), smartwatch or Bluetooth panic button.
-- Audio or video attached to reports (audio is recorded during SOS already).
 - Native-speaker review of the Tamil, Bengali and Marathi translations (interface, complaint letters, Privacy Policy and Terms), and legal review of the translated legal pages and the Help & rights guide in all four languages.
 - Safe-route navigation, and risk prediction beyond the weighted count of reports on the heatmap (e.g. time of day, lighting, crowd data).
 - End-to-end encryption. Data is protected by access control on the server, not encrypted per user.
@@ -118,7 +117,7 @@ Open http://localhost:8080. The Vite dev server forwards `/api` requests to the 
 | `CORS_ORIGIN` | Comma-separated origins allowed to call the API directly (default `http://localhost:8080`). |
 | `AI_DAILY_LIMIT` | Most AI calls (support chat, fake caller, report drafts) per day across everyone, default 2000. These work without an account, so this caps the bill; past it they quietly use their scripted fallbacks until the next day (UTC). |
 | `DATABASE_PATH` | SQLite file location (default `server/data/herspace.db`). |
-| `UPLOAD_DIR` | Where report photos are stored (default `server/data/uploads`). Back it up with the database. |
+| `UPLOAD_DIR` | Where report photos, recordings and SOS audio are stored (default `server/data/uploads`). Back it up with the database. |
 | `ADMIN_EMAILS` | Development and tests only: comma-separated emails treated as moderators. Ignored in production, so a moderator is always chosen deliberately. In production, grant the role with `npm run moderator -- add <email>` (also `remove`, `list`) in `server/`, after the person has signed up. |
 | `MAX_RECORDING_MB_PER_DAY` | Cap on SOS audio each account can upload per day (default 200). |
 | `NOMINATIM_URL`, `OVERPASS_URL` | OpenStreetMap services for area names in SOS texts and nearby help on the map (defaults: the public instances). Set either to `off` to disable it. For real traffic, use your own instance or a commercial provider: the public ones have strict usage policies. |
@@ -156,7 +155,7 @@ For a real phone, deploy the API over HTTPS, set `VITE_API_BASE_URL` to it, and 
 
 ### Checking the app on the emulator
 
-`npm run test:android` drives the app on a running emulator and checks what only the app can do: SOS with audio recording, battery and emergency info on the contact's link, photo uploads, the evidence pack's print dialog (Save as PDF), automatic arrival from real GPS fixes, the safe word and voice commands with Android's recognizer, the fake call's voice, disguised mode with its silent SOS code, and an offline report sent once the connection is back (34 checks).
+`npm run test:android` drives the app on a running emulator and checks what only the app can do: SOS with audio recording, battery and emergency info on the contact's link, photo uploads, the evidence pack's print dialog (Save as PDF), automatic arrival from real GPS fixes, the safe word and voice commands with Android's recognizer, the fake call's voice, disguised mode with its silent SOS code and Calculator icon, audio attached to a report and played back, and an offline report sent once the connection is back (46 checks).
 
 ```sh
 emulator -avd <name>                 # start an emulator (Android Studio's Device Manager works too)
@@ -260,6 +259,8 @@ Database schema changes go in `server/src/db.ts` as new entries in the `migratio
 | `POST /api/reports` | Optional | Submit a report (`anonymous: true` never stores the user) |
 | `GET /api/reports`, `DELETE /api/reports/:id` | Session | Your own non-anonymous reports |
 | `POST /api/reports/:id/photos` | Upload token | Add a JPEG photo (up to 3, within 15 minutes of submitting) |
+| `POST /api/reports/:id/media` | Upload token | Add an audio or video recording (up to 2, 50 MB each, within 15 minutes of submitting) |
+| `GET /api/reports/:id/media/:mediaId` | Reporter or moderator | Play a recording (supports Range requests) |
 | `GET /api/reports/:id/photos/:photoId` | Session (owner or moderator) | View a report photo |
 | `POST /api/reports/:id/flag` | – | Flag a map point |
 | `GET /api/reports/map` | – | Public, coarsened points for the map |

@@ -18,6 +18,8 @@ export type ComplaintFields = {
   accused: string;
   witnesses: string;
   attachments: number;
+  // Audio and video attached to the report: not printable, so offered on request.
+  recordings?: number;
   // "refused" only: which police station refused, and when.
   refusedStation?: string;
   refusedOn?: string;
@@ -35,6 +37,7 @@ type Template = {
   accused: string;
   witnesses: string;
   attached: (n: number) => string;
+  recordings: (n: number) => string;
   closing: string;
   phoneLabel: string;
   // Section 173(4) of the Bharatiya Nagarik Suraksha Sanhita, 2023 (Section 154(3) of the old CrPC).
@@ -76,6 +79,7 @@ const TEMPLATES: Record<LetterLang, Template> = {
     accused: "Details of the accused",
     witnesses: "Witnesses",
     attached: (n) => `Attached: ${n} photo${n === 1 ? "" : "s"}`,
+    recordings: (n) => `Audio or video recording${n === 1 ? "" : "s"}: ${n}, available on request`,
     closing: "Yours faithfully,",
     phoneLabel: "Phone",
     blanks: {
@@ -120,6 +124,7 @@ const TEMPLATES: Record<LetterLang, Template> = {
     accused: "आरोपी के बारे में जानकारी",
     witnesses: "गवाह",
     attached: (n) => `संलग्न: ${n} फ़ोटो`,
+    recordings: (n) => `ऑडियो या वीडियो रिकॉर्डिंग: ${n}, माँगने पर उपलब्ध`,
     closing: "भवदीया,",
     phoneLabel: "फ़ोन",
     blanks: {
@@ -164,6 +169,7 @@ const TEMPLATES: Record<LetterLang, Template> = {
     accused: "குற்றம் சாட்டப்பட்டவர் பற்றிய விவரங்கள்",
     witnesses: "சாட்சிகள்",
     attached: (n) => `இணைப்பு: ${n} ${n === 1 ? "புகைப்படம்" : "புகைப்படங்கள்"}`,
+    recordings: (n) => `ஒலி அல்லது வீடியோ பதிவுகள்: ${n}, கேட்டால் தரப்படும்`,
     closing: "இப்படிக்கு,",
     phoneLabel: "தொலைபேசி",
     blanks: {
@@ -208,6 +214,7 @@ const TEMPLATES: Record<LetterLang, Template> = {
     accused: "অভিযুক্ত সম্পর্কে তথ্য",
     witnesses: "সাক্ষী",
     attached: (n) => `সংযুক্ত: ${n}টি ছবি`,
+    recordings: (n) => `অডিও বা ভিডিও রেকর্ডিং: ${n}টি, চাইলে দেওয়া হবে`,
     closing: "বিনীত,",
     phoneLabel: "ফোন",
     blanks: {
@@ -252,6 +259,7 @@ const TEMPLATES: Record<LetterLang, Template> = {
     accused: "आरोपीबद्दल माहिती",
     witnesses: "साक्षीदार",
     attached: (n) => `सोबत जोडलेले: ${n} फोटो`,
+    recordings: (n) => `ऑडिओ किंवा व्हिडिओ रेकॉर्डिंग: ${n}, मागितल्यास उपलब्ध`,
     closing: "आपली विश्वासू,",
     phoneLabel: "फोन",
     blanks: {
@@ -310,6 +318,7 @@ export function buildComplaint(f: ComplaintFields, lang: LetterLang): string {
     ...(f.accused.trim() ? [`${l.accused}: ${f.accused.trim()}`, ""] : []),
     ...(f.witnesses.trim() ? [`${l.witnesses}: ${f.witnesses.trim()}`, ""] : []),
     ...(f.attachments ? [l.attached(f.attachments), ""] : []),
+    ...(f.recordings ? [l.recordings(f.recordings), ""] : []),
     refused ? l.refused.ask : police ? l.ask.police : l.ask.workplace,
     "",
     l.closing,

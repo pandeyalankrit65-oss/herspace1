@@ -8,7 +8,7 @@ import { sendSms } from '../messaging';
 import { codePhraseMessage, listContacts } from './contacts';
 import { perUser } from '../rateLimit';
 import crypto from 'crypto';
-import { deleteReports, reportPhotos } from './reports';
+import { deleteReports, reportMedia, reportPhotos } from './reports';
 import { handOverCircles } from './circles';
 import { deleteRecord } from './record';
 
@@ -189,7 +189,7 @@ accountRouter.get('/export', (req, res) => {
     .all(userId)
     .map((r) => {
       const { id, ...rest } = r as { id: number };
-      return { ...rest, photos: reportPhotos(id).length };
+      return { ...rest, photos: reportPhotos(id).length, recordings: reportMedia(id).length };
     });
   const sosEvents = (
     db.prepare('SELECT id, lat, lng, accuracy, created_at AS createdAt, is_test AS isTest FROM sos_events WHERE user_id = ?').all(userId) as Array<{ id: number }>

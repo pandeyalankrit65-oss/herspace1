@@ -2,7 +2,8 @@
 // (Chrome DevTools Protocol over adb) and checks native behaviour through adb: SOS with audio
 // recording, battery and emergency info, photos, the evidence pack's print dialog, automatic
 // arrival, a ride heading the wrong way, the safe word and voice commands, the fake call's voice,
-// follow-up notifications (and their text hidden by disguised mode), the calculator icon, the private record's
+// follow-up notifications (and their text hidden by disguised mode), the calculator icon, audio
+// attached to a report, the private record's
 // encryption and lock, and offline reports.
 //
 // Usage:  npm run test:android            (the app must already be installed)
@@ -333,10 +334,36 @@ function preflight() {
         return c.toDataURL("image/jpeg").split(",")[1];
       });
       await page.getByLabel("Photos (optional)").setInputFiles({ name: "car.jpg", mimeType: "image/jpeg", buffer: Buffer.from(jpeg, "base64") });
+      // A second of audio, recorded by the WebView itself, attached as a recording.
+      const webm = await page.evaluate(async () => {
+        const audio = new AudioContext();
+        await audio.resume();
+        const tone = audio.createOscillator();
+        const out = audio.createMediaStreamDestination();
+        tone.connect(out);
+        tone.start();
+        const recorder = new MediaRecorder(out.stream);
+        const chunks = [];
+        recorder.ondataavailable = (e) => chunks.push(e.data);
+        const done = new Promise((r) => (recorder.onstop = r));
+        recorder.start();
+        await new Promise((r) => setTimeout(r, 1000));
+        recorder.stop();
+        await done;
+        tone.stop();
+        const bytes = new Uint8Array(await new Blob(chunks).arrayBuffer());
+        let s = "";
+        for (const b of bytes) s += String.fromCharCode(b);
+        return btoa(s);
+      });
+      await page.getByLabel("Audio or video (optional)").setInputFiles({ name: "what-he-said.webm", mimeType: "audio/webm", buffer: Buffer.from(webm, "base64") });
       await page.getByRole("button", { name: "Submit Report" }).click();
       await waitFor(() => visible(page.getByText("Report Submitted", { exact: true })));
       await go("/account");
       check("report photo uploads from the app", !!(await waitFor(() => visible(page.getByRole("img", { name: "Photo 1" }).first()), 15000)));
+      await page.getByRole("button", { name: "Play Audio 1" }).first().click();
+      const played = await waitFor(() => page.locator('audio[aria-label="Audio 1"]').first().evaluate((a) => a.readyState >= 1).catch(() => false), 15000);
+      check("report audio uploads from the app and plays back", !!played);
       await go("/account");
       await page.getByRole("link", { name: "Evidence pack (PDF)" }).first().click();
       const doc = page.locator(".print-doc");

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import LegalPage, { ContactLine, Section, useLegalLang, type LegalLang } from "@/components/LegalPage";
 
 const PrivacyEn = () => (
-  <LegalPage title="Privacy Policy" updated="7 October 2026">
+  <LegalPage title="Privacy Policy" updated="11 October 2026">
     <p className="text-lg text-muted-foreground leading-relaxed">
       HerSpace exists to help keep you safe, so we collect only what the app needs to work, and we tell you plainly where it goes.
     </p>
@@ -52,7 +52,10 @@ const PrivacyEn = () => (
           <strong>Incident reports:</strong> the incident type, your description, the date and any location you enter or choose to
           share, and any photos you add. Before a photo leaves your device, the app makes a clean copy without its hidden
           details (such as the GPS position and camera model); our server removes any that remain. If you submit anonymously,
-          the report and its photos are not linked to your account in any way.
+          the report and its photos are not linked to your account in any way. You can also add up to two audio or video
+          recordings. They are kept as you recorded them, except that our server removes the location a phone writes into a
+          video. Like photos, recordings never appear on the map: only you (unless you reported anonymously) and our moderators
+          can play them.
         </li>
         <li>
           <strong>Map flags:</strong> when you flag a map point we record your account, or a scrambled version of your IP address

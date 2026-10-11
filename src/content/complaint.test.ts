@@ -51,6 +51,8 @@ describe("complaint letters", () => {
     expect(letter).toContain("Witnesses: Shop owner");
     expect(letter).toContain("Attached: 2 photos");
     expect(buildComplaint({ ...base, attachments: 1 }, "en")).toContain("Attached: 1 photo\n");
+    expect(buildComplaint({ ...base, recordings: 2 }, "en")).toContain("Audio or video recordings: 2, available on request\n");
+    expect(buildComplaint(base, "en")).not.toContain("recording");
   });
 
   it("leaves clear placeholders for anything missing", () => {

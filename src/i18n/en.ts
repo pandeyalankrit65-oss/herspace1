@@ -2116,6 +2116,24 @@ const en = {
   "safe.iconOffDone": "HerSpace's own icon is back. Add it to your home screen from the app list.",
   "safe.iconFailed": "Couldn't change the icon",
 
+  // Audio and video attached to reports
+  "report.media": "Audio or video (optional)",
+  "report.addMedia": "Add audio or video",
+  "report.mediaHint": "Up to 2, 50 MB each (about half a minute of phone video): a recording of what was said, or a clip of what happened. The location your phone writes into videos is removed. Never on the map: only you (unless you report anonymously) and HerSpace moderators can play them.",
+  "report.mediaWrongType": "Only audio and video files can be added here.",
+  "report.mediaTooBig": "{name} is too big",
+  "report.mediaTooBigDesc": "Each recording can be up to 50 MB. Trim it on your phone, or add a shorter clip.",
+  "report.removeMedia": "Remove {name}",
+  "report.mediaNotUploaded_one": "Your report was saved, but {count} recording couldn't be uploaded.",
+  "report.mediaNotUploaded_other": "Your report was saved, but {count} recordings couldn't be uploaded.",
+  "media.video": "Video {n}",
+  "media.audio": "Audio {n}",
+  "media.play": "Play",
+  "media.loading": "Loading...",
+  "media.failed": "Couldn't load it. Try again.",
+  "evidence.media": "Audio and video ({count})",
+  "evidence.mediaNote": "These can't be printed. They are kept in HerSpace, and the person who reported this can play or download them from their account and share them on request. The location a phone writes into videos was removed when they were uploaded.",
+
   // Error screen
   "error.title": "Something went wrong",
   "error.desc": "This page hit an error. If you're in danger, call for help now.",

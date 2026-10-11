@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import PageHeader from "@/components/PageHeader";
 import LoadingRows from "@/components/LoadingRows";
 import ReportPhotos from "@/components/ReportPhotos";
+import ReportMediaList from "@/components/ReportMediaList";
+import type { ReportMedia } from "@/lib/media";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +32,7 @@ type ModReport = {
   flags: number;
   hidden: boolean;
   photos: number[];
+  media?: ReportMedia[];
   trust?: "anonymous" | "account" | "verified";
   holdReasons?: string[];
   confirmations?: number;
@@ -172,6 +175,7 @@ const Moderation = () => {
                 )}
                 <p className="whitespace-pre-wrap text-sm">{r.description}</p>
                 <ReportPhotos reportId={r.id} photos={r.photos} />
+                <ReportMediaList reportId={r.id} media={r.media} />
                 <div className="flex flex-wrap gap-2 pt-1">
                   {ACTIONS[queue].map((a) => (
                     <Button key={a.action} size="sm" variant={a.variant} disabled={busy === r.id} onClick={() => act(r.id, a.action)}>

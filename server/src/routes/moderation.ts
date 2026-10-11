@@ -5,10 +5,10 @@ import { requireModerator } from '../auth';
 import { now, parse } from '../util';
 import { sendEmail } from '../messaging';
 import { ACCOUNT_SIGNALS, accountSignals, pseudonym } from '../trust';
-import { FLAG_THRESHOLD, reportPhotos } from './reports';
+import { FLAG_THRESHOLD, reportMedia, reportPhotos } from './reports';
 
 // Review queue for Safe Map points. Moderators see what they need to judge a report
-// (type, description, date, rough area, photos, flags), never who submitted it.
+// (type, description, date, rough area, photos, recordings, flags), never who submitted it.
 export const moderationRouter = Router();
 moderationRouter.use(requireModerator);
 
@@ -43,6 +43,7 @@ moderationRouter.get('/reports', (req, res) => {
     holdReasons: r.holdReasons ? r.holdReasons.split(',') : [],
     hidden: r.status === 'removed' || r.status === 'held' || (r.status !== 'approved' && r.flags >= FLAG_THRESHOLD),
     photos: reportPhotos(r.id).map((p) => p.id),
+    media: reportMedia(r.id),
   }));
   res.json({ reports, flagThreshold: FLAG_THRESHOLD });
 });

@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n";
 import type { MessageKey } from "@/i18n/en";
 import { api, ApiError } from "@/lib/api";
 import { usePhotoUrl } from "@/lib/photos";
+import { formatSize, type ReportMedia } from "@/lib/media";
 import { buildComplaint } from "@/content/complaint";
 import { printPage } from "@/lib/print";
 
@@ -36,6 +37,7 @@ type Pack = {
     date: string | null;
     createdAt: string;
     photos: number[];
+    media?: ReportMedia[];
   };
   sosEvents: SosEvent[];
   window: { from: string; to: string };
@@ -102,6 +104,7 @@ const Evidence = () => {
         accused: "",
         witnesses: "",
         attachments: r.photos.length,
+        recordings: r.media?.length ?? 0,
       },
       lang,
     );
@@ -170,6 +173,20 @@ const Evidence = () => {
               ))}
             </div>
             <p className="text-xs text-neutral-600">{t("evidence.photosNote")}</p>
+          </Section>
+        )}
+
+        {/* Recordings can't be printed: listed, so whoever reads this knows to ask for them. */}
+        {(r.media?.length ?? 0) > 0 && (
+          <Section title={t("evidence.media", { count: r.media!.length })}>
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {r.media!.map((m, i) => (
+                <li key={m.id}>
+                  {t(m.kind === "video" ? "media.video" : "media.audio", { n: i + 1 })}, {formatSize(m.size)}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-neutral-600">{t("evidence.mediaNote")}</p>
           </Section>
         )}
 

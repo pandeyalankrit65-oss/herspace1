@@ -504,6 +504,19 @@ const migrations: string[] = [
   `
   ALTER TABLE users ADD COLUMN missed_call_sos INTEGER NOT NULL DEFAULT 0;
   `,
+  // Audio and video attached to reports (files on disk; MP4 location data removed).
+  `
+  CREATE TABLE report_media (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL REFERENCES reports(id) ON DELETE CASCADE,
+    file TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX report_media_report ON report_media(report_id);
+  `,
 ];
 
 function migrate() {

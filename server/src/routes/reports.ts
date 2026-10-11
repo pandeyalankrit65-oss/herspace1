@@ -2,7 +2,19 @@ import express, { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { requireAuth } from '../auth';
-import { deletePhotoFiles, MAX_PHOTO_BYTES, MAX_PHOTOS_PER_REPORT, photoPath, savePhoto, stripJpegMetadata } from '../photos';
+import {
+  deletePhotoFiles,
+  MAX_MEDIA_BYTES,
+  MAX_MEDIA_PER_REPORT,
+  MAX_PHOTO_BYTES,
+  MAX_PHOTOS_PER_REPORT,
+  mediaFormat,
+  photoPath,
+  saveFile,
+  savePhoto,
+  stripJpegMetadata,
+  stripMp4Metadata,
+} from '../photos';
 import { rateLimit } from '../rateLimit';
 import { coordsSchema, keyedHash, now, parse, randomToken, sha256 } from '../util';
 import { holdReasons, reporterTrust } from '../trust';
@@ -15,6 +27,7 @@ export const FLAG_THRESHOLD = Number(process.env.MAP_FLAG_THRESHOLD || 3);
 const reportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
 const flagLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 20 });
 const photoLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30 });
+const mediaLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10 });
 
 // Photos are uploaded right after the report is created, with a short-lived token returned by
 // POST /api/reports. That works for anonymous reports without linking them to anyone.
@@ -23,11 +36,18 @@ const UPLOAD_WINDOW_MS = 15 * 60 * 1000;
 export const reportPhotos = (reportId: number) =>
   db.prepare('SELECT id FROM report_photos WHERE report_id = ? ORDER BY id').all(reportId) as Array<{ id: number }>;
 
-// Deletes reports (and their photo files) matching a condition on `reports r`.
+export type ReportMedia = { id: number; kind: 'audio' | 'video'; size: number };
+export const reportMedia = (reportId: number) =>
+  db.prepare('SELECT id, kind, size FROM report_media WHERE report_id = ? ORDER BY id').all(reportId) as ReportMedia[];
+
+// Deletes reports (and their photo, audio and video files) matching a condition on `reports r`.
 export function deleteReports(where: string, ...params: Array<string | number>) {
   const files = db
-    .prepare(`SELECT p.file FROM report_photos p JOIN reports r ON r.id = p.report_id WHERE ${where}`)
-    .all(...params) as Array<{ file: string }>;
+    .prepare(
+      `SELECT p.file FROM report_photos p JOIN reports r ON r.id = p.report_id WHERE ${where}
+       UNION ALL SELECT m.file FROM report_media m JOIN reports r ON r.id = m.report_id WHERE ${where}`
+    )
+    .all(...params, ...params) as Array<{ file: string }>;
   const result = db.prepare(`DELETE FROM reports AS r WHERE ${where}`).run(...params);
   deletePhotoFiles(files.map((f) => f.file));
   return Number(result.changes);
@@ -117,6 +137,46 @@ reportsRouter.post('/:id/photos', photoLimiter, express.raw({ type: 'image/jpeg'
   res.status(201).json({ id: Number(result.lastInsertRowid) });
 });
 
+// Audio or video (a recording of what was said, a clip of what happened), uploaded the same way
+// as photos. The file's own first bytes decide what it is; the location a phone camera writes
+// into an MP4 is removed before it's stored.
+const MEDIA_TYPE = /^(audio|video)\//;
+const MEDIA_MIME: Record<string, Record<'audio' | 'video', string>> = {
+  mp4: { audio: 'audio/mp4', video: 'video/mp4' },
+  webm: { audio: 'audio/webm', video: 'video/webm' },
+  ogg: { audio: 'audio/ogg', video: 'video/ogg' },
+  mp3: { audio: 'audio/mpeg', video: 'audio/mpeg' },
+};
+reportsRouter.post(
+  '/:id/media',
+  mediaLimiter,
+  express.raw({ type: (req) => MEDIA_TYPE.test(String(req.headers['content-type'] ?? '')), limit: MAX_MEDIA_BYTES }),
+  (req, res) => {
+    const id = Number(req.params.id);
+    const token = req.get('x-upload-token') || '';
+    const report = db.prepare('SELECT upload_token_hash AS hash, upload_expires_at AS expiresAt FROM reports WHERE id = ?').get(id) as
+      | { hash: string | null; expiresAt: string | null }
+      | undefined;
+    if (!report || !report.hash || report.hash !== sha256(token)) return res.status(404).json({ error: 'Report not found.' });
+    if (!report.expiresAt || new Date(report.expiresAt) < new Date()) {
+      return res.status(410).json({ error: 'Recordings can only be added right after submitting a report.' });
+    }
+    const data = Buffer.isBuffer(req.body) ? req.body : null;
+    const format = data ? mediaFormat(data) : null;
+    if (!data || !format || (format === 'mp4' && !stripMp4Metadata(data))) {
+      return res.status(415).json({ error: 'Recordings must be audio or video files (MP4, WebM, Ogg or MP3).' });
+    }
+    const kind = format === 'mp3' || (req.get('content-type') ?? '').startsWith('audio/') ? 'audio' : 'video';
+    const count = (db.prepare('SELECT COUNT(*) AS n FROM report_media WHERE report_id = ?').get(id) as { n: number }).n;
+    if (count >= MAX_MEDIA_PER_REPORT) return res.status(409).json({ error: `A report can have up to ${MAX_MEDIA_PER_REPORT} recordings.` });
+    const file = saveFile(data, format);
+    const result = db
+      .prepare('INSERT INTO report_media (report_id, file, kind, mime, size, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(id, file, kind, MEDIA_MIME[format][kind], data.length, now());
+    res.status(201).json({ id: Number(result.lastInsertRowid), kind });
+  }
+);
+
 // A user's own (non-anonymous) reports.
 reportsRouter.get('/', requireAuth, (req, res) => {
   const reports = db
@@ -125,7 +185,7 @@ reportsRouter.get('/', requireAuth, (req, res) => {
          created_at AS createdAt FROM reports WHERE user_id = ? ORDER BY id DESC`
     )
     .all(req.user!.id) as Array<{ id: number }>;
-  res.json({ reports: reports.map((r) => ({ ...r, photos: reportPhotos(r.id).map((p) => p.id) })) });
+  res.json({ reports: reports.map((r) => ({ ...r, photos: reportPhotos(r.id).map((p) => p.id), media: reportMedia(r.id) })) });
 });
 
 // Everything for one report's evidence pack: the report, and the user's real (not test) SOS
@@ -169,7 +229,7 @@ reportsRouter.get('/:id/evidence', requireAuth, (req, res) => {
   res.json({
     generatedAt: now(),
     user: { name: user.name, phone: phone.verified ? phone.phone : null },
-    report: { ...report, photos: reportPhotos(report.id).map((p) => p.id) },
+    report: { ...report, photos: reportPhotos(report.id).map((p) => p.id), media: reportMedia(report.id) },
     sosEvents,
     window: { from, to },
   });
@@ -185,6 +245,20 @@ reportsRouter.get('/:id/photos/:photoId', requireAuth, (req, res) => {
   if (!file) return res.status(404).json({ error: 'Photo not found.' });
   res.type('image/jpeg').sendFile(file, (err) => {
     if (err && !res.headersSent) res.status(404).json({ error: 'Photo not found.' });
+  });
+});
+
+// Audio and video, like photos: only for the person who reported it and moderators. Sent as a
+// file, so players can seek in it (Range requests).
+reportsRouter.get('/:id/media/:mediaId', requireAuth, (req, res) => {
+  const media = db
+    .prepare('SELECT m.file, m.mime, r.user_id AS userId FROM report_media m JOIN reports r ON r.id = m.report_id WHERE m.id = ? AND r.id = ?')
+    .get(Number(req.params.mediaId), Number(req.params.id)) as { file: string; mime: string; userId: number | null } | undefined;
+  const file = media && (media.userId === req.user!.id || req.user!.moderator) ? photoPath(media.file) : null;
+  if (!media || !file) return res.status(404).json({ error: 'Recording not found.' });
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.type(media.mime).sendFile(file, (err) => {
+    if (err && !res.headersSent) res.status(404).json({ error: 'Recording not found.' });
   });
 });
 

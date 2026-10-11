@@ -16,7 +16,7 @@ import { api } from "@/lib/api";
 import { buildComplaint, LETTER_LANGS, letterSubject, type ComplaintFields, type ComplaintKind, type LetterLang } from "@/content/complaint";
 import { printPage } from "@/lib/print";
 
-type Report = { id: number; description: string; location: string | null; date: string | null; createdAt: string; photos?: number[] };
+type Report = { id: number; description: string; location: string | null; date: string | null; createdAt: string; photos?: number[]; media?: unknown[] };
 
 // Writes a formal complaint (police FIR request or workplace POSH complaint) from the user's
 // details, optionally starting from one of their saved reports. Nothing here is sent anywhere.
@@ -64,6 +64,7 @@ const Complaint = () => {
           place: r.location ?? f.place,
           date: r.date ?? r.createdAt.slice(0, 10),
           attachments: r.photos?.length ?? 0,
+          recordings: r.media?.length ?? 0,
         }));
       })
       .catch(() => {});

@@ -1,15 +1,16 @@
 import { api } from "./api";
 import { uploadPhoto } from "./photos";
+import { uploadMedia } from "./media";
 
-// Reports written while offline are kept on this device (IndexedDB, so photos fit) and sent
-// as soon as there's a connection again.
+// Reports written while offline are kept on this device (IndexedDB, so photos, audio and video
+// fit) and sent as soon as there's a connection again.
 
 const DB = "herspace";
 const STORE = "outbox";
 
 // userId: who wrote it (null if anonymous). A report is only ever sent from that same account,
 // so on a shared phone it can't end up in someone else's account.
-export type QueuedReport = { id?: number; userId: number | null; body: Record<string, unknown>; photos: Blob[]; createdAt: string };
+export type QueuedReport = { id?: number; userId: number | null; body: Record<string, unknown>; photos: Blob[]; media?: Blob[]; createdAt: string };
 
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -53,6 +54,7 @@ async function sendFor(currentUserId: number | null): Promise<number> {
     try {
       const created = await api<{ id: number; uploadToken: string }>("/api/reports", { body: r.body });
       for (const photo of r.photos) await uploadPhoto(created.id, created.uploadToken, photo).catch(() => {});
+      for (const file of r.media ?? []) await uploadMedia(created.id, created.uploadToken, file).catch(() => {});
       await remove(r.id!);
       sent++;
     } catch {

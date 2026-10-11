@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import TellItYourWay from "@/components/TellItYourWay";
 import { followUpAfter } from "@/lib/followUpNotifications";
-import { FileText, MapPin, Calendar, Clock, LocateFixed, ImagePlus, X } from "lucide-react";
+import { FileText, MapPin, Calendar, Clock, LocateFixed, ImagePlus, X, Film, Mic, Paperclip } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import { queueReport } from "@/lib/outbox";
 import { useI18n } from "@/i18n";
 import PageHeader from "@/components/PageHeader";
 import { MAX_PHOTOS, preparePhoto, uploadPhoto } from "@/lib/photos";
+import { formatSize, MAX_MEDIA, MAX_MEDIA_BYTES, mediaKind, uploadMedia } from "@/lib/media";
 
 const Report = () => {
   const { toast } = useToast();
@@ -39,6 +40,19 @@ const Report = () => {
   const photoUrls = useRef<string[]>([]);
   photoUrls.current = photos.map((p) => p.url);
   useEffect(() => () => photoUrls.current.forEach((u) => URL.revokeObjectURL(u)), []);
+  const [media, setMedia] = useState<File[]>([]);
+  const mediaInput = useRef<HTMLInputElement>(null);
+
+  const addMedia = (files: FileList | null) => {
+    const added: File[] = [];
+    for (const file of Array.from(files ?? [])) {
+      if (!mediaKind(file)) toast({ title: t("report.mediaWrongType"), variant: "destructive" });
+      else if (file.size > MAX_MEDIA_BYTES) toast({ title: t("report.mediaTooBig", { name: file.name }), description: t("report.mediaTooBigDesc"), variant: "destructive" });
+      else added.push(file);
+    }
+    setMedia((prev) => [...prev, ...added].slice(0, MAX_MEDIA));
+    if (mediaInput.current) mediaInput.current.value = "";
+  };
 
   const addPhotos = async (files: FileList | null) => {
     const room = MAX_PHOTOS - photos.length;
@@ -99,28 +113,40 @@ const Report = () => {
       } catch (err) {
         if (!(err instanceof ApiError) || err.status !== 0) throw err;
         // No connection: keep it on this phone and send it when back online.
-        await queueReport({ userId: body.anonymous ? null : (user?.id ?? null), body, photos: photos.map((p) => p.blob), createdAt: new Date().toISOString() });
+        await queueReport({ userId: body.anonymous ? null : (user?.id ?? null), body, photos: photos.map((p) => p.blob), media, createdAt: new Date().toISOString() });
         toast({ title: t("offline.reportQueuedTitle"), description: t("offline.reportQueuedDesc") });
         followUpAfter("report", { title: t("follow.notifyTitle"), body: t("follow.notifyBody") });
         setFormData(emptyForm);
         photos.forEach((p) => URL.revokeObjectURL(p.url));
         setPhotos([]);
+        setMedia([]);
         return;
       }
       let failedUploads = 0;
+      let failedMedia = 0;
       for (const photo of photos) {
         await uploadPhoto(created.id, created.uploadToken, photo.blob).catch(() => failedUploads++);
       }
+      for (const file of media) {
+        await uploadMedia(created.id, created.uploadToken, file).catch(() => failedMedia++);
+      }
       toast({
         title: t("report.submittedTitle"),
-        description: failedUploads ? tn("report.photosNotUploaded", failedUploads) : created.held ? t("report.heldDesc") : t("report.submittedDesc"),
-        variant: failedUploads ? "destructive" : undefined,
+        description: failedUploads
+          ? tn("report.photosNotUploaded", failedUploads)
+          : failedMedia
+            ? tn("report.mediaNotUploaded", failedMedia)
+            : created.held
+              ? t("report.heldDesc")
+              : t("report.submittedDesc"),
+        variant: failedUploads || failedMedia ? "destructive" : undefined,
       });
       // "How are you doing?" tomorrow, and a few days later.
       followUpAfter("report", { title: t("follow.notifyTitle"), body: t("follow.notifyBody") });
       setFormData(emptyForm);
       photos.forEach((p) => URL.revokeObjectURL(p.url));
       setPhotos([]);
+      setMedia([]);
     } catch (err) {
       toast({
         title: t("report.failedTitle"),
@@ -278,6 +304,49 @@ const Report = () => {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">{t("report.photosHint")}</p>
+                </div>
+
+                {/* Audio and video */}
+                <div className="space-y-2">
+                  <Label htmlFor="report-media">{t("report.media")}</Label>
+                  <input
+                    ref={mediaInput}
+                    id="report-media"
+                    type="file"
+                    accept="audio/*,video/*"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => addMedia(e.target.files)}
+                  />
+                  {media.length > 0 && (
+                    <ul className="space-y-1">
+                      {media.map((file, i) => {
+                        const Icon = mediaKind(file) === "video" ? Film : Mic;
+                        return (
+                          <li key={`${file.name}-${i}`} className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
+                            <Icon className="h-4 w-4 shrink-0 text-primary" />
+                            <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                            <span className="shrink-0 text-muted-foreground">{formatSize(file.size)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setMedia((prev) => prev.filter((_, j) => j !== i))}
+                              aria-label={t("report.removeMedia", { name: file.name })}
+                              className="rounded-full p-0.5 hover:bg-muted"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {media.length < MAX_MEDIA && (
+                    <Button type="button" variant="outline" className="gap-2" onClick={() => mediaInput.current?.click()}>
+                      <Paperclip className="h-4 w-4" />
+                      {t("report.addMedia")}
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">{t("report.mediaHint")}</p>
                 </div>
 
                 {/* Map location */}

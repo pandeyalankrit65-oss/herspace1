@@ -731,6 +731,93 @@ describe('report photos', () => {
   });
 });
 
+// A small MP4 the way a phone camera writes it: the place it was filmed in moov/udta (©xyz),
+// the phone's details in moov/meta, and some "video" in mdat.
+function mp4WithLocation() {
+  const box = (type: string, ...parts: Buffer[]) => {
+    const body = Buffer.concat(parts);
+    const head = Buffer.alloc(8);
+    head.writeUInt32BE(8 + body.length);
+    head.write(type, 4, 'latin1');
+    return Buffer.concat([head, body]);
+  };
+  return Buffer.concat([
+    box('ftyp', Buffer.from('isom\0\0\x02\0isomiso2mp41', 'latin1')),
+    box(
+      'moov',
+      box('mvhd', Buffer.alloc(100)),
+      box('trak', box('tkhd', Buffer.alloc(84)), box('mdia', box('mdhd', Buffer.alloc(24)))),
+      box('udta', box('\xa9xyz', Buffer.from('\0\x0f\x15\xc7+26.8467+080.9462/', 'latin1'))),
+      box('meta', Buffer.from('\0\0\0\0com.android.manufacturer Pixel 9', 'latin1'))
+    ),
+    box('mdat', Buffer.from('video frames here', 'latin1')),
+  ]);
+}
+
+async function uploadMedia(reportId: number, token: string, data: Buffer, type: string) {
+  const res = await fetch(`${base}/reports/${reportId}/media`, { method: 'POST', headers: { 'Content-Type': type, 'X-Upload-Token': token }, body: new Uint8Array(data) });
+  return { status: res.status, data: (await res.json()) as { id?: number; kind?: string; error?: string } };
+}
+
+describe('report audio and video', () => {
+  test('the location in a phone video is removed; only the owner can play it; two at most', async () => {
+    const { token } = await newUser('Ishita');
+    const report = await call('/reports', { token, body: { incidentType: 'harassment', description: 'On the bus' } });
+    const { id, uploadToken } = report.data;
+
+    assert.equal((await uploadMedia(id, 'wrong-token', mp4WithLocation(), 'video/mp4')).status, 404);
+    assert.equal((await uploadMedia(id, uploadToken, Buffer.from('<html>not a video</html>'), 'video/mp4')).status, 415);
+    assert.equal((await uploadMedia(id, uploadToken, Buffer.from('MZ\x90\0', 'latin1'), 'audio/mpeg')).status, 415);
+    // A box that claims to be bigger than the file: refused rather than stored half-cleaned.
+    const broken = mp4WithLocation();
+    broken.writeUInt32BE(0xffffff, 28);
+    assert.equal((await uploadMedia(id, uploadToken, broken, 'video/mp4')).status, 415);
+
+    const original = mp4WithLocation();
+    const video = await uploadMedia(id, uploadToken, original, 'video/mp4');
+    assert.equal(video.status, 201);
+    assert.equal(video.data.kind, 'video');
+    // WebM from the browser's recorder.
+    const webm = Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.from('webm audio')]);
+    const audio = await uploadMedia(id, uploadToken, webm, 'audio/webm;codecs=opus');
+    assert.equal(audio.data.kind, 'audio');
+    assert.equal((await uploadMedia(id, uploadToken, webm, 'audio/webm')).status, 409);
+
+    const mine = (await call('/reports', { token })).data.reports.find((r: { id: number }) => r.id === id);
+    assert.deepEqual(
+      mine.media.map((m: { kind: string; size: number }) => [m.kind, m.size]),
+      [
+        ['video', original.length],
+        ['audio', webm.length],
+      ]
+    );
+
+    const res = await fetch(`${base}/reports/${id}/media/${video.data.id}`, { headers: { Cookie: `herspace_session=${token}` } });
+    assert.equal(res.headers.get('content-type'), 'video/mp4');
+    const stored = Buffer.from(await res.arrayBuffer());
+    assert.equal(stored.length, original.length, 'same size: the boxes are renamed, not cut');
+    assert.equal(stored.includes(Buffer.from('+26.8467')), true, 'the bytes stay, inside a box players skip');
+    assert.equal(stored.includes(Buffer.from('udta')), false, 'no location box left');
+    assert.equal(stored.includes(Buffer.from('meta')), false, 'no phone details box left');
+    assert.equal(stored.includes(Buffer.from('video frames here')), true, 'video kept');
+    // Players seek with Range requests.
+    const part = await fetch(`${base}/reports/${id}/media/${video.data.id}`, { headers: { Cookie: `herspace_session=${token}`, Range: 'bytes=0-7' } });
+    assert.equal(part.status, 206);
+
+    const other = await newUser('Other');
+    assert.equal((await call(`/reports/${id}/media/${video.data.id}`, { token: other.token })).status, 404);
+    assert.equal((await call(`/reports/${id}/media/${video.data.id}`)).status, 401);
+    const evidence = await call(`/reports/${id}/evidence`, { token });
+    assert.equal(evidence.data.report.media.length, 2);
+    assert.equal((await call('/account/export', { token })).data.reports.find((r: { description: string }) => r.description === 'On the bus').recordings, 2);
+
+    // Deleting the report deletes the files.
+    const files = db.prepare('SELECT file FROM report_media WHERE report_id = ?').all(id) as Array<{ file: string }>;
+    assert.equal((await call(`/reports/${id}`, { token, method: 'DELETE' })).status, 200);
+    for (const f of files) assert.equal(fs.existsSync(photoPath(f.file)!), false);
+  });
+});
+
 describe('moderation', () => {
   test('moderators review flagged map points; others cannot', async () => {
     const reporter = await newUser('Reporter');
